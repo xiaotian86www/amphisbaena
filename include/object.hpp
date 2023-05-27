@@ -8,6 +8,8 @@
 
 namespace translator
 {
+    class Group;
+
     class Object
     {
     public:
@@ -24,15 +26,9 @@ namespace translator
 
         virtual void set_value(std::string_view name, std::string_view value) = 0;
 
-        template <typename GroupType_>
-        GroupType_ &get_group(std::string_view name)
-        {
-        }
+        virtual Group *get_group(std::string_view name) = 0;
 
-        template <typename GroupType_>
-        const GroupType_ &get_group(std::string_view name) const
-        {
-        }
+        virtual const Group *get_group(std::string_view name) const = 0;
     };
 
     class Group
