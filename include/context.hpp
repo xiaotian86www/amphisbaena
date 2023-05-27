@@ -5,6 +5,7 @@
 #include <functional>
 
 #include "object.hpp"
+#include "server.hpp"
 
 namespace translator
 {
@@ -34,7 +35,7 @@ namespace translator
             throw new std::runtime_error(ss.str());
         }
 
-        void set_object(std::string_view name, std::unique_ptr<Object>&& obj)
+        void set_object(std::string_view name, std::unique_ptr<Object> &&obj)
         {
             auto it = objects_.find(name);
             if (it != objects_.end())
@@ -43,19 +44,41 @@ namespace translator
                 objects_.insert(std::make_pair(name, std::move(obj)));
         }
 
-        void reset()
-        {
-            objects_.clear();
-        }
-
         void set_object_func(std::string_view name, get_object_func_t func)
         {
             object_funcs_.insert_or_assign(name, func);
         }
 
+        void set_server(std::string_view name, std::unique_ptr<Server> &&server)
+        {
+            auto it = servers_.find(name);
+            if (it != servers_.end())
+                it->second = std::move(server);
+            else
+                servers_.insert(std::make_pair(name, std::move(server)));
+        }
+
+        Server* get_server(std::string_view name)
+        {
+            auto it = servers_.find(name);
+            if (it!= servers_.end())
+                return it->second.get();
+                
+            std::stringstream ss;
+            ss << "cannot find server '" << name << "'";
+
+            throw new std::runtime_error(ss.str());
+        }
+
+        void reset()
+        {
+            objects_.clear();
+        }
+
     private:
         std::map<std::string_view, std::unique_ptr<Object>> objects_;
         std::map<std::string_view, get_object_func_t> object_funcs_;
+        std::map<std::string_view, std::unique_ptr<Server>> servers_;
     };
 
 } // namespace translator
