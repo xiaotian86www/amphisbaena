@@ -1,6 +1,6 @@
 #include <rapidjson/document.h>
 
-#include "translator.hpp"
+#include "object.hpp"
 
 class JsonObject
     : public translator::Object

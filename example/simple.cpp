@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include "json.hpp"
+#include "func.hpp"
 
 int main(int argc, char **argv)
 {
