@@ -1,0 +1,3 @@
+[submodule "thirdparty/coroutine"]
+	path = thirdparty/coroutine
+	url = https://github.com/cloudwu/coroutine.git
