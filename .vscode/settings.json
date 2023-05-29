@@ -71,6 +71,7 @@
         "future": "cpp",
         "iomanip": "cpp",
         "typeindex": "cpp",
-        "coroutine": "cpp"
+        "coroutine": "cpp",
+        "stddef.h": "c"
     }
 }
