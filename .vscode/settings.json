@@ -70,6 +70,7 @@
         "fstream": "cpp",
         "future": "cpp",
         "iomanip": "cpp",
-        "typeindex": "cpp"
+        "typeindex": "cpp",
+        "coroutine": "cpp"
     }
 }

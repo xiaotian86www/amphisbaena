@@ -4,15 +4,30 @@
 #include <sstream>
 #include <functional>
 
+extern "C"
+{
+#include <coroutine/coroutine.h>
+}
+
 #include "object.hpp"
 #include "server.hpp"
 
 namespace translator
 {
+    struct task
+    {
+    };
+
     class Context
     {
     public:
         using get_object_func_t = std::function<std::unique_ptr<Object>(Context *)>;
+
+    public:
+        Context(schedule *s, int32_t co_id)
+            : s_(s), co_id_(co_id)
+        {
+        }
 
     public:
         Object *get_object(std::string_view name)
@@ -58,12 +73,12 @@ namespace translator
                 servers_.insert(std::make_pair(name, std::move(server)));
         }
 
-        Server* get_server(std::string_view name)
+        Server *get_server(std::string_view name)
         {
             auto it = servers_.find(name);
-            if (it!= servers_.end())
+            if (it != servers_.end())
                 return it->second.get();
-                
+
             std::stringstream ss;
             ss << "cannot find server '" << name << "'";
 
@@ -75,10 +90,29 @@ namespace translator
             objects_.clear();
         }
 
+        void yield()
+        {
+            coroutine_yield(s_);
+        }
+
+    public:
+        int32_t co_id()
+        {
+            return co_id_;
+        }
+
+        void set_task(task &&t)
+        {
+            t_ = std::move(t);
+        }
+
     private:
+        int32_t co_id_;
         std::map<std::string_view, std::unique_ptr<Object>> objects_;
         std::map<std::string_view, get_object_func_t> object_funcs_;
         std::map<std::string_view, std::unique_ptr<Server>> servers_;
+        task t_;
+        schedule *s_;
     };
 
 } // namespace translator
