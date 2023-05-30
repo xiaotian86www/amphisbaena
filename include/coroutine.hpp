@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <list>
 #include <vector>
 #include <memory>
@@ -19,8 +20,6 @@ class Schedule;
 
 class Coroutine;
 
-typedef void (*coroutine_func)(Coroutine *co, void *arg);
-
 class Coroutine
 {
 public:
@@ -32,8 +31,10 @@ public:
         COROUTINE_SUSPEND = 3
     };
 
+    using coroutine_func = std::function<void(Coroutine *)>;
+
 public:
-    Coroutine(Schedule *s, int id, coroutine_func func, void *arg);
+    Coroutine(Schedule *s, int id, coroutine_func &&func);
 
     ~Coroutine();
 
@@ -59,7 +60,6 @@ private:
 private:
     std::vector<char> stack_;
     coroutine_func func_;
-    void *arg_;
     ucontext_t ctx_;
     Schedule *sch_;
     StatusEnum status_;
@@ -75,7 +75,7 @@ public:
     ~Schedule();
 
 public:
-    std::unique_ptr<Coroutine> create(coroutine_func func, void *arg);
+    std::unique_ptr<Coroutine> create(Coroutine::coroutine_func &&func);
 
 private:
     char stack_[STACK_SIZE];

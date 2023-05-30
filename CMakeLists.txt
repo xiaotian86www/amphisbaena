@@ -12,4 +12,4 @@ set(SRC_LIST
 add_executable(test ${SRC_LIST})
 
 target_include_directories(test PRIVATE ${PROJECT_SOURCE_DIR}/include)
-target_link_libraries(test gtest)
+target_link_libraries(test gtest gmock)

@@ -4,8 +4,11 @@
 #include <cassert>
 #include <cstring>
 
-Coroutine::Coroutine(Schedule *s, int id, coroutine_func func, void *arg)
-    : func_(func), arg_(arg), sch_(s), status_(StatusEnum::COROUTINE_READY), id_(id)
+Coroutine::Coroutine(Schedule *s, int id, Coroutine::coroutine_func &&func)
+    : func_(std::move(func)),
+      sch_(s),
+      status_(StatusEnum::COROUTINE_READY),
+      id_(id)
 {
 }
 
@@ -60,7 +63,7 @@ void Coroutine::mainfunc(uint32_t low32, uint32_t hi32)
 {
     uintptr_t ptr = (uintptr_t)low32 | ((uintptr_t)hi32 << 32);
     Coroutine *co = (Coroutine *)ptr;
-    co->func_(co, co->arg_);
+    co->func_(co);
     co->status_ = StatusEnum::COROUTINE_DEAD;
     // co->sch_->running_ = nullptr;
 }
@@ -73,9 +76,9 @@ Schedule::~Schedule()
 {
 }
 
-std::unique_ptr<Coroutine> Schedule::create(coroutine_func func, void *arg)
+std::unique_ptr<Coroutine> Schedule::create(Coroutine::coroutine_func &&func)
 {
-    return std::make_unique<Coroutine>(this, max_co_id_++, func, arg);
+    return std::make_unique<Coroutine>(this, max_co_id_++, std::move(func));
 }
 
 // std::unique_ptr<Coroutine> Schedule::running()

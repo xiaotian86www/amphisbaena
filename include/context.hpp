@@ -4,13 +4,9 @@
 #include <sstream>
 #include <functional>
 
-extern "C"
-{
-#include <coroutine/coroutine.h>
-}
-
 #include "object.hpp"
 #include "server.hpp"
+#include "coroutine.hpp"
 
 namespace translator
 {
@@ -24,8 +20,8 @@ namespace translator
         using get_object_func_t = std::function<std::unique_ptr<Object>(Context *)>;
 
     public:
-        Context(schedule *s, int32_t co_id)
-            : s_(s), co_id_(co_id)
+        Context(Coroutine *co, int32_t co_id)
+            : co_(co), co_id_(co_id)
         {
         }
 
@@ -92,7 +88,7 @@ namespace translator
 
         void yield()
         {
-            coroutine_yield(s_);
+            co_->yield();
         }
 
     public:
@@ -112,7 +108,7 @@ namespace translator
         std::map<std::string_view, get_object_func_t> object_funcs_;
         std::map<std::string_view, std::unique_ptr<Server>> servers_;
         task t_;
-        schedule *s_;
+        Coroutine *co_;
     };
 
 } // namespace translator
