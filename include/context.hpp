@@ -20,8 +20,8 @@ namespace translator
         using get_object_func_t = std::function<std::unique_ptr<Object>(Context *)>;
 
     public:
-        Context(Coroutine *co, int32_t co_id)
-            : co_(co), co_id_(co_id)
+        Context()
+            : co_(std::bind(&Context::main_func, this))
         {
         }
 
@@ -86,29 +86,24 @@ namespace translator
             objects_.clear();
         }
 
-        void yield()
+    private:
+        void main_func()
         {
-            co_->yield();
+
         }
 
     public:
-        int32_t co_id()
-        {
-            return co_id_;
-        }
-
         void set_task(task &&t)
         {
             t_ = std::move(t);
         }
 
     private:
-        int32_t co_id_;
         std::map<std::string_view, std::unique_ptr<Object>> objects_;
         std::map<std::string_view, get_object_func_t> object_funcs_;
         std::map<std::string_view, std::unique_ptr<Server>> servers_;
         task t_;
-        Coroutine *co_;
+        Coroutine co_;
     };
 
 } // namespace translator
