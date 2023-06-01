@@ -5,6 +5,8 @@ project(test)
 
 set(SRC_LIST
     src/coroutine.cpp
+    src/environment.cpp
+    src/object.cpp
     test/test_coroutine.cpp
     test/test_context.cpp
 )

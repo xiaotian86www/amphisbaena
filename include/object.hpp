@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 #include <string_view>
 #include <functional>
 #include <unordered_map>
@@ -59,20 +60,22 @@ namespace translator
         ConstIterType_ end() const;
     };
 
-    class Context;
+    class Environment;
 
     class ObjectFactory
     {
     public:
-        typedef std::function<std::unique_ptr<Object>(Context *)> ctor_func_type;
+        typedef std::function<std::unique_ptr<Object>(Environment *)> ctor_func_type;
 
     public:
         void registe(std::string_view name, ctor_func_type &&func);
 
-        ObjectPtr produce(std::string_view name);
+        ObjectPtr produce(Environment *env, std::string_view name);
 
     private:
         std::unordered_map<std::string_view, ctor_func_type> ctors_;
     };
+
+    typedef std::shared_ptr<ObjectFactory> ObjectFactoryPtr;
 
 } // namespace translator

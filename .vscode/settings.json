@@ -73,6 +73,7 @@
         "typeindex": "cpp",
         "coroutine": "cpp",
         "stddef.h": "c",
-        "version": "cpp"
+        "version": "cpp",
+        "*.ipp": "cpp"
     }
 }
