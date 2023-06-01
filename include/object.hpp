@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <string_view>
 #include <functional>
+#include <unordered_map>
 
 #include <boost/lexical_cast.hpp>
 
@@ -31,6 +32,8 @@ namespace translator
         virtual const Group *get_group(std::string_view name) const = 0;
     };
 
+    typedef std::unique_ptr<Object> ObjectPtr;
+
     class Group
     {
     public:
@@ -54,6 +57,22 @@ namespace translator
 
         template <typename ConstIterType_>
         ConstIterType_ end() const;
+    };
+
+    class Context;
+
+    class ObjectFactory
+    {
+    public:
+        typedef std::function<std::unique_ptr<Object>(Context *)> ctor_func_type;
+
+    public:
+        void registe(std::string_view name, ctor_func_type &&func);
+
+        ObjectPtr produce(std::string_view name);
+
+    private:
+        std::unordered_map<std::string_view, ctor_func_type> ctors_;
     };
 
 } // namespace translator
