@@ -21,4 +21,10 @@ Environment::set_object(std::string_view name, ObjectPtr&& object)
 {
   objects_[name] = std::move(object);
 }
+
+Server*
+Environment::get_server(std::string_view name)
+{
+  return server_pool_->get(name);
+}
 } // namespace translator

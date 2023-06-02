@@ -92,7 +92,3 @@ co_id()
   assert(sc.running_);
   return sc.running_->id();
 }
-// std::unique_ptr<Coroutine> Schedule::running()
-// {
-//     return running_;
-// }
