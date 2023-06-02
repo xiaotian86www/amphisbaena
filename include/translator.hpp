@@ -1,11 +1,11 @@
 #pragma once
 
-#include <queue>
+#include <condition_variable>
 #include <mutex>
+#include <queue>
 #include <stack>
 #include <thread>
 #include <vector>
-#include <condition_variable>
 
 extern "C"
 {
@@ -14,95 +14,87 @@ extern "C"
 
 #include "context.hpp"
 
-namespace translator
+namespace translator {
+
+class Translator
 {
+public:
+  Translator() {}
 
-    class Translator
+  ~Translator()
+  {
+    is_running_ = false;
+    if (th_.joinable())
+      th_.join();
+  }
+
+public:
+  void push(task&& task)
+  {
+    Context* co_context = nullptr;
     {
-    public:
-        Translator()
-        {
-        }
+      std::unique_lock<std::mutex> ul(idle_co_mtx_);
+      idle_co_cv_.wait(ul, [this] { return !idle_co_.empty(); });
 
-        ~Translator()
-        {
-            is_running_ = false;
-            if (th_.joinable())
-                th_.join();
-        }
+      co_context = idle_co_.top();
+      co_context->set_task(std::move(task));
+      idle_co_.pop();
+    }
 
-    public:
-        void push(task &&task)
-        {
-            Context *co_context = nullptr;
-            {
-                std::unique_lock<std::mutex> ul(idle_co_mtx_);
-                idle_co_cv_.wait(ul, [this]
-                                 { return !idle_co_.empty(); });
+    {
+      std::unique_lock<std::mutex> ul(runnable_co_mtx_);
+      runnable_co_.push(co_context);
+      runnable_co_cv_.notify_all();
+    }
+  }
 
-                co_context = idle_co_.top();
-                co_context->set_task(std::move(task));
-                idle_co_.pop();
-            }
+private:
+  void th_func()
+  {
+    while (is_running_) {
+      Context* co_context = nullptr;
+      {
+        std::unique_lock<std::mutex> ul(runnable_co_mtx_);
+        runnable_co_cv_.wait(ul, [this] { return !runnable_co_.empty(); });
 
-            {
-                std::unique_lock<std::mutex> ul(runnable_co_mtx_);
-                runnable_co_.push(co_context);
-                runnable_co_cv_.notify_all();
-            }
-        }
+        co_context = runnable_co_.front();
+        runnable_co_.pop();
+      }
 
-    private:
-        void th_func()
-        {
-            while (is_running_)
-            {
-                Context *co_context = nullptr;
-                {
-                    std::unique_lock<std::mutex> ul(runnable_co_mtx_);
-                    runnable_co_cv_.wait(ul, [this]
-                                         { return !runnable_co_.empty(); });
+      coroutine_resume(schedule_, co_context->co_id());
+    }
+  }
 
-                    co_context = runnable_co_.front();
-                    runnable_co_.pop();
-                }
+  void co_func(Context* context)
+  {
+    while (true) {
+      if (queue_.empty()) {
+        coroutine_yield(schedule_);
+        continue;
+      }
 
-                coroutine_resume(schedule_, co_context->co_id());
-            }
-        }
+      // do something
 
-        void co_func(Context *context)
-        {
-            while (true)
-            {
-                if (queue_.empty())
-                {
-                    coroutine_yield(schedule_);
-                    continue;
-                }
+      // runnable
+      {
+        std::unique_lock<std::mutex> ul(idle_co_mtx_);
+        idle_co_.push(context);
+        idle_co_cv_.notify_all();
+      }
+    }
+  }
 
-                // do something
+private:
+  std::stack<Context*> idle_co_;
+  std::mutex idle_co_mtx_;
+  std::condition_variable idle_co_cv_;
 
-                // runnable
-                {
-                    std::unique_lock<std::mutex> ul(idle_co_mtx_);
-                    idle_co_.push(context);
-                    idle_co_cv_.notify_all();
-                }
-            }
-        }
+  std::queue<Context*> runnable_co_;
+  std::mutex runnable_co_mtx_;
+  std::condition_variable runnable_co_cv_;
 
-    private:
-        std::stack<Context *> idle_co_;
-        std::mutex idle_co_mtx_;
-        std::condition_variable idle_co_cv_;
-
-        std::queue<Context *> runnable_co_;
-        std::mutex runnable_co_mtx_;
-        std::condition_variable runnable_co_cv_;
-
-        std::thread th_;
-        bool is_running_ = true;
-        struct schedule *schedule_ = coroutine_open();
-    };
+  std::thread th_;
+  bool is_running_ = true;
+  struct schedule* schedule_ = coroutine_open();
+};
 } // namespace translator

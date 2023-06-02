@@ -4,14 +4,16 @@
 #include <unordered_map>
 
 #include "object.hpp"
+#include "server.hpp"
 
 namespace translator
 {
     class Environment
     {
     public:
-        Environment(ObjectFactoryPtr object_factory)
-            : object_factory_(object_factory)
+        Environment(ObjectFactoryPtr object_factory,
+                    ServerPoolPtr server_pool)
+            : object_factory_(object_factory), server_pool_(server_pool)
         {
         }
 
@@ -23,5 +25,6 @@ namespace translator
     private:
         std::unordered_map<std::string_view, ObjectPtr> objects_;
         ObjectFactoryPtr object_factory_;
+        ServerPoolPtr server_pool_;
     };
 } // namespace translator

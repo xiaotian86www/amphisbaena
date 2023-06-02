@@ -4,28 +4,29 @@
 
 #include "object.hpp"
 
-namespace translator
+namespace translator {
+class Server
 {
-    class Server
-    {
-    public:
-        virtual ~Server() = default;
+public:
+  virtual ~Server() = default;
 
-        virtual std::unique_ptr<Object> call(
-            std::string_view method, const Object *args) = 0;
-    };
+  virtual std::unique_ptr<Object> call(std::string_view method,
+                                       const Object* args) = 0;
+};
 
-    class ServerPool
-    {
-    public:
-        ServerPool() = default;
+class ServerPool
+{
+public:
+  ServerPool() = default;
 
-    public:
-        void add(std::string_view name, std::shared_ptr<Server> server);
+public:
+  void add(std::string_view name, std::shared_ptr<Server> server);
 
-        Server *get(std::string_view name);
+  Server* get(std::string_view name);
 
-    private:
-        std::map<std::string_view, std::shared_ptr<Server>> pool;
-    };
+private:
+  std::map<std::string_view, std::shared_ptr<Server>> pool;
+};
+
+typedef std::shared_ptr<ServerPool> ServerPoolPtr;
 } // namespace translator

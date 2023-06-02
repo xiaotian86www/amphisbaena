@@ -1,38 +1,37 @@
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include "coroutine.hpp"
 
 struct args
 {
-    int n;
+  int n;
 };
 
-void foo(std::function<void(int)> func)
+void
+foo(std::function<void(int)> func)
 {
-    for (int i = 0; i < 2; i++)
-    {
-        func(co_id() * 10 + i);
-        co_yield();
-    }
+  for (int i = 0; i < 2; i++) {
+    func(co_id() * 10 + i);
+    co_yield ();
+  }
 }
 
 TEST(coroutine, test1)
 {
-    testing::MockFunction<void(int)> foo_mock;
-    Coroutine c1(std::bind(foo, foo_mock.AsStdFunction()));
-    Coroutine c2(std::bind(foo, foo_mock.AsStdFunction()));
+  testing::MockFunction<void(int)> foo_mock;
+  Coroutine c1(std::bind(foo, foo_mock.AsStdFunction()));
+  Coroutine c2(std::bind(foo, foo_mock.AsStdFunction()));
 
-    testing::Sequence dummy;
-    EXPECT_CALL(foo_mock, Call(c1.id() * 10));
-    EXPECT_CALL(foo_mock, Call(c2.id() * 10));
-    EXPECT_CALL(foo_mock, Call(c1.id() * 10 + 1));
-    EXPECT_CALL(foo_mock, Call(c2.id() * 10 + 1));
+  testing::Sequence dummy;
+  EXPECT_CALL(foo_mock, Call(c1.id() * 10));
+  EXPECT_CALL(foo_mock, Call(c2.id() * 10));
+  EXPECT_CALL(foo_mock, Call(c1.id() * 10 + 1));
+  EXPECT_CALL(foo_mock, Call(c2.id() * 10 + 1));
 
-    while (c1.status() != Coroutine::StatusEnum::COROUTINE_DEAD &&
-           c2.status() != Coroutine::StatusEnum::COROUTINE_DEAD)
-    {
-        c1.resume();
-        c2.resume();
-    }
+  while (c1.status() != Coroutine::StatusEnum::COROUTINE_DEAD &&
+         c2.status() != Coroutine::StatusEnum::COROUTINE_DEAD) {
+    c1.resume();
+    c2.resume();
+  }
 }
