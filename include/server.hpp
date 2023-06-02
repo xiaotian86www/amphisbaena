@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 #include "object.hpp"
 
 namespace translator
@@ -11,5 +13,19 @@ namespace translator
 
         virtual std::unique_ptr<Object> call(
             std::string_view method, const Object *args) = 0;
+    };
+
+    class ServerPool
+    {
+    public:
+        ServerPool() = default;
+
+    public:
+        void add(std::string_view name, std::shared_ptr<Server> server);
+
+        Server *get(std::string_view name);
+
+    private:
+        std::map<std::string_view, std::shared_ptr<Server>> pool;
     };
 } // namespace translator

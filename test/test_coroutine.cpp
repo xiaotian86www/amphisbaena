@@ -20,13 +20,14 @@ void foo(std::function<void(int)> func)
 TEST(coroutine, test1)
 {
     testing::MockFunction<void(int)> foo_mock;
-    testing::Sequence dummy;
-    EXPECT_CALL(foo_mock, Call(0));
-    EXPECT_CALL(foo_mock, Call(10));
-    EXPECT_CALL(foo_mock, Call(1));
-    EXPECT_CALL(foo_mock, Call(11));
     Coroutine c1(std::bind(foo, foo_mock.AsStdFunction()));
     Coroutine c2(std::bind(foo, foo_mock.AsStdFunction()));
+
+    testing::Sequence dummy;
+    EXPECT_CALL(foo_mock, Call(c1.id() * 10));
+    EXPECT_CALL(foo_mock, Call(c2.id() * 10));
+    EXPECT_CALL(foo_mock, Call(c1.id() * 10 + 1));
+    EXPECT_CALL(foo_mock, Call(c2.id() * 10 + 1));
 
     while (c1.status() != Coroutine::StatusEnum::COROUTINE_DEAD &&
            c2.status() != Coroutine::StatusEnum::COROUTINE_DEAD)
