@@ -66,7 +66,7 @@ Coroutine::yield()
   stack_.resize(sc.stack_ + STACK_SIZE - &dummy);
   memcpy(stack_.data(), &dummy, stack_.size());
   status_ = StatusEnum::COROUTINE_SUSPEND;
-  // sc.running_ = nullptr;
+  sc.running_ = nullptr;
   swapcontext(&ctx_, &sc.main_);
 }
 
