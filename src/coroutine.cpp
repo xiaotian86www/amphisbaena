@@ -5,6 +5,8 @@
 #include <cstring>
 #include <queue>
 
+#define STACK_SIZE (1024 * 1024)
+
 namespace translator {
 
 thread_local Schedule* sch;

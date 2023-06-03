@@ -10,8 +10,6 @@
 #include <ucontext.h>
 #include <vector>
 
-#define STACK_SIZE (1024 * 1024)
-
 namespace translator {
 typedef std::function<void()> task;
 
