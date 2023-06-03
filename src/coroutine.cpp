@@ -117,13 +117,13 @@ Schedule::resume(int id)
 }
 
 int
-Schedule::running_id()
+Schedule::this_co_id()
 {
   return running_->id();
 }
 
 Schedule*
-Schedule::current_schedule()
+Schedule::this_sch()
 {
   return sch;
 }
@@ -154,32 +154,35 @@ Schedule::th_func()
 }
 
 void
-Schedule::MainContext::load(const Context& in)
+load_context(Schedule::Context& main, const Schedule::Context& in)
 {
-  memcpy(&stack_.back() - in.stack_.size(), in.stack_.data(), in.stack_.size());
+  memcpy(
+    &main.stack_.back() - in.stack_.size(), in.stack_.data(), in.stack_.size());
 
-  swapcontext(&uct_, &in.uct_);
+  swapcontext(&main.uct_, &in.uct_);
 }
 
 void
-Schedule::MainContext::store(Context& out) const
+store_context(const Schedule::Context& main, Schedule::Context& out)
 {
   char dummy = 0;
-  assert(stack_.data() <= &dummy); // 栈未被消耗完
-  out.stack_.resize(&stack_.back() - &dummy);
+  assert(main.stack_.data() <= &dummy); // 栈未被消耗完
+  out.stack_.resize(&main.stack_.back() - &dummy);
   memcpy(out.stack_.data(), &dummy, out.stack_.size());
 
-  swapcontext(&out.uct_, &uct_);
+  swapcontext(&out.uct_, &main.uct_);
 }
 
 Schedule::Context
-Schedule::MainContext::make(void (*func)(void), Coroutine* co)
+make_context(Schedule::Context& main,
+             void (*func)(void),
+             Schedule::Coroutine* co)
 {
   Schedule::Context context;
   getcontext(&context.uct_); // 只是为了获取帧结构，以下动作完善帧结构
-  context.uct_.uc_stack.ss_sp = stack_.data();
-  context.uct_.uc_stack.ss_size = stack_.size();
-  context.uct_.uc_link = &uct_;
+  context.uct_.uc_stack.ss_sp = main.stack_.data();
+  context.uct_.uc_stack.ss_size = main.stack_.size();
+  context.uct_.uc_link = &main.uct_;
   uintptr_t ptr = (uintptr_t)co;
   // mainfunc只支持int类型参数，不支持void*参数属于设计问题
   makecontext(&context.uct_,
@@ -197,16 +200,16 @@ Schedule::Coroutine::resume()
   assert(!sch->running_);
   switch (status_) {
     case StatusEnum::COROUTINE_READY: {
-      context_ = sch->context_.make((void (*)(void))mainfunc, this);
+      context_ = make_context(sch->context_, (void (*)(void))mainfunc, this);
       sch->running_ = this;
       status_ = StatusEnum::COROUTINE_RUNNING;
-      sch->context_.load(context_); // 保存主线程帧，设置协程帧为当前帧
+      load_context(sch->context_, context_); // 保存主线程帧，设置协程帧为当前帧
       break;
     }
     case StatusEnum::COROUTINE_SUSPEND: {
       sch->running_ = this;
       status_ = StatusEnum::COROUTINE_RUNNING;
-      sch->context_.load(context_);
+      load_context(sch->context_, context_);
       break;
     }
     default:
@@ -221,7 +224,7 @@ Schedule::Coroutine::yield()
   assert(sch->running_);
   sch->running_ = nullptr;
   status_ = StatusEnum::COROUTINE_SUSPEND;
-  sch->context_.store(context_);
+  store_context(sch->context_, context_);
 }
 
 void

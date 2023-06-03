@@ -12,9 +12,9 @@ void
 foo(std::function<void(int)> func)
 {
   for (int i = 0; i < 2; i++) {
-    translator::Schedule* sch = translator::Schedule::current_schedule();
-    func(sch->running_id() * 10 + i);
-    sch->resume(sch->running_id());
+    translator::Schedule* sch = translator::Schedule::this_sch();
+    func(sch->this_co_id() * 10 + i);
+    sch->resume(sch->this_co_id());
     sch->yield();
   }
 }
@@ -27,7 +27,7 @@ TEST(coroutine, test1)
   EXPECT_CALL(foo_mock, Call(10));
   EXPECT_CALL(foo_mock, Call(1));
   EXPECT_CALL(foo_mock, Call(11));
-  
+
   translator::Schedule sch;
   sch.create(std::bind(foo, foo_mock.AsStdFunction()));
   sch.create(std::bind(foo, foo_mock.AsStdFunction()));

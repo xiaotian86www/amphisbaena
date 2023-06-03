@@ -30,14 +30,14 @@ public:
 
   void resume(int id);
 
-  int running_id();
+  int this_co_id();
 
-  static Schedule* current_schedule();
+  static Schedule* this_sch();
 
 private:
   void th_func();
 
-private:
+public:
   class Coroutine;
 
   struct Context
@@ -46,19 +46,9 @@ private:
     ucontext_t uct_;
   };
 
-  struct MainContext
-  {
-    std::vector<char> stack_;
-    ucontext_t uct_;
+private:
 
-    void load(const Context& in);
-
-    void store(Context& out) const;
-
-    Context make(void (*func)(void), Coroutine* co);
-  };
-
-  MainContext context_;
+  Context context_;
   std::priority_queue<int, std::vector<int>, std::greater<int>> free_ids_;
   std::vector<std::unique_ptr<Coroutine>> cos_;
   std::mutex cos_mtx_;
@@ -81,8 +71,8 @@ class Future
 public:
   Tp_&& get()
   {
-    sch_ = Schedule::current_schedule();
-    co_id_ = sch_->running_id();
+    sch_ = Schedule::this_sch();
+    co_id_ = sch_->this_co_id();
 
     sch_->yield();
     return std::move(value_);
