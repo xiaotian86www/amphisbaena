@@ -14,6 +14,7 @@ foo(std::function<void(int)> func)
   for (int i = 0; i < 2; i++) {
     translator::Schedule* sch = translator::Schedule::current_schedule();
     func(sch->running_id() * 10 + i);
+    sch->resume(sch->running_id());
     sch->yield();
   }
 }
@@ -21,19 +22,16 @@ foo(std::function<void(int)> func)
 TEST(coroutine, test1)
 {
   testing::MockFunction<void(int)> foo_mock;
-  translator::Schedule sch;
-  int c1 = sch.create(std::bind(foo, foo_mock.AsStdFunction()));
-  int c2 = sch.create(std::bind(foo, foo_mock.AsStdFunction()));
-  sch.resume(c1);
-  sch.resume(c2);
-
   testing::Sequence dummy;
-  EXPECT_CALL(foo_mock, Call(c1 * 10));
-  EXPECT_CALL(foo_mock, Call(c2 * 10));
-  EXPECT_CALL(foo_mock, Call(c1 * 10 + 1));
-  EXPECT_CALL(foo_mock, Call(c2 * 10 + 1));
+  EXPECT_CALL(foo_mock, Call(0));
+  EXPECT_CALL(foo_mock, Call(10));
+  EXPECT_CALL(foo_mock, Call(1));
+  EXPECT_CALL(foo_mock, Call(11));
   
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  translator::Schedule sch;
+  sch.create(std::bind(foo, foo_mock.AsStdFunction()));
+  sch.create(std::bind(foo, foo_mock.AsStdFunction()));
+
 }
 
 /**

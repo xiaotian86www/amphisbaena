@@ -140,7 +140,7 @@ Schedule::th_func()
       running_cos_cv_.wait(
         ul, [this] { return !th_running_ || !running_cos_.empty(); });
 
-      if (!th_running_)
+      if (!th_running_ && running_cos_.empty())
         break;
 
       co = running_cos_.front();
