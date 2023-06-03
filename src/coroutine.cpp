@@ -9,8 +9,8 @@ namespace translator {
 
 thread_local Schedule* sch;
 
-void
-co_func(uint32_t low32, uint32_t hi32);
+// void
+// co_func(uint32_t low32, uint32_t hi32);
 
 void
 load_context(Schedule::Context& main, const Schedule::Context& in)
@@ -33,22 +33,15 @@ store_context(const Schedule::Context& main, Schedule::Context& out)
 }
 
 Schedule::Context
-make_context(Schedule::Context& main,
-             void (*func)(void),
-             Schedule::Coroutine* co)
+make_context(Schedule::Context& main, void (*func)(void))
 {
   Schedule::Context context;
   getcontext(&context.uct_); // 只是为了获取帧结构，以下动作完善帧结构
   context.uct_.uc_stack.ss_sp = main.stack_.data();
   context.uct_.uc_stack.ss_size = main.stack_.size();
   context.uct_.uc_link = &main.uct_;
-  uintptr_t ptr = (uintptr_t)co;
   // mainfunc只支持int类型参数，不支持void*参数属于设计问题
-  makecontext(&context.uct_,
-              (void (*)(void))func,
-              2,
-              (uint32_t)ptr,
-              (uint32_t)(ptr >> 32));
+  makecontext(&context.uct_, func, 0);
 
   return context;
 }
@@ -65,8 +58,8 @@ public:
   };
 
 public:
-  Coroutine(int id, Schedule::Context& main, task&& func)
-    : context_(make_context(main, (void (*)(void))co_func, this))
+  Coroutine(int id, Context&& context, task&& func)
+    : context_(std::move(context))
     , func_(std::move(func))
     , id_(id)
   {
@@ -83,7 +76,7 @@ public:
   int id() { return id_; }
 
 private:
-  static void co_func(uint32_t low32, uint32_t hi32);
+  // static void co_func(uint32_t low32, uint32_t hi32);
 
 public:
   Schedule::Context context_;
@@ -96,11 +89,8 @@ public:
 // co_func(uint32_t low32, uint32_t hi32)
 // {
 //   uintptr_t ptr = (uintptr_t)low32 | ((uintptr_t)hi32 << 32);
-//   Schedule::Coroutine* co = (Schedule::Coroutine*)ptr;
-//   co->func_();
-//   sch->running_ = nullptr;
-//   co->status_ = StatusEnum::COROUTINE_DEAD;
-//   sch->destroy(co->id_);
+//   Schedule* sch = (Schedule*)ptr;
+//   sch->co_func();
 // }
 
 Schedule::Schedule()
@@ -134,7 +124,8 @@ Schedule::create(task&& func)
       id = free_ids_.top();
       free_ids_.pop();
     }
-    auto ptr = std::make_unique<Coroutine>(id, context_, std::move(func));
+    auto ptr = std::make_unique<Coroutine>(
+      id, make_context(context_, (void (*)(void))co_func), std::move(func));
     cos_[id] = std::move(ptr);
   }
   resume(id);
@@ -158,7 +149,9 @@ void
 Schedule::yield()
 {
   assert(running_);
-  running_->yield();
+  auto co = running_;
+  running_ = nullptr;
+  co->yield();
 }
 
 void
@@ -203,6 +196,8 @@ Schedule::th_func()
       running_cos_.pop();
     }
 
+    assert(!running_);
+    running_ = co;
     co->resume();
   }
 
@@ -210,14 +205,25 @@ Schedule::th_func()
 }
 
 void
+Schedule::co_func()
+{
+  assert(sch);
+  assert(sch->running_);
+  sch->running_->func_();
+  auto co = sch->running_;
+  sch->running_ = nullptr;
+
+  sch->destroy(co->id_);
+}
+
+void
 Schedule::Coroutine::resume()
 {
-  assert(!sch->running_);
   switch (status_) {
     case StatusEnum::COROUTINE_READY:
     case StatusEnum::COROUTINE_SUSPEND: {
-      sch->running_ = this;
       status_ = StatusEnum::COROUTINE_RUNNING;
+      assert(sch);
       load_context(sch->context_, context_);
       break;
     }
@@ -229,22 +235,20 @@ Schedule::Coroutine::resume()
 void
 Schedule::Coroutine::yield()
 {
-  assert(sch);
-  assert(sch->running_);
-  sch->running_ = nullptr;
   status_ = StatusEnum::COROUTINE_SUSPEND;
+  assert(sch);
   store_context(sch->context_, context_);
 }
 
-void
-Schedule::Coroutine::co_func(uint32_t low32, uint32_t hi32)
-{
-  uintptr_t ptr = (uintptr_t)low32 | ((uintptr_t)hi32 << 32);
-  Coroutine* co = (Coroutine*)ptr;
-  co->func_();
-  sch->running_ = nullptr;
-  co->status_ = StatusEnum::COROUTINE_DEAD;
-  sch->destroy(co->id_);
-}
+// void
+// Schedule::Coroutine::co_func(uint32_t low32, uint32_t hi32)
+// {
+//   uintptr_t ptr = (uintptr_t)low32 | ((uintptr_t)hi32 << 32);
+//   Coroutine* co = (Coroutine*)ptr;
+//   co->func_();
+//   sch->running_ = nullptr;
+//   co->status_ = StatusEnum::COROUTINE_DEAD;
+//   sch->destroy(co->id_);
+// }
 
 } // namespace translator

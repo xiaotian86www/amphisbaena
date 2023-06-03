@@ -37,6 +37,8 @@ public:
 private:
   void th_func();
 
+  static void co_func();
+
 public:
   class Coroutine;
 
