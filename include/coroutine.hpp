@@ -18,19 +18,31 @@ typedef std::function<void()> task;
 class Schedule
 {
 public:
+  struct Context
+  {
+    std::vector<char> stack_;
+    ucontext_t uct_;
+  };
+
+  struct Coroutine
+  {
+    Context context;
+    task func;
+    int id;
+  };
+
+public:
   Schedule();
   ~Schedule();
 
 public:
-  int create(task&& func);
+  void post(task&& func);
 
-  void destroy(int id);
+  void wake(Coroutine* co);
 
-  void yield();
+  static void yield();
 
-  void resume(int id);
-
-  int this_co_id();
+  static Coroutine* this_co();
 
   static Schedule* this_sch();
 
@@ -39,14 +51,9 @@ private:
 
   static void co_func();
 
-public:
-  class Coroutine;
+  Coroutine* co_create(task&& func);
 
-  struct Context
-  {
-    std::vector<char> stack_;
-    ucontext_t uct_;
-  };
+  void co_destroy(Coroutine* co);
 
 private:
   Context context_;
@@ -73,16 +80,16 @@ public:
   Tp_&& get()
   {
     sch_ = Schedule::this_sch();
-    co_id_ = sch_->this_co_id();
+    co_ = Schedule::this_co();
 
-    sch_->yield();
+    Schedule::yield();
     return std::move(value_);
   }
 
 private:
   Tp_ value_;
   Schedule* sch_ = nullptr;
-  int co_id_;
+  Schedule::Coroutine* co_ = nullptr;
 };
 
 template<typename Tp_>
@@ -93,7 +100,7 @@ public:
   {
     ft_.value_ = std::move(value);
 
-    ft_.sch_->resume(ft_.co_id_);
+    ft_.sch_->wake(ft_.co_);
   }
 
 private:

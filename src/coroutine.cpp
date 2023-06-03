@@ -9,9 +9,6 @@ namespace translator {
 
 thread_local Schedule* sch;
 
-// void
-// co_func(uint32_t low32, uint32_t hi32);
-
 void
 load_context(Schedule::Context& main, const Schedule::Context& in)
 {
@@ -46,57 +43,9 @@ make_context(Schedule::Context& main, void (*func)(void))
   return context;
 }
 
-class Schedule::Coroutine
-{
-public:
-  enum class StatusEnum : int
-  {
-    COROUTINE_DEAD = 0,
-    COROUTINE_READY = 1,
-    COROUTINE_RUNNING = 2,
-    COROUTINE_SUSPEND = 3
-  };
-
-public:
-  Coroutine(int id, Context&& context, task&& func)
-    : context_(std::move(context))
-    , func_(std::move(func))
-    , id_(id)
-  {
-  }
-
-public:
-  void resume();
-
-  void yield();
-
-public:
-  StatusEnum status() { return status_; }
-
-  int id() { return id_; }
-
-private:
-  // static void co_func(uint32_t low32, uint32_t hi32);
-
-public:
-  Schedule::Context context_;
-  task func_;
-  StatusEnum status_ = StatusEnum::COROUTINE_READY;
-  int id_;
-};
-
-// void
-// co_func(uint32_t low32, uint32_t hi32)
-// {
-//   uintptr_t ptr = (uintptr_t)low32 | ((uintptr_t)hi32 << 32);
-//   Schedule* sch = (Schedule*)ptr;
-//   sch->co_func();
-// }
-
 Schedule::Schedule()
   : th_(std::bind(&Schedule::th_func, this))
 {
-  sch = this;
   context_.stack_.resize(STACK_SIZE);
 }
 
@@ -106,74 +55,79 @@ Schedule::~Schedule()
   running_cos_cv_.notify_all();
   if (th_.joinable())
     th_.join();
-
-  sch = nullptr;
-}
-
-int
-Schedule::create(task&& func)
-{
-  int id;
-  {
-    std::lock_guard<std::mutex> lg(cos_mtx_);
-
-    if (free_ids_.empty()) {
-      id = cos_.size();
-      cos_.push_back(nullptr);
-    } else {
-      id = free_ids_.top();
-      free_ids_.pop();
-    }
-    auto ptr = std::make_unique<Coroutine>(
-      id, make_context(context_, (void (*)(void))co_func), std::move(func));
-    cos_[id] = std::move(ptr);
-  }
-  resume(id);
-
-  return id;
 }
 
 void
-Schedule::destroy(int id)
+Schedule::post(task&& func)
+{
+  auto co = co_create(std::move(func));
+  wake(co);
+}
+
+Schedule::Coroutine*
+Schedule::co_create(task&& func)
+{
+  int id;
+  std::lock_guard<std::mutex> lg(cos_mtx_);
+
+  if (free_ids_.empty()) {
+    id = cos_.size();
+    cos_.push_back(nullptr);
+  } else {
+    id = free_ids_.top();
+    free_ids_.pop();
+  }
+  std::unique_ptr<Coroutine> ptr(new Coroutine{
+    make_context(context_, (void (*)(void))co_func), std::move(func), id });
+  auto& co = cos_.at(id);
+  co = std::move(ptr);
+
+  return co.get();
+}
+
+void
+Schedule::co_destroy(Coroutine* co)
 {
   std::lock_guard<std::mutex> lg(cos_mtx_);
-  if (cos_[id] == cos_.back()) {
+  if (co == cos_.back().get()) {
     cos_.pop_back();
   } else {
-    sch->cos_[id].release();
-    sch->free_ids_.push(id);
+    free_ids_.push(co->id);
+    cos_[co->id].release();
   }
 }
 
 void
 Schedule::yield()
 {
-  assert(running_);
-  auto co = running_;
-  running_ = nullptr;
-  co->yield();
+  assert(sch);
+  assert(sch->running_);
+  auto co = sch->running_;
+  sch->running_ = nullptr;
+  sch->wake(co);
+  store_context(sch->context_, co->context);
 }
 
 void
-Schedule::resume(int id)
+Schedule::wake(Coroutine* co)
 {
-  assert(id < cos_.size());
-  assert(cos_[id]);
-
   std::unique_lock<std::mutex> ul(running_cos_mtx_);
-  running_cos_.push(cos_[id].get());
+  running_cos_.push(co);
   running_cos_cv_.notify_all();
 }
 
-int
-Schedule::this_co_id()
+Schedule::Coroutine*
+Schedule::this_co()
 {
-  return running_->id();
+  assert(sch);
+  assert(sch->running_);
+  return sch->running_;
 }
 
 Schedule*
 Schedule::this_sch()
 {
+  assert(sch);
   return sch;
 }
 
@@ -198,7 +152,9 @@ Schedule::th_func()
 
     assert(!running_);
     running_ = co;
-    co->resume();
+
+    assert(sch);
+    load_context(sch->context_, co->context);
   }
 
   sch = nullptr;
@@ -209,46 +165,11 @@ Schedule::co_func()
 {
   assert(sch);
   assert(sch->running_);
-  sch->running_->func_();
+  sch->running_->func();
   auto co = sch->running_;
   sch->running_ = nullptr;
 
-  sch->destroy(co->id_);
+  sch->co_destroy(co);
 }
-
-void
-Schedule::Coroutine::resume()
-{
-  switch (status_) {
-    case StatusEnum::COROUTINE_READY:
-    case StatusEnum::COROUTINE_SUSPEND: {
-      status_ = StatusEnum::COROUTINE_RUNNING;
-      assert(sch);
-      load_context(sch->context_, context_);
-      break;
-    }
-    default:
-      assert(0);
-  }
-}
-
-void
-Schedule::Coroutine::yield()
-{
-  status_ = StatusEnum::COROUTINE_SUSPEND;
-  assert(sch);
-  store_context(sch->context_, context_);
-}
-
-// void
-// Schedule::Coroutine::co_func(uint32_t low32, uint32_t hi32)
-// {
-//   uintptr_t ptr = (uintptr_t)low32 | ((uintptr_t)hi32 << 32);
-//   Coroutine* co = (Coroutine*)ptr;
-//   co->func_();
-//   sch->running_ = nullptr;
-//   co->status_ = StatusEnum::COROUTINE_DEAD;
-//   sch->destroy(co->id_);
-// }
 
 } // namespace translator
