@@ -21,9 +21,11 @@ public:
   };
 
 public:
-  Coroutine(int id, task&& func);
-
-  ~Coroutine();
+  Coroutine(int id, task&& func)
+    : func_(std::move(func))
+    , id_(id)
+  {
+  }
 
 public:
   void resume();
@@ -39,9 +41,8 @@ private:
   static void mainfunc(uint32_t low32, uint32_t hi32);
 
 private:
-  std::vector<char> stack_;
+  Schedule::Context context_;
   task func_;
-  ucontext_t ctx_;
   StatusEnum status_ = StatusEnum::COROUTINE_READY;
   int id_;
 };
@@ -50,6 +51,7 @@ Schedule::Schedule()
   : th_(std::bind(&Schedule::th_func, this))
 {
   sch = this;
+  context_.stack_.resize(STACK_SIZE);
 }
 
 Schedule::~Schedule()
@@ -111,6 +113,7 @@ Schedule::resume(int id)
 
   std::unique_lock<std::mutex> ul(running_cos_mtx_);
   running_cos_.push(cos_[id].get());
+  running_cos_cv_.notify_all();
 }
 
 int
@@ -137,7 +140,7 @@ Schedule::th_func()
       running_cos_cv_.wait(
         ul, [this] { return !th_running_ || !running_cos_.empty(); });
 
-      if (!running_)
+      if (!th_running_)
         break;
 
       co = running_cos_.front();
@@ -150,13 +153,43 @@ Schedule::th_func()
   sch = nullptr;
 }
 
-Schedule::Coroutine::Coroutine(int id, task&& func)
-  : func_(std::move(func))
-  , id_(id)
+void
+Schedule::MainContext::load(const Context& in)
 {
+  memcpy(&stack_.back() - in.stack_.size(), in.stack_.data(), in.stack_.size());
+
+  swapcontext(&uct_, &in.uct_);
 }
 
-Schedule::Coroutine::~Coroutine() {}
+void
+Schedule::MainContext::store(Context& out) const
+{
+  char dummy = 0;
+  assert(stack_.data() <= &dummy); // 栈未被消耗完
+  out.stack_.resize(&stack_.back() - &dummy);
+  memcpy(out.stack_.data(), &dummy, out.stack_.size());
+
+  swapcontext(&out.uct_, &uct_);
+}
+
+Schedule::Context
+Schedule::MainContext::make(void (*func)(void), Coroutine* co)
+{
+  Schedule::Context context;
+  getcontext(&context.uct_); // 只是为了获取帧结构，以下动作完善帧结构
+  context.uct_.uc_stack.ss_sp = stack_.data();
+  context.uct_.uc_stack.ss_size = stack_.size();
+  context.uct_.uc_link = &uct_;
+  uintptr_t ptr = (uintptr_t)co;
+  // mainfunc只支持int类型参数，不支持void*参数属于设计问题
+  makecontext(&context.uct_,
+              (void (*)(void))func,
+              2,
+              (uint32_t)ptr,
+              (uint32_t)(ptr >> 32));
+
+  return context;
+}
 
 void
 Schedule::Coroutine::resume()
@@ -164,28 +197,16 @@ Schedule::Coroutine::resume()
   assert(!sch->running_);
   switch (status_) {
     case StatusEnum::COROUTINE_READY: {
-      getcontext(&ctx_); // 只是为了获取帧结构，以下动作完善帧结构
-      ctx_.uc_stack.ss_sp = sch->stack_;
-      ctx_.uc_stack.ss_size = STACK_SIZE;
-      ctx_.uc_link = &sch->main_;
+      context_ = sch->context_.make((void (*)(void))mainfunc, this);
       sch->running_ = this;
       status_ = StatusEnum::COROUTINE_RUNNING;
-      uintptr_t ptr = (uintptr_t)this;
-      // mainfunc只支持int类型参数，不支持void*参数属于设计问题
-      makecontext(&ctx_,
-                  (void (*)(void))mainfunc,
-                  2,
-                  (uint32_t)ptr,
-                  (uint32_t)(ptr >> 32));
-      swapcontext(&sch->main_, &ctx_); // 保存主线程帧，设置协程帧为当前帧
+      sch->context_.load(context_); // 保存主线程帧，设置协程帧为当前帧
       break;
     }
     case StatusEnum::COROUTINE_SUSPEND: {
-      memcpy(
-        sch->stack_ + STACK_SIZE - stack_.size(), stack_.data(), stack_.size());
       sch->running_ = this;
       status_ = StatusEnum::COROUTINE_RUNNING;
-      swapcontext(&sch->main_, &ctx_);
+      sch->context_.load(context_);
       break;
     }
     default:
@@ -198,14 +219,9 @@ Schedule::Coroutine::yield()
 {
   assert(sch);
   assert(sch->running_);
-  char dummy = 0;
-  // 栈未被消耗完
-  assert(sch->stack_ <= &dummy);
-  stack_.resize(sch->stack_ + STACK_SIZE - &dummy);
-  memcpy(stack_.data(), &dummy, stack_.size());
-  status_ = StatusEnum::COROUTINE_SUSPEND;
   sch->running_ = nullptr;
-  swapcontext(&ctx_, &sch->main_);
+  status_ = StatusEnum::COROUTINE_SUSPEND;
+  sch->context_.store(context_);
 }
 
 void
@@ -214,29 +230,9 @@ Schedule::Coroutine::mainfunc(uint32_t low32, uint32_t hi32)
   uintptr_t ptr = (uintptr_t)low32 | ((uintptr_t)hi32 << 32);
   Coroutine* co = (Coroutine*)ptr;
   co->func_();
-  co->status_ = StatusEnum::COROUTINE_DEAD;
   sch->running_ = nullptr;
+  co->status_ = StatusEnum::COROUTINE_DEAD;
   sch->destroy(co->id_);
-}
-
-void co_yield ()
-{
-  assert(sch);
-  sch->yield();
-}
-
-void
-co_resume(int id)
-{
-  assert(sch);
-  sch->resume(id);
-}
-
-int
-co_id()
-{
-  assert(sch);
-  return sch->running_id();
 }
 
 } // namespace translator

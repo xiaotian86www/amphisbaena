@@ -40,8 +40,25 @@ private:
 private:
   class Coroutine;
 
-  char stack_[STACK_SIZE];
-  ucontext_t main_;
+  struct Context
+  {
+    std::vector<char> stack_;
+    ucontext_t uct_;
+  };
+
+  struct MainContext
+  {
+    std::vector<char> stack_;
+    ucontext_t uct_;
+
+    void load(const Context& in);
+
+    void store(Context& out) const;
+
+    Context make(void (*func)(void), Coroutine* co);
+  };
+
+  MainContext context_;
   std::priority_queue<int, std::vector<int>, std::greater<int>> free_ids_;
   std::vector<std::unique_ptr<Coroutine>> cos_;
   std::mutex cos_mtx_;
