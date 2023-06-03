@@ -31,7 +31,7 @@ TEST(coroutine, test1)
 
   while (c1.status() != Coroutine::StatusEnum::COROUTINE_DEAD &&
          c2.status() != Coroutine::StatusEnum::COROUTINE_DEAD) {
-    c1.resume();
-    c2.resume();
+    co_resume(c1.id());
+    co_resume(c2.id());
   }
 }

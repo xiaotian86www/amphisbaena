@@ -49,7 +49,11 @@ private:
   int id_;
 };
 
-void co_yield ();
+void
+co_yield();
+
+void
+co_resume(int id);
 
 int
 co_id();

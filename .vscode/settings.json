@@ -74,6 +74,7 @@
         "coroutine": "cpp",
         "stddef.h": "c",
         "version": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "queue": "cpp"
     }
 }
