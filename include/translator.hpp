@@ -7,11 +7,6 @@
 #include <thread>
 #include <vector>
 
-extern "C"
-{
-#include <coroutine/coroutine.h>
-}
-
 #include "context.hpp"
 
 namespace translator {

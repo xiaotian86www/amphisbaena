@@ -3,12 +3,44 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
-#include <list>
 #include <memory>
+#include <queue>
+#include <thread>
 #include <ucontext.h>
 #include <vector>
 
 #define STACK_SIZE (1024 * 1024)
+
+namespace translator {
+class Coroutine;
+class Schedule;
+struct CoroutineDeleter
+{
+  void operator()(Coroutine* co) const;
+};
+
+typedef std::unique_ptr<Coroutine, CoroutineDeleter> CoroutinePtr;
+typedef std::function<void()> coroutine_func;
+
+class Schedule
+{
+public:
+  Schedule();
+  ~Schedule();
+
+public:
+  CoroutinePtr create(coroutine_func&& func);
+
+  void destroy(Coroutine* co);
+
+public:
+  char stack_[STACK_SIZE];
+  ucontext_t main_;
+  Coroutine* running_ = nullptr;
+  std::priority_queue<int, std::vector<int>, std::greater<int>> free_ids_;
+  std::vector<Coroutine*> cos_;
+  std::thread th_;
+};
 
 class Coroutine
 {
@@ -21,10 +53,8 @@ public:
     COROUTINE_SUSPEND = 3
   };
 
-  using coroutine_func = std::function<void(Coroutine*)>;
-
 public:
-  Coroutine(coroutine_func&& func);
+  Coroutine(int id, coroutine_func&& func);
 
   ~Coroutine();
 
@@ -45,15 +75,16 @@ private:
   std::vector<char> stack_;
   coroutine_func func_;
   ucontext_t ctx_;
-  StatusEnum status_;
+  StatusEnum status_ = StatusEnum::COROUTINE_READY;
   int id_;
 };
 
-void
-co_yield();
+void co_yield ();
 
 void
 co_resume(int id);
 
 int
 co_id();
+
+} // namespace translator
