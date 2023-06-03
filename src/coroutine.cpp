@@ -9,7 +9,7 @@ namespace translator {
 
 thread_local Schedule* sc;
 
-class Coroutine
+class Schedule::Coroutine
 {
 public:
   enum class StatusEnum : int
@@ -76,6 +76,9 @@ Schedule::create(co_func&& func)
 
   auto ptr = std::make_unique<Coroutine>(id, std::move(func));
   cos_[id] = std::move(ptr);
+
+  resume(id);
+  
   return id;
 }
 
@@ -88,6 +91,29 @@ Schedule::destroy(int id)
     sc->cos_[id].release();
     sc->free_ids_.push(id);
   }
+}
+
+void
+Schedule::yield()
+{
+  assert(running_);
+  running_->yield();
+}
+
+void
+Schedule::resume(int id)
+{
+  assert(id < cos_.size());
+  assert(cos_[id]);
+
+  std::unique_lock<std::mutex> ul(running_cos_mtx_);
+  running_cos_.push(cos_[id].get());
+}
+
+int
+Schedule::running_id()
+{
+  return running_->id();
 }
 
 void
@@ -115,16 +141,16 @@ Schedule::th_func()
   sc = nullptr;
 }
 
-Coroutine::Coroutine(int id, co_func&& func)
+Schedule::Coroutine::Coroutine(int id, co_func&& func)
   : func_(std::move(func))
   , id_(id)
 {
 }
 
-Coroutine::~Coroutine() {}
+Schedule::Coroutine::~Coroutine() {}
 
 void
-Coroutine::resume()
+Schedule::Coroutine::resume()
 {
   assert(!sc->running_);
   switch (status_) {
@@ -159,8 +185,9 @@ Coroutine::resume()
 }
 
 void
-Coroutine::yield()
+Schedule::Coroutine::yield()
 {
+  assert(sc);
   assert(sc->running_);
   char dummy = 0;
   // 栈未被消耗完
@@ -173,7 +200,7 @@ Coroutine::yield()
 }
 
 void
-Coroutine::mainfunc(uint32_t low32, uint32_t hi32)
+Schedule::Coroutine::mainfunc(uint32_t low32, uint32_t hi32)
 {
   uintptr_t ptr = (uintptr_t)low32 | ((uintptr_t)hi32 << 32);
   Coroutine* co = (Coroutine*)ptr;
@@ -186,23 +213,21 @@ Coroutine::mainfunc(uint32_t low32, uint32_t hi32)
 void co_yield ()
 {
   assert(sc);
-  assert(sc->running_);
-  sc->running_->yield();
+  sc->yield();
 }
 
 void
 co_resume(int id)
 {
   assert(sc);
-  assert(id < sc->cos_.size());
-  assert(sc->cos_[id]);
-  sc->cos_[id]->resume();
+  sc->resume(id);
 }
 
 int
 co_id()
 {
-  assert(sc->running_);
-  return sc->running_->id();
+  assert(sc);
+  return sc->running_id();
 }
+
 } // namespace translator
