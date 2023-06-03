@@ -185,12 +185,15 @@ Coroutine::mainfunc(uint32_t low32, uint32_t hi32)
 
 void co_yield ()
 {
+  assert(sc);
+  assert(sc->running_);
   sc->running_->yield();
 }
 
 void
 co_resume(int id)
 {
+  assert(sc);
   assert(id < sc->cos_.size());
   assert(sc->cos_[id]);
   sc->cos_[id]->resume();
