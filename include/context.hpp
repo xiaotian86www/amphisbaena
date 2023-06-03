@@ -19,7 +19,7 @@ public:
 
 public:
   Context()
-    : co_(sch_.create(std::bind(&Context::main_func, this)))
+    // : co_(sch_.create(std::bind(&Context::main_func, this)))
   {
   }
 
@@ -92,7 +92,6 @@ private:
   std::map<std::string_view, std::unique_ptr<Server>> servers_;
   task t_;
   Schedule sch_;
-  CoroutinePtr co_;
 };
 
 } // namespace translator

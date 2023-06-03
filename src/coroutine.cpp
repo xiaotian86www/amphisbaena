@@ -9,25 +9,61 @@ namespace translator {
 
 thread_local Schedule* sc;
 
-void
-CoroutineDeleter::operator()(Coroutine* co) const
+class Coroutine
 {
-  assert(sc);
-  sc->destroy(co);
-}
+public:
+  enum class StatusEnum : int
+  {
+    COROUTINE_DEAD = 0,
+    COROUTINE_READY = 1,
+    COROUTINE_RUNNING = 2,
+    COROUTINE_SUSPEND = 3
+  };
+
+public:
+  Coroutine(int id, co_func&& func);
+
+  ~Coroutine();
+
+public:
+  void resume();
+
+  void yield();
+
+public:
+  StatusEnum status() { return status_; }
+
+  int id() { return id_; }
+
+private:
+  static void mainfunc(uint32_t low32, uint32_t hi32);
+
+private:
+  std::vector<char> stack_;
+  co_func func_;
+  ucontext_t ctx_;
+  StatusEnum status_ = StatusEnum::COROUTINE_READY;
+  int id_;
+};
 
 Schedule::Schedule()
+  : th_(std::bind(&Schedule::th_func, this))
 {
   sc = this;
 }
 
 Schedule::~Schedule()
 {
+  th_running_ = false;
+  running_cos_cv_.notify_all();
+  if (th_.joinable())
+    th_.join();
+
   sc = nullptr;
 }
 
-CoroutinePtr
-Schedule::create(coroutine_func&& func)
+int
+Schedule::create(co_func&& func)
 {
   int id;
   if (free_ids_.empty()) {
@@ -38,31 +74,54 @@ Schedule::create(coroutine_func&& func)
     free_ids_.pop();
   }
 
-  CoroutinePtr ptr(new Coroutine(id, std::move(func)));
-  cos_[id] = ptr.get();
-  return ptr;
+  auto ptr = std::make_unique<Coroutine>(id, std::move(func));
+  cos_[id] = std::move(ptr);
+  return id;
 }
 
 void
-Schedule::destroy(Coroutine* co)
+Schedule::destroy(int id)
 {
-  if (co == cos_.back()) {
+  if (cos_[id] == cos_.back()) {
     cos_.pop_back();
   } else {
-    sc->cos_[co->id()] = nullptr;
-    sc->free_ids_.push(co->id());
+    sc->cos_[id].release();
+    sc->free_ids_.push(id);
   }
 }
 
-Coroutine::Coroutine(int id, coroutine_func&& func)
+void
+Schedule::th_func()
+{
+  sc = this;
+
+  while (true) {
+    Coroutine* co;
+    {
+      std::unique_lock<std::mutex> ul(running_cos_mtx_);
+      running_cos_cv_.wait(
+        ul, [this] { return !th_running_ || !running_cos_.empty(); });
+
+      if (!running_)
+        break;
+
+      co = running_cos_.front();
+      running_cos_.pop();
+    }
+
+    co->resume();
+  }
+
+  sc = nullptr;
+}
+
+Coroutine::Coroutine(int id, co_func&& func)
   : func_(std::move(func))
   , id_(id)
 {
 }
 
-Coroutine::~Coroutine()
-{
-}
+Coroutine::~Coroutine() {}
 
 void
 Coroutine::resume()
@@ -121,6 +180,7 @@ Coroutine::mainfunc(uint32_t low32, uint32_t hi32)
   co->func_();
   co->status_ = StatusEnum::COROUTINE_DEAD;
   sc->running_ = nullptr;
+  sc->destroy(co->id_);
 }
 
 void co_yield ()

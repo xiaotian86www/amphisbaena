@@ -21,40 +21,38 @@ TEST(coroutine, test1)
 {
   testing::MockFunction<void(int)> foo_mock;
   translator::Schedule sch;
-  auto c1 = sch.create(std::bind(foo, foo_mock.AsStdFunction()));
-  auto c2 = sch.create(std::bind(foo, foo_mock.AsStdFunction()));
+  int c1 = sch.create(std::bind(foo, foo_mock.AsStdFunction()));
+  int c2 = sch.create(std::bind(foo, foo_mock.AsStdFunction()));
 
   testing::Sequence dummy;
-  EXPECT_CALL(foo_mock, Call(c1->id() * 10));
-  EXPECT_CALL(foo_mock, Call(c2->id() * 10));
-  EXPECT_CALL(foo_mock, Call(c1->id() * 10 + 1));
-  EXPECT_CALL(foo_mock, Call(c2->id() * 10 + 1));
+  EXPECT_CALL(foo_mock, Call(c1 * 10));
+  EXPECT_CALL(foo_mock, Call(c2 * 10));
+  EXPECT_CALL(foo_mock, Call(c1 * 10 + 1));
+  EXPECT_CALL(foo_mock, Call(c2 * 10 + 1));
 
-  while (c1->status() != translator::Coroutine::StatusEnum::COROUTINE_DEAD &&
-         c2->status() != translator::Coroutine::StatusEnum::COROUTINE_DEAD) {
-    translator::co_resume(c1->id());
-    translator::co_resume(c2->id());
+  for (int i = 0; i < 2; ++i) {
+    translator::co_resume(c1);
+    translator::co_resume(c2);
   }
 }
 
 /**
  * @brief 检查是否复用id
- * 
+ *
  */
 TEST(coroutine, test2)
 {
   testing::MockFunction<void(int)> foo_mock;
   translator::Schedule sch;
-  {
-    auto c1 = sch.create(std::bind(foo, foo_mock.AsStdFunction()));
-    EXPECT_EQ(c1->id(), 0);
-    auto c2 = sch.create(std::bind(foo, foo_mock.AsStdFunction()));
-    EXPECT_EQ(c2->id(), 1);
-  }
-  {
-    auto c1 = sch.create(std::bind(foo, foo_mock.AsStdFunction()));
-    EXPECT_EQ(c1->id(), 0);
-    auto c2 = sch.create(std::bind(foo, foo_mock.AsStdFunction()));
-    EXPECT_EQ(c2->id(), 1);
-  }
+
+  int c1 = sch.create([] {});
+  EXPECT_EQ(c1, 0);
+  int c2 = sch.create([] {});
+  EXPECT_EQ(c2, 1);
+  translator::co_resume(c2);
+  auto c3 = sch.create([]{});
+  EXPECT_EQ(c3, 1);
+  translator::co_resume(c1);
+  auto c4 = sch.create([]{});
+  EXPECT_EQ(c4, 0);
 }
