@@ -9,8 +9,6 @@
 #include "server.hpp"
 
 namespace translator {
-struct task
-{};
 
 class Context
 {
@@ -83,14 +81,10 @@ public:
 private:
   void main_func() {}
 
-public:
-  void set_task(task&& t) { t_ = std::move(t); }
-
 private:
   std::map<std::string_view, std::unique_ptr<Object>> objects_;
   std::map<std::string_view, get_object_func_t> object_funcs_;
   std::map<std::string_view, std::unique_ptr<Server>> servers_;
-  task t_;
   Schedule sch_;
 };
 
