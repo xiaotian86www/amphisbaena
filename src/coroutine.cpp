@@ -106,7 +106,7 @@ Schedule::yield()
   assert(sch->running_);
   auto co = sch->running_;
   sch->running_ = nullptr;
-  sch->resume(co);
+  // sch->resume(co);
   store_context(sch->context_, co->context);
 }
 

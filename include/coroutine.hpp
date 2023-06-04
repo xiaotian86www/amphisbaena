@@ -65,44 +65,4 @@ private:
   std::thread th_;
   bool th_running_ = true;
 };
-
-template<typename Tp_>
-class Promise;
-
-template<typename Tp_>
-class Future
-{
-  friend class Promise<Tp_>;
-
-public:
-  Tp_&& get()
-  {
-    sch_ = Schedule::this_sch();
-    co_ = Schedule::this_co();
-
-    Schedule::yield();
-    return std::move(value_);
-  }
-
-private:
-  Tp_ value_;
-  Schedule* sch_ = nullptr;
-  Schedule::Coroutine* co_ = nullptr;
-};
-
-template<typename Tp_>
-class Promise
-{
-public:
-  void set(Tp_&& value)
-  {
-    ft_.value_ = std::move(value);
-
-    ft_.sch_->resume(ft_.co_);
-  }
-
-private:
-  Future<Tp_> ft_;
-};
-
 } // namespace translator

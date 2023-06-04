@@ -8,12 +8,13 @@ struct args
   int n;
 };
 
-void
+static void
 foo(std::function<void(int)> func)
 {
   for (int i = 0; i < 2; i++) {
     translator::Schedule* sch = translator::Schedule::this_sch();
     func(sch->this_co()->id * 10 + i);
+    sch->resume(sch->this_co());
     sch->yield();
   }
 }
@@ -30,7 +31,6 @@ TEST(coroutine, test1)
   translator::Schedule sch;
   sch.post(std::bind(foo, foo_mock.AsStdFunction()));
   sch.post(std::bind(foo, foo_mock.AsStdFunction()));
-
 }
 
 // /**
