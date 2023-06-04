@@ -36,7 +36,7 @@ public:
 public:
   void post(task&& func);
 
-  void wake(Coroutine* co);
+  void resume(Coroutine* co);
 
   static void yield();
 
@@ -98,7 +98,7 @@ public:
   {
     ft_.value_ = std::move(value);
 
-    ft_.sch_->wake(ft_.co_);
+    ft_.sch_->resume(ft_.co_);
   }
 
 private:

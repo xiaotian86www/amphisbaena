@@ -63,7 +63,7 @@ void
 Schedule::post(task&& func)
 {
   auto co = co_create(std::move(func));
-  wake(co);
+  resume(co);
 }
 
 Schedule::Coroutine*
@@ -106,12 +106,12 @@ Schedule::yield()
   assert(sch->running_);
   auto co = sch->running_;
   sch->running_ = nullptr;
-  sch->wake(co);
+  sch->resume(co);
   store_context(sch->context_, co->context);
 }
 
 void
-Schedule::wake(Coroutine* co)
+Schedule::resume(Coroutine* co)
 {
   std::unique_lock<std::mutex> ul(running_cos_mtx_);
   running_cos_.push(co);
