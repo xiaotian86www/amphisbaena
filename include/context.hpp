@@ -4,7 +4,7 @@
 #include <map>
 #include <sstream>
 
-#include "coroutine.hpp"
+#include "schedule.hpp"
 #include "object.hpp"
 #include "server.hpp"
 

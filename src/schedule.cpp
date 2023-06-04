@@ -1,4 +1,4 @@
-#include "coroutine.hpp"
+#include "schedule.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -31,19 +31,31 @@ store_context(const Schedule::Context& main, Schedule::Context& out)
   swapcontext(&out.uct_, &main.uct_);
 }
 
-Schedule::Context
-make_context(Schedule::Context& main, void (*func)(void))
+void
+make_context(Schedule::Context& main,
+             Schedule::Context& context,
+             void (*func)(void))
 {
-  Schedule::Context context;
   getcontext(&context.uct_); // 只是为了获取帧结构，以下动作完善帧结构
   context.uct_.uc_stack.ss_sp = main.stack_.data();
   context.uct_.uc_stack.ss_size = main.stack_.size();
   context.uct_.uc_link = &main.uct_;
   // mainfunc只支持int类型参数，不支持void*参数属于设计问题
   makecontext(&context.uct_, func, 0);
-
-  return context;
 }
+
+struct Schedule::Coroutine : public std::enable_shared_from_this<Coroutine>
+{
+  Coroutine(task&& t, int i)
+    : func(std::move(t))
+    , id(i)
+  {
+  }
+
+  Context context;
+  task func;
+  int id;
+};
 
 Schedule::Schedule()
   : th_(std::bind(&Schedule::th_func, this))
@@ -66,7 +78,7 @@ Schedule::post(task&& func)
   resume(co);
 }
 
-Schedule::Coroutine*
+std::weak_ptr<Schedule::Coroutine>
 Schedule::co_create(task&& func)
 {
   int id;
@@ -79,23 +91,26 @@ Schedule::co_create(task&& func)
     id = free_ids_.top();
     free_ids_.pop();
   }
-  std::unique_ptr<Coroutine> ptr(new Coroutine{
-    make_context(context_, (void (*)(void))co_func), std::move(func), id });
+
+  auto ptr = std::make_shared<Coroutine>(std::move(func), id);
+
+  make_context(context_, ptr->context, (void (*)(void))co_func);
+
   auto& co = cos_.at(id);
   co = std::move(ptr);
 
-  return co.get();
+  return co;
 }
 
 void
-Schedule::co_destroy(Coroutine* co)
+Schedule::co_destroy(std::shared_ptr<Coroutine> co)
 {
   std::lock_guard<std::mutex> lg(cos_mtx_);
-  if (co == cos_.back().get()) {
+  if (co == cos_.back()) {
     cos_.pop_back();
   } else {
     free_ids_.push(co->id);
-    cos_[co->id].release();
+    cos_[co->id].reset();
   }
 }
 
@@ -111,14 +126,18 @@ Schedule::yield()
 }
 
 void
-Schedule::resume(Coroutine* co)
+Schedule::resume(std::weak_ptr<Coroutine> co)
 {
+  auto sco = co.lock();
+  if (!sco)
+    return;
+
   std::unique_lock<std::mutex> ul(running_cos_mtx_);
-  running_cos_.push(co);
+  running_cos_.push(sco);
   running_cos_cv_.notify_all();
 }
 
-Schedule::Coroutine*
+std::weak_ptr<Schedule::Coroutine>
 Schedule::this_co()
 {
   assert(sch);
@@ -139,7 +158,7 @@ Schedule::th_func()
   sch = this;
 
   while (true) {
-    Coroutine* co;
+    std::shared_ptr<Coroutine> co;
     {
       std::unique_lock<std::mutex> ul(running_cos_mtx_);
       running_cos_cv_.wait(

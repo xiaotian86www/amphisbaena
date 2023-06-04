@@ -1,6 +1,6 @@
 #pragma once
 
-#include "coroutine.hpp"
+#include "schedule.hpp"
 
 namespace translator {
 template<typename Tp_>
@@ -26,7 +26,7 @@ public:
 private:
   Tp_ value_;
   Schedule* sch_ = Schedule::this_sch();
-  Schedule::Coroutine* co_ = Schedule::this_co();
+  std::weak_ptr<Schedule::Coroutine> co_{ Schedule::this_co() };
 };
 
 template<typename Tp_>

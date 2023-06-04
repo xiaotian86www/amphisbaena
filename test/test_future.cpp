@@ -18,12 +18,11 @@ TEST(future, test_1)
   testing::MockFunction<void(translator::Promise<int>&)> foo_mock1;
   testing::MockFunction<void(int)> foo_mock2;
 
-  EXPECT_CALL(foo_mock1, Call(testing::_))
+  EXPECT_CALL(foo_mock1, Call(testing::_)).Times(2)
     .WillRepeatedly(testing::Invoke([](translator::Promise<int>& pms) {
-      pms.set(translator::Schedule::this_co()->id);
+      pms.set(0);
     }));
-  EXPECT_CALL(foo_mock2, Call(0));
-  EXPECT_CALL(foo_mock2, Call(1));
+  EXPECT_CALL(foo_mock2, Call(0)).Times(2);
 
   translator::Schedule sch;
   sch.post(

@@ -13,7 +13,7 @@
 namespace translator {
 typedef std::function<void()> task;
 
-class Schedule
+class Schedule : public std::enable_shared_from_this<Schedule>
 {
 public:
   struct Context
@@ -22,12 +22,7 @@ public:
     ucontext_t uct_;
   };
 
-  struct Coroutine
-  {
-    Context context;
-    task func;
-    int id;
-  };
+  struct Coroutine;
 
 public:
   Schedule();
@@ -36,11 +31,11 @@ public:
 public:
   void post(task&& func);
 
-  void resume(Coroutine* co);
+  void resume(std::weak_ptr<Coroutine> co);
 
   static void yield();
 
-  static Coroutine* this_co();
+  static std::weak_ptr<Coroutine> this_co();
 
   static Schedule* this_sch();
 
@@ -49,17 +44,17 @@ private:
 
   static void co_func();
 
-  Coroutine* co_create(task&& func);
+  std::weak_ptr<Coroutine> co_create(task&& func);
 
-  void co_destroy(Coroutine* co);
+  void co_destroy(std::shared_ptr<Coroutine> co);
 
 private:
   Context context_;
   std::priority_queue<int, std::vector<int>, std::greater<int>> free_ids_;
-  std::vector<std::unique_ptr<Coroutine>> cos_;
+  std::vector<std::shared_ptr<Coroutine>> cos_;
   std::mutex cos_mtx_;
-  Coroutine* running_ = nullptr;
-  std::queue<Coroutine*> running_cos_;
+  std::shared_ptr<Coroutine> running_;
+  std::queue<std::shared_ptr<Coroutine>> running_cos_;
   std::mutex running_cos_mtx_;
   std::condition_variable running_cos_cv_;
   std::thread th_;
