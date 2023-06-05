@@ -1,5 +1,7 @@
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <thread>
 
 #include "future.hpp"
 
@@ -18,10 +20,10 @@ TEST(future, test_1)
   testing::MockFunction<void(translator::Promise<int>&)> foo_mock1;
   testing::MockFunction<void(int)> foo_mock2;
 
-  EXPECT_CALL(foo_mock1, Call(testing::_)).Times(2)
-    .WillRepeatedly(testing::Invoke([](translator::Promise<int>& pms) {
-      pms.set(0);
-    }));
+  EXPECT_CALL(foo_mock1, Call(testing::_))
+    .Times(2)
+    .WillRepeatedly(
+      testing::Invoke([](translator::Promise<int>& pms) { pms.set(0); }));
   EXPECT_CALL(foo_mock2, Call(0)).Times(2);
 
   auto sch = std::make_shared<translator::Schedule>();

@@ -192,15 +192,8 @@ Schedule::co_create(task&& func)
 
   std::lock_guard<std::mutex> lg(cos_mtx_);
 
-  if (free_ids_.empty()) {
-    co->id = cos_.size();
-    cos_.push_back(nullptr);
-  } else {
-    co->id = free_ids_.top();
-    free_ids_.pop();
-  }
+  cos_.insert(co);
 
-  cos_[co->id] = co;
   co_count_++;
 
   return co;
@@ -211,12 +204,7 @@ Schedule::co_destroy(std::shared_ptr<Coroutine> co)
 {
   std::lock_guard<std::mutex> lg(cos_mtx_);
   co_count_--;
-  if (co == cos_.back()) {
-    cos_.pop_back();
-  } else {
-    free_ids_.push(co->id);
-    cos_[co->id].reset();
-  }
+  cos_.erase(co);
 }
 
 } // namespace translator

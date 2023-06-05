@@ -7,9 +7,8 @@
 #include <functional>
 #include <memory>
 #include <queue>
-#include <thread>
 #include <ucontext.h>
-#include <vector>
+#include <unordered_set>
 
 namespace translator {
 typedef std::function<void()> task;
@@ -57,8 +56,7 @@ private:
 
 private:
   Context context_;
-  std::priority_queue<int, std::vector<int>, std::greater<int>> free_ids_;
-  std::vector<std::shared_ptr<Coroutine>> cos_;
+  std::unordered_set<std::shared_ptr<Coroutine>> cos_;
   std::mutex cos_mtx_;
   std::shared_ptr<Coroutine> running_;
   std::queue<std::shared_ptr<Coroutine>> running_cos_;
