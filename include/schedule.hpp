@@ -58,9 +58,9 @@ private:
   std::mutex cos_mtx_;
   std::shared_ptr<Coroutine> running_;
   std::queue<std::shared_ptr<Coroutine>> running_cos_;
+  int32_t co_count_;
   std::mutex running_cos_mtx_;
   std::condition_variable running_cos_cv_;
-  std::atomic<int> co_count_;
   // std::thread th_;
   bool th_running_ = true;
 };

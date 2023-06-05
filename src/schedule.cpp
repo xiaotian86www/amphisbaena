@@ -43,7 +43,8 @@ make_context(Schedule::Context& main,
   context.uct_.uc_link = &main.uct_;
   // mainfunc只支持int类型参数，不支持void*参数属于设计问题
   uintptr_t ptr = (uintptr_t)sch;
-  makecontext(&context.uct_, (void(*)())func, 2, (uint32_t)ptr, (uint32_t)(ptr >> 32));
+  makecontext(
+    &context.uct_, (void (*)())func, 2, (uint32_t)ptr, (uint32_t)(ptr >> 32));
 }
 
 struct Schedule::Coroutine : public std::enable_shared_from_this<Coroutine>
@@ -52,7 +53,6 @@ struct Schedule::Coroutine : public std::enable_shared_from_this<Coroutine>
 
   Context context;
   task func;
-  int id;
 };
 
 Schedule::Schedule()
@@ -68,13 +68,15 @@ Schedule::~Schedule()
 void
 Schedule::run()
 {
-  th_running_ = true;
-
-  while (co_count_) {
+  while (true) {
     std::shared_ptr<Coroutine> co;
     {
       std::unique_lock<std::mutex> ul(running_cos_mtx_);
-      running_cos_cv_.wait(ul, [this] { return !running_cos_.empty(); });
+      running_cos_cv_.wait(
+        ul, [this] { return !co_count_ || !running_cos_.empty(); });
+
+      if (!co_count_)
+        break;
 
       co = running_cos_.front();
       running_cos_.pop();
@@ -149,8 +151,7 @@ Schedule::co_create(task&& func)
 {
   auto co = std::make_shared<Coroutine>();
   co->func = std::move(func);
-  make_context(
-    context_, co->context, (void (*)(Schedule*))co_func, this);
+  make_context(context_, co->context, (void (*)(Schedule*))co_func, this);
 
   std::lock_guard<std::mutex> lg(cos_mtx_);
 
