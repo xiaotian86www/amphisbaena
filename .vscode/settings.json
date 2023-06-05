@@ -75,6 +75,7 @@
         "stddef.h": "c",
         "version": "cpp",
         "*.ipp": "cpp",
-        "queue": "cpp"
+        "queue": "cpp",
+        "unordered_set": "cpp"
     }
 }

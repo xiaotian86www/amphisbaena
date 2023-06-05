@@ -48,14 +48,11 @@ public:
 private:
   static void co_func(uint32_t low32, uint32_t high32);
 
-  std::weak_ptr<Coroutine> co_create(task&& func);
-
-  void co_destroy(std::shared_ptr<Coroutine> co);
+  void do_resume(std::shared_ptr<Coroutine> co);
 
 private:
   Context context_;
   std::unordered_set<std::shared_ptr<Coroutine>> cos_;
-  std::mutex cos_mtx_;
   std::shared_ptr<Coroutine> running_;
   std::queue<std::shared_ptr<Coroutine>> running_cos_;
   int32_t co_count_;

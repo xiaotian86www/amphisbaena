@@ -99,8 +99,16 @@ Schedule::stop()
 void
 Schedule::post(task&& func)
 {
-  auto co = co_create(std::move(func));
-  resume(co);
+  auto co = std::make_shared<Coroutine>();
+  co->func = std::move(func);
+  make_context(context_, co->context, (void (*)(Schedule*))co_func, this);
+
+  std::lock_guard<std::mutex> lg(running_cos_mtx_);
+
+  cos_.insert(co);
+  co_count_++;
+
+  do_resume(co);
 }
 
 void
@@ -121,8 +129,7 @@ Schedule::resume(std::weak_ptr<Coroutine> co)
     return;
 
   std::unique_lock<std::mutex> ul(running_cos_mtx_);
-  running_cos_.push(sco);
-  running_cos_cv_.notify_all();
+  do_resume(sco);
 }
 
 std::weak_ptr<Schedule::Coroutine>
@@ -143,31 +150,16 @@ Schedule::co_func(uint32_t low32, uint32_t high32)
   auto co = sch->running_;
   sch->running_ = nullptr;
 
-  sch->co_destroy(co);
-}
-
-std::weak_ptr<Schedule::Coroutine>
-Schedule::co_create(task&& func)
-{
-  auto co = std::make_shared<Coroutine>();
-  co->func = std::move(func);
-  make_context(context_, co->context, (void (*)(Schedule*))co_func, this);
-
-  std::lock_guard<std::mutex> lg(cos_mtx_);
-
-  cos_.insert(co);
-
-  co_count_++;
-
-  return co;
+  std::lock_guard<std::mutex> lg(sch->running_cos_mtx_);
+  sch->co_count_--;
+  sch->cos_.erase(co);
 }
 
 void
-Schedule::co_destroy(std::shared_ptr<Coroutine> co)
+Schedule::do_resume(std::shared_ptr<Coroutine> co)
 {
-  std::lock_guard<std::mutex> lg(cos_mtx_);
-  co_count_--;
-  cos_.erase(co);
+  running_cos_.push(co);
+  running_cos_cv_.notify_all();
 }
 
 } // namespace translator
