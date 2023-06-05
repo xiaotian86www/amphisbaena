@@ -11,7 +11,9 @@
 #include <unordered_set>
 
 namespace translator {
-typedef std::function<void()> task;
+class Schedule;
+
+typedef std::function<void(Schedule*)> task;
 
 class Schedule : public std::enable_shared_from_this<Schedule>
 {
@@ -39,16 +41,12 @@ public:
 public:
   void resume(std::weak_ptr<Coroutine> co);
 
-  static void yield();
+  void yield();
 
-  static std::weak_ptr<Coroutine> this_co();
-
-  static std::shared_ptr<Schedule> this_sch();
+  std::weak_ptr<Coroutine> this_co();
 
 private:
-  void th_func();
-
-  static void co_func();
+  static void co_func(uint32_t low32, uint32_t high32);
 
   std::weak_ptr<Coroutine> co_create(task&& func);
 

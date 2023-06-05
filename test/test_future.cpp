@@ -6,10 +6,11 @@
 #include "future.hpp"
 
 static void
-foo(std::function<void(translator::Promise<int>&)> func1,
+foo(translator::Schedule* sch,
+    std::function<void(translator::Promise<int>&)> func1,
     std::function<void(int)> func2)
 {
-  translator::Promise<int> pms;
+  translator::Promise<int> pms(sch);
   func1(pms);
   auto& ftr = pms.future();
   func2(ftr.get());
@@ -28,9 +29,9 @@ TEST(future, test_1)
 
   auto sch = std::make_shared<translator::Schedule>();
   sch->post(
-    std::bind(foo, foo_mock1.AsStdFunction(), foo_mock2.AsStdFunction()));
+    std::bind(foo, std::placeholders::_1, foo_mock1.AsStdFunction(), foo_mock2.AsStdFunction()));
   sch->post(
-    std::bind(foo, foo_mock1.AsStdFunction(), foo_mock2.AsStdFunction()));
+    std::bind(foo, std::placeholders::_1, foo_mock1.AsStdFunction(), foo_mock2.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch.get()));
 

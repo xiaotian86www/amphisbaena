@@ -9,7 +9,7 @@
 
 namespace translator {
 
-thread_local std::shared_ptr<Schedule> sch;
+// thread_local std::shared_ptr<Schedule> sch;
 
 void
 load_context(Schedule::Context& main, const Schedule::Context& in)
@@ -34,14 +34,16 @@ store_context(const Schedule::Context& main, Schedule::Context& out)
 void
 make_context(Schedule::Context& main,
              Schedule::Context& context,
-             void (*func)(void))
+             void (*func)(Schedule*),
+             Schedule* sch)
 {
   getcontext(&context.uct_); // 只是为了获取帧结构，以下动作完善帧结构
   context.uct_.uc_stack.ss_sp = main.stack_.data();
   context.uct_.uc_stack.ss_size = main.stack_.size();
   context.uct_.uc_link = &main.uct_;
   // mainfunc只支持int类型参数，不支持void*参数属于设计问题
-  makecontext(&context.uct_, func, 0);
+  uintptr_t ptr = (uintptr_t)sch;
+  makecontext(&context.uct_, (void(*)())func, 2, (uint32_t)ptr, (uint32_t)(ptr >> 32));
 }
 
 struct Schedule::Coroutine : public std::enable_shared_from_this<Coroutine>
@@ -66,17 +68,13 @@ Schedule::~Schedule()
 void
 Schedule::run()
 {
-  assert(!sch);
-  sch = shared_from_this();
-
   th_running_ = true;
 
   while (co_count_) {
     std::shared_ptr<Coroutine> co;
     {
       std::unique_lock<std::mutex> ul(running_cos_mtx_);
-      running_cos_cv_.wait(
-        ul, [this] { return !running_cos_.empty(); });
+      running_cos_cv_.wait(ul, [this] { return !running_cos_.empty(); });
 
       co = running_cos_.front();
       running_cos_.pop();
@@ -85,11 +83,8 @@ Schedule::run()
     assert(!running_);
     running_ = co;
 
-    assert(sch);
-    load_context(sch->context_, co->context);
+    load_context(context_, co->context);
   }
-
-  sch.reset();
 }
 
 void
@@ -109,12 +104,11 @@ Schedule::post(task&& func)
 void
 Schedule::yield()
 {
-  assert(sch);
-  assert(sch->running_);
-  auto co = sch->running_;
-  sch->running_ = nullptr;
-  // sch->resume(co);
-  store_context(sch->context_, co->context);
+  assert(running_);
+  auto co = running_;
+  running_ = nullptr;
+  // resume(co);
+  store_context(context_, co->context);
 }
 
 void
@@ -132,51 +126,18 @@ Schedule::resume(std::weak_ptr<Coroutine> co)
 std::weak_ptr<Schedule::Coroutine>
 Schedule::this_co()
 {
-  assert(sch);
-  assert(sch->running_);
-  return sch->running_;
-}
-
-std::shared_ptr<Schedule>
-Schedule::this_sch()
-{
-  assert(sch);
-  return sch;
+  assert(running_);
+  return running_;
 }
 
 void
-Schedule::th_func()
+Schedule::co_func(uint32_t low32, uint32_t high32)
 {
-  assert(!sch);
-  sch = shared_from_this();
-
-  while (co_count_) {
-    std::shared_ptr<Coroutine> co;
-    {
-      std::unique_lock<std::mutex> ul(running_cos_mtx_);
-      running_cos_cv_.wait(
-        ul, [this] { return !running_cos_.empty(); });
-
-      co = running_cos_.front();
-      running_cos_.pop();
-    }
-
-    assert(!running_);
-    running_ = co;
-
-    assert(sch);
-    load_context(sch->context_, co->context);
-  }
-
-  sch.reset();
-}
-
-void
-Schedule::co_func()
-{
+  uintptr_t ptr = (uintptr_t)low32 | ((uintptr_t)high32 << 32);
+  Schedule* sch = (Schedule*)ptr;
   assert(sch);
   assert(sch->running_);
-  sch->running_->func();
+  sch->running_->func(sch);
   auto co = sch->running_;
   sch->running_ = nullptr;
 
@@ -188,7 +149,8 @@ Schedule::co_create(task&& func)
 {
   auto co = std::make_shared<Coroutine>();
   co->func = std::move(func);
-  make_context(context_, co->context, (void (*)(void))co_func);
+  make_context(
+    context_, co->context, (void (*)(Schedule*))co_func, this);
 
   std::lock_guard<std::mutex> lg(cos_mtx_);
 

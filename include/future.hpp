@@ -12,28 +12,37 @@ class Future
   friend class Promise<Tp_>;
 
 public:
-  Future() = default;
+  Future(Schedule* sch)
+    : sch_(sch)
+    , co_(sch_->this_co())
+  {
+  }
+
   Future(const Future<Tp_>&) = delete;
   Future<Tp_>& operator=(const Future<Tp_>&) = delete;
 
 public:
   Tp_&& get()
   {
-    Schedule::yield();
+    sch_->yield();
     return std::move(value_);
   }
 
 private:
   Tp_ value_;
-  std::shared_ptr<Schedule> sch_{ Schedule::this_sch() };
-  std::weak_ptr<Schedule::Coroutine> co_{ Schedule::this_co() };
+  Schedule* sch_;
+  std::weak_ptr<Schedule::Coroutine> co_;
 };
 
 template<typename Tp_>
 class Promise
 {
 public:
-  Promise() = default;
+  Promise(Schedule* sch)
+    : ftr_(sch)
+  {
+  }
+
   Promise(const Promise<Tp_>&) = delete;
   Promise<Tp_>& operator=(const Promise<Tp_>&) = delete;
 
@@ -41,15 +50,15 @@ public:
   template<typename ValueTp_>
   void set(ValueTp_&& value)
   {
-    ft_.value_ = std::forward<ValueTp_>(value);
+    ftr_.value_ = std::forward<ValueTp_>(value);
 
-    ft_.sch_->resume(ft_.co_);
+    ftr_.sch_->resume(ftr_.co_);
   }
 
-  Future<Tp_>& future() { return ft_; }
+  Future<Tp_>& future() { return ftr_; }
 
 private:
-  Future<Tp_> ft_;
+  Future<Tp_> ftr_;
 };
 
 } // namespace translator
