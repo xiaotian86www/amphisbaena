@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
@@ -29,15 +30,21 @@ public:
   ~Schedule();
 
 public:
+  void run();
+
+  void stop();
+
+public:
   void post(task&& func);
 
+public:
   void resume(std::weak_ptr<Coroutine> co);
 
   static void yield();
 
   static std::weak_ptr<Coroutine> this_co();
 
-  static Schedule* this_sch();
+  static std::shared_ptr<Schedule> this_sch();
 
 private:
   void th_func();
@@ -57,7 +64,8 @@ private:
   std::queue<std::shared_ptr<Coroutine>> running_cos_;
   std::mutex running_cos_mtx_;
   std::condition_variable running_cos_cv_;
-  std::thread th_;
+  std::atomic<int> co_count_;
+  // std::thread th_;
   bool th_running_ = true;
 };
 } // namespace translator

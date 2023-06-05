@@ -25,7 +25,7 @@ public:
 
 private:
   Tp_ value_;
-  Schedule* sch_ = Schedule::this_sch();
+  std::shared_ptr<Schedule> sch_{ Schedule::this_sch() };
   std::weak_ptr<Schedule::Coroutine> co_{ Schedule::this_co() };
 };
 

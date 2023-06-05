@@ -12,7 +12,7 @@ static void
 foo(std::function<void(int)> func)
 {
   for (int i = 0; i < 2; i++) {
-    translator::Schedule* sch = translator::Schedule::this_sch();
+    auto sch = translator::Schedule::this_sch();
     func(0);
     sch->resume(sch->this_co());
     sch->yield();
@@ -25,9 +25,16 @@ TEST(coroutine, test1)
   testing::Sequence dummy;
   EXPECT_CALL(foo_mock, Call(0)).Times(4);
 
-  translator::Schedule sch;
-  sch.post(std::bind(foo, foo_mock.AsStdFunction()));
-  sch.post(std::bind(foo, foo_mock.AsStdFunction()));
+  auto sch = std::make_shared<translator::Schedule>();
+  sch->post(std::bind(foo, foo_mock.AsStdFunction()));
+  sch->post(std::bind(foo, foo_mock.AsStdFunction()));
+
+  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+
+  sch->stop();
+
+  if (th.joinable())
+    th.join();
 }
 
 // /**

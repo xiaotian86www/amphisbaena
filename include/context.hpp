@@ -4,7 +4,6 @@
 #include <map>
 #include <sstream>
 
-#include "schedule.hpp"
 #include "object.hpp"
 #include "server.hpp"
 
@@ -17,7 +16,6 @@ public:
 
 public:
   Context()
-    // : co_(sch_.create(std::bind(&Context::main_func, this)))
   {
   }
 
@@ -85,7 +83,6 @@ private:
   std::map<std::string_view, std::unique_ptr<Object>> objects_;
   std::map<std::string_view, get_object_func_t> object_funcs_;
   std::map<std::string_view, std::unique_ptr<Server>> servers_;
-  Schedule sch_;
 };
 
 } // namespace translator

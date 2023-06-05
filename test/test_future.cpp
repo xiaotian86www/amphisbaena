@@ -24,9 +24,16 @@ TEST(future, test_1)
     }));
   EXPECT_CALL(foo_mock2, Call(0)).Times(2);
 
-  translator::Schedule sch;
-  sch.post(
+  auto sch = std::make_shared<translator::Schedule>();
+  sch->post(
     std::bind(foo, foo_mock1.AsStdFunction(), foo_mock2.AsStdFunction()));
-  sch.post(
+  sch->post(
     std::bind(foo, foo_mock1.AsStdFunction(), foo_mock2.AsStdFunction()));
+
+  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+
+  // sch->stop();
+
+  if (th.joinable())
+    th.join();
 }
