@@ -1,16 +1,19 @@
-
-cmake_minimum_required(VERSION 3.5)
-
-project(test)
+cmake_minimum_required(VERSION 3.0.0)
+project(translator VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 
-file(GLOB TEST_LIST test/*.cpp)
+include(CTest)
+enable_testing()
 
-file(GLOB SRC_LIST src/*.cpp)
+include_directories(${PROJECT_SOURCE_DIR}/include)
 
-add_executable(test ${SRC_LIST} ${TEST_LIST})
+aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC_LIST)
 
-target_include_directories(test PRIVATE ${PROJECT_SOURCE_DIR}/include)
+add_library(${PROJECT_NAME} ${SRC_LIST})
 
-target_link_libraries(test gtest gmock gmock_main)
+add_subdirectory(test)
+
+set(CPACK_PROJECT_NAME ${PROJECT_NAME})
+set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
+include(CPack)
