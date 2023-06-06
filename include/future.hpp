@@ -31,7 +31,7 @@ public:
 private:
   Tp_ value_;
   ScheduleRef sch_;
-  std::weak_ptr<Schedule::Coroutine> co_;
+  Schedule::CoroutineRef co_;
 };
 
 template<typename Tp_>

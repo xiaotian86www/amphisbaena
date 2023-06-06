@@ -133,9 +133,9 @@ public:
     store_context(context_, co->context);
   }
 
-  void resume(std::weak_ptr<Coroutine> co)
+  void resume(CoroutineRef co)
   {
-    auto sco = co.lock();
+    auto sco = co.ptr_.lock();
     if (!sco)
       return;
 
@@ -147,10 +147,10 @@ public:
     cv_.notify_all();
   }
 
-  std::weak_ptr<Coroutine> this_co()
+  CoroutineRef this_co()
   {
     assert(running_);
-    return running_;
+    return CoroutineRef{ running_ };
   }
 
   void co_func()
@@ -216,26 +216,26 @@ Schedule::yield()
 }
 
 void
-Schedule::resume(std::weak_ptr<Coroutine> co)
+Schedule::resume(CoroutineRef co)
 {
   impl_->resume(co);
 }
 
-std::weak_ptr<Schedule::Coroutine>
+Schedule::CoroutineRef
 Schedule::this_co()
 {
   return impl_->this_co();
 }
 
 ScheduleRef::ScheduleRef(std::weak_ptr<Schedule::Impl> impl)
-  : impl_(impl)
+  : ptr_(impl)
 {
 }
 
 void
-ScheduleRef::resume(std::weak_ptr<Schedule::Coroutine> co)
+ScheduleRef::resume(Schedule::CoroutineRef co)
 {
-  auto impl = impl_.lock();
+  auto impl = ptr_.lock();
   if (impl)
     impl->resume(co);
 }
@@ -243,19 +243,19 @@ ScheduleRef::resume(std::weak_ptr<Schedule::Coroutine> co)
 void
 ScheduleRef::yield()
 {
-  auto impl = impl_.lock();
+  auto impl = ptr_.lock();
   if (impl)
     impl->yield();
 }
 
-std::weak_ptr<Schedule::Coroutine>
+Schedule::CoroutineRef
 ScheduleRef::this_co()
 {
-  auto impl = impl_.lock();
+  auto impl = ptr_.lock();
   if (impl)
     return impl->this_co();
   else
-    return std::weak_ptr<Schedule::Coroutine>();
+    return { std::weak_ptr<Schedule::Coroutine>() };
 }
 
 } // namespace translator

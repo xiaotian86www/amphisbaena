@@ -16,14 +16,14 @@ class ScheduleRef;
 
 typedef std::function<void(ScheduleRef)> task;
 
-class Schedule : public std::enable_shared_from_this<Schedule>
+class Schedule
 {
-  friend ScheduleRef;
-
 public:
   struct Coroutine;
-
-  class Impl;
+  struct CoroutineRef
+  {
+    std::weak_ptr<Schedule::Coroutine> ptr_;
+  };
 
 public:
   Schedule();
@@ -39,13 +39,14 @@ public:
 public:
   void post(task&& func);
 
-  void resume(std::weak_ptr<Coroutine> co);
+  void resume(CoroutineRef co);
 
   void yield();
 
-  std::weak_ptr<Coroutine> this_co();
+  CoroutineRef this_co();
 
-private:
+public:
+  class Impl;
   std::shared_ptr<Impl> impl_;
 };
 
@@ -55,14 +56,14 @@ public:
   ScheduleRef(std::weak_ptr<Schedule::Impl> impl);
 
 public:
-  void resume(std::weak_ptr<Schedule::Coroutine> co);
+  void resume(Schedule::CoroutineRef co);
 
   void yield();
 
-  std::weak_ptr<Schedule::Coroutine> this_co();
+  Schedule::CoroutineRef this_co();
 
 private:
-  std::weak_ptr<Schedule::Impl> impl_;
+  std::weak_ptr<Schedule::Impl> ptr_;
 };
 
 } // namespace translator
