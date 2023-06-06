@@ -6,7 +6,7 @@
 #include "future.hpp"
 
 static void
-foo(translator::Schedule* sch,
+foo(translator::ScheduleRef sch,
     std::function<void(translator::Promise<int>&)> func1,
     std::function<void(int)> func2)
 {

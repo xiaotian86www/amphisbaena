@@ -12,23 +12,24 @@
 
 namespace translator {
 class Schedule;
+class ScheduleRef;
 
-typedef std::function<void(Schedule*)> task;
+typedef std::function<void(ScheduleRef)> task;
 
 class Schedule : public std::enable_shared_from_this<Schedule>
 {
-public:
-  struct Context
-  {
-    std::vector<char> stack_;
-    ucontext_t uct_;
-  };
+  friend ScheduleRef;
 
+public:
   struct Coroutine;
+
+  class Impl;
 
 public:
   Schedule();
-  ~Schedule();
+  virtual ~Schedule();
+  Schedule(const Schedule&) = delete;
+  Schedule& operator=(const Schedule&) = delete;
 
 public:
   void run();
@@ -46,17 +47,23 @@ public:
   std::weak_ptr<Coroutine> this_co();
 
 private:
-  static void co_func(uint32_t low32, uint32_t high32);
+  std::shared_ptr<Impl> impl_;
+};
+
+class ScheduleRef
+{
+public:
+  ScheduleRef(std::weak_ptr<Schedule::Impl> impl);
+
+public:
+  void resume(std::weak_ptr<Schedule::Coroutine> co);
+
+  void yield();
+
+  std::weak_ptr<Schedule::Coroutine> this_co();
 
 private:
-  Context context_;
-  std::unordered_set<std::shared_ptr<Coroutine>> cos_;
-  std::shared_ptr<Coroutine> running_;
-  std::queue<std::shared_ptr<Coroutine>> running_cos_;
-  int32_t co_count_;
-  std::mutex mtx_;
-  std::condition_variable cv_;
-  // std::thread th_;
-  bool th_running_ = true;
+  std::weak_ptr<Schedule::Impl> impl_;
 };
+
 } // namespace translator

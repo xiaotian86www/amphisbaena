@@ -12,9 +12,9 @@ class Future
   friend class Promise<Tp_>;
 
 public:
-  Future(Schedule* sch)
+  Future(ScheduleRef sch)
     : sch_(sch)
-    , co_(sch_->this_co())
+    , co_(sch_.this_co())
   {
   }
 
@@ -24,13 +24,13 @@ public:
 public:
   Tp_&& get()
   {
-    sch_->yield();
+    sch_.yield();
     return std::move(value_);
   }
 
 private:
   Tp_ value_;
-  Schedule* sch_;
+  ScheduleRef sch_;
   std::weak_ptr<Schedule::Coroutine> co_;
 };
 
@@ -38,7 +38,7 @@ template<typename Tp_>
 class Promise
 {
 public:
-  Promise(Schedule* sch)
+  Promise(ScheduleRef sch)
     : ftr_(sch)
   {
   }
@@ -52,7 +52,7 @@ public:
   {
     ftr_.value_ = std::forward<ValueTp_>(value);
 
-    ftr_.sch_->resume(ftr_.co_);
+    ftr_.sch_.resume(ftr_.co_);
   }
 
   Future<Tp_>& future() { return ftr_; }

@@ -10,12 +10,12 @@ struct args
 };
 
 static void
-foo(translator::Schedule* sch, std::function<void(int)> func)
+foo(translator::ScheduleRef sch, std::function<void(int)> func)
 {
   for (int i = 0; i < 2; i++) {
     func(i);
-    sch->resume(sch->this_co());
-    sch->yield();
+    sch.resume(sch.this_co());
+    sch.yield();
   }
 }
 
