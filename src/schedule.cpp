@@ -15,6 +15,17 @@ struct CoContext
   ucontext_t uct_;
 };
 
+struct Schedule::Coroutine : public std::enable_shared_from_this<Coroutine>
+{
+  Coroutine() = default;
+
+  CoContext context;
+  task func;
+};
+
+static void
+co_func_wrapper(uint32_t low32, uint32_t high32);
+
 void
 load_context(CoContext& main, const CoContext& in)
 {
@@ -36,37 +47,25 @@ store_context(const CoContext& main, CoContext& out)
 }
 
 void
-make_context(CoContext& main,
-             CoContext& context,
-             void (*func)(Schedule*),
-             Schedule* sch)
+make_context(CoContext& main, CoContext& context, Schedule::Impl* impl)
 {
   getcontext(&context.uct_); // 只是为了获取帧结构，以下动作完善帧结构
   context.uct_.uc_stack.ss_sp = main.stack_.data();
   context.uct_.uc_stack.ss_size = main.stack_.size();
   context.uct_.uc_link = &main.uct_;
   // mainfunc只支持int类型参数，不支持void*参数属于设计问题
-  uintptr_t ptr = (uintptr_t)sch;
-  makecontext(
-    &context.uct_, (void (*)())func, 2, (uint32_t)ptr, (uint32_t)(ptr >> 32));
+  uintptr_t ptr = (uintptr_t)impl;
+  makecontext(&context.uct_,
+              (void (*)())co_func_wrapper,
+              2,
+              (uint32_t)ptr,
+              (uint32_t)(ptr >> 32));
 }
 
-struct Schedule::Coroutine : public std::enable_shared_from_this<Coroutine>
-{
-  Coroutine() = default;
-
-  CoContext context;
-  task func;
-};
-
-class Schedule::Impl
+class Schedule::Impl : public std::enable_shared_from_this<Schedule::Impl>
 {
 public:
-  Impl(Schedule* sch)
-    : sch_(sch)
-  {
-    context_.stack_.resize(STACK_SIZE);
-  }
+  Impl(Schedule* sch) { context_.stack_.resize(STACK_SIZE); }
 
   ~Impl() { stop(); }
 
@@ -114,7 +113,7 @@ public:
   {
     auto co = std::make_shared<Coroutine>();
     co->func = std::move(func);
-    make_context(context_, co->context, (void (*)(Schedule*))co_func, sch_);
+    make_context(context_, co->context, this);
 
     std::lock_guard<std::mutex> lg(mtx_);
 
@@ -154,19 +153,16 @@ public:
     return running_;
   }
 
-  static void co_func(uint32_t low32, uint32_t high32)
+  void co_func()
   {
-    uintptr_t ptr = (uintptr_t)low32 | ((uintptr_t)high32 << 32);
-    Schedule* sch = (Schedule*)ptr;
-    assert(sch);
-    assert(sch->impl_->running_);
-    sch->impl_->running_->func(ScheduleRef(sch->impl_));
-    auto co = sch->impl_->running_;
-    sch->impl_->running_ = nullptr;
+    assert(running_);
+    running_->func(ScheduleRef(shared_from_this()));
+    auto co = running_;
+    running_ = nullptr;
 
-    std::lock_guard<std::mutex> lg(sch->impl_->mtx_);
-    sch->impl_->co_count_--;
-    sch->impl_->cos_.erase(co);
+    std::lock_guard<std::mutex> lg(mtx_);
+    co_count_--;
+    cos_.erase(co);
   }
 
 private:
@@ -177,8 +173,16 @@ private:
   int32_t co_count_;
   std::mutex mtx_;
   std::condition_variable cv_;
-  Schedule* sch_ = nullptr;
 };
+
+void
+co_func_wrapper(uint32_t low32, uint32_t high32)
+{
+  uintptr_t ptr = (uintptr_t)low32 | ((uintptr_t)high32 << 32);
+  Schedule::Impl* impl = (Schedule::Impl*)ptr;
+  assert(impl);
+  impl->co_func();
+}
 
 Schedule::Schedule()
   : impl_(std::make_shared<Impl>(this))
@@ -229,25 +233,29 @@ ScheduleRef::ScheduleRef(std::weak_ptr<Schedule::Impl> impl)
 }
 
 void
-ScheduleRef::yield()
-{
-  auto impl = impl_.lock();
-  if (impl) impl->yield();
-}
-
-void
 ScheduleRef::resume(std::weak_ptr<Schedule::Coroutine> co)
 {
   auto impl = impl_.lock();
-  if (impl) impl->resume(co);
+  if (impl)
+    impl->resume(co);
+}
+
+void
+ScheduleRef::yield()
+{
+  auto impl = impl_.lock();
+  if (impl)
+    impl->yield();
 }
 
 std::weak_ptr<Schedule::Coroutine>
 ScheduleRef::this_co()
 {
   auto impl = impl_.lock();
-  if (impl) return impl->this_co();
-  else return std::weak_ptr<Schedule::Coroutine>();
+  if (impl)
+    return impl->this_co();
+  else
+    return std::weak_ptr<Schedule::Coroutine>();
 }
 
 } // namespace translator

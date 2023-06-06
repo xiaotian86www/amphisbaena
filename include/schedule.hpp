@@ -39,7 +39,6 @@ public:
 public:
   void post(task&& func);
 
-public:
   void resume(std::weak_ptr<Coroutine> co);
 
   void yield();
