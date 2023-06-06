@@ -13,7 +13,7 @@ static void
 foo(translator::Schedule* sch, std::function<void(int)> func)
 {
   for (int i = 0; i < 2; i++) {
-    func(0);
+    func(i);
     sch->resume(sch->this_co());
     sch->yield();
   }
@@ -22,8 +22,8 @@ foo(translator::Schedule* sch, std::function<void(int)> func)
 TEST(coroutine, test1)
 {
   testing::MockFunction<void(int)> foo_mock;
-  testing::Sequence dummy;
-  EXPECT_CALL(foo_mock, Call(0)).Times(4);
+  EXPECT_CALL(foo_mock, Call(0)).Times(2);
+  EXPECT_CALL(foo_mock, Call(1)).Times(2);
 
   auto sch = std::make_shared<translator::Schedule>();
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
@@ -31,27 +31,28 @@ TEST(coroutine, test1)
 
   std::thread th(std::bind(&translator::Schedule::run, sch.get()));
 
-  sch->stop();
-
   if (th.joinable())
     th.join();
 }
 
-// /**
-//  * @brief 检查是否复用id
-//  *
-//  */
-// TEST(coroutine, test2)
-// {
-//   testing::MockFunction<void(int)> foo_mock;
-//   translator::Schedule sch;
+/**
+ * @brief 中途停止
+ * 
+ */
+TEST(coroutine, test2)
+{
+  testing::MockFunction<void(int)> foo_mock;
+  
+  auto sch = std::make_shared<translator::Schedule>();
+  
+  EXPECT_CALL(foo_mock, Call(0)).WillOnce(testing::Invoke([sch](int){
+    sch->stop();
+  }));
 
-//   int c1 = sch.post([] {});
-//   EXPECT_EQ(c1, 0);
-//   int c2 = sch.post([] {});
-//   EXPECT_EQ(c2, 1);
-//   auto c3 = sch.post([]{});
-//   EXPECT_EQ(c3, 2);
-//   auto c4 = sch.post([]{});
-//   EXPECT_EQ(c4, 3);
-// }
+  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+
+  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+
+  if (th.joinable())
+    th.join();
+}

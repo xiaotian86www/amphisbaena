@@ -62,7 +62,7 @@ Schedule::Schedule()
 
 Schedule::~Schedule()
 {
-  // stop();
+  stop();
 }
 
 void
@@ -72,8 +72,7 @@ Schedule::run()
     std::shared_ptr<Coroutine> co;
     {
       std::unique_lock<std::mutex> ul(mtx_);
-      cv_.wait(
-        ul, [this] { return !co_count_ || !running_cos_.empty(); });
+      cv_.wait(ul, [this] { return !co_count_ || !running_cos_.empty(); });
 
       if (!co_count_)
         break;
@@ -92,8 +91,19 @@ Schedule::run()
 void
 Schedule::stop()
 {
-  // th_running_ = false;
-  // cv_.notify_all();
+  std::lock_guard<std::mutex> lg(mtx_);
+  while (!running_cos_.empty()) {
+    auto co = running_cos_.front();
+    running_cos_.pop();
+
+    co_count_--;
+    cos_.erase(co);
+  }
+
+  co_count_ -= cos_.size();
+  cos_.clear();
+
+  cv_.notify_all();
 }
 
 void
@@ -108,7 +118,8 @@ Schedule::post(task&& func)
   cos_.insert(co);
   co_count_++;
 
-  do_resume(co);
+  running_cos_.push(co);
+  cv_.notify_all();
 }
 
 void
@@ -129,7 +140,11 @@ Schedule::resume(std::weak_ptr<Coroutine> co)
     return;
 
   std::unique_lock<std::mutex> ul(mtx_);
-  do_resume(sco);
+  if (cos_.find(sco) == cos_.end()) // 不属于该sch的co
+    return;
+
+  running_cos_.push(sco);
+  cv_.notify_all();
 }
 
 std::weak_ptr<Schedule::Coroutine>
@@ -153,13 +168,6 @@ Schedule::co_func(uint32_t low32, uint32_t high32)
   std::lock_guard<std::mutex> lg(sch->mtx_);
   sch->co_count_--;
   sch->cos_.erase(co);
-}
-
-void
-Schedule::do_resume(std::shared_ptr<Coroutine> co)
-{
-  running_cos_.push(co);
-  cv_.notify_all();
 }
 
 } // namespace translator

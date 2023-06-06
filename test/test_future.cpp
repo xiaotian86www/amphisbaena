@@ -35,8 +35,6 @@ TEST(future, test_1)
 
   std::thread th(std::bind(&translator::Schedule::run, sch.get()));
 
-  // sch->stop();
-
   if (th.joinable())
     th.join();
 }

@@ -48,8 +48,6 @@ public:
 private:
   static void co_func(uint32_t low32, uint32_t high32);
 
-  void do_resume(std::shared_ptr<Coroutine> co);
-
 private:
   Context context_;
   std::unordered_set<std::shared_ptr<Coroutine>> cos_;
