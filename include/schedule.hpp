@@ -56,6 +56,8 @@ public:
   ScheduleRef(std::weak_ptr<Schedule::Impl> impl);
 
 public:
+  void post(task&& func);
+
   void resume(Schedule::CoroutineRef co);
 
   void yield();

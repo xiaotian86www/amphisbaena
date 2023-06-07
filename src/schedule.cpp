@@ -233,6 +233,14 @@ ScheduleRef::ScheduleRef(std::weak_ptr<Schedule::Impl> impl)
 }
 
 void
+ScheduleRef::post(task&& func)
+{
+  auto impl = ptr_.lock();
+  if (impl)
+    impl->post(std::move(func));
+}
+
+void
 ScheduleRef::resume(Schedule::CoroutineRef co)
 {
   auto impl = ptr_.lock();
