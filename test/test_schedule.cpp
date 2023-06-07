@@ -14,6 +14,7 @@ foo(translator::ScheduleRef sch, std::function<void(int)> func)
 {
   for (int i = 0; i < 2; i++) {
     func(i);
+    // TODO 这种写法不合理，但为了达到自我唤醒效果先如此实现
     sch.resume(sch.this_co());
     sch.yield();
   }
@@ -37,15 +38,15 @@ TEST(coroutine, test1)
 
 /**
  * @brief 中途停止
- * 
+ *
  */
 TEST(coroutine, test2)
 {
   testing::MockFunction<void(int)> foo_mock;
-  
+
   auto sch = std::make_shared<translator::Schedule>();
-  
-  EXPECT_CALL(foo_mock, Call(0)).WillOnce(testing::Invoke([sch](int){
+
+  EXPECT_CALL(foo_mock, Call(0)).WillOnce(testing::Invoke([sch](int) {
     sch->stop();
   }));
 

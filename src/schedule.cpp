@@ -1,8 +1,13 @@
 #include "schedule.hpp"
 
+#include <bits/types/struct_timespec.h>
+#include <bits/types/time_t.h>
 #include <cassert>
+#include <chrono>
 #include <cstdint>
 #include <cstring>
+#include <memory>
+#include <mutex>
 #include <queue>
 
 #define STACK_SIZE (1024 * 1024)
@@ -15,12 +20,30 @@ struct CoContext
   ucontext_t uct_;
 };
 
-struct Schedule::Coroutine : public std::enable_shared_from_this<Coroutine>
+struct Schedule::Coroutine
 {
   Coroutine() = default;
 
   CoContext context;
   task func;
+};
+
+struct CoTimer
+{
+  timespec duration;
+  Schedule::CoroutineRef co;
+};
+
+typedef std::shared_ptr<CoTimer> CoTimerPtr;
+
+struct CoTimerPtrGreater
+{
+  bool operator()(const CoTimerPtr& left, const CoTimerPtr& right) const
+  {
+    return left->duration.tv_sec > right->duration.tv_sec ||
+           (left->duration.tv_sec == right->duration.tv_sec &&
+            left->duration.tv_nsec > right->duration.tv_nsec);
+  }
 };
 
 static void
@@ -73,7 +96,7 @@ public:
   void run()
   {
     while (true) {
-      std::shared_ptr<Coroutine> co;
+      assert(!running_);
       {
         std::unique_lock<std::mutex> ul(mtx_);
         cv_.wait(ul, [this] { return !co_count_ || !running_cos_.empty(); });
@@ -81,14 +104,11 @@ public:
         if (!co_count_)
           break;
 
-        co = running_cos_.front();
+        running_ = running_cos_.front();
         running_cos_.pop();
       }
 
-      assert(!running_);
-      running_ = co;
-
-      load_context(context_, co->context);
+      load_context(context_, running_->context);
     }
   }
 
@@ -96,11 +116,7 @@ public:
   {
     std::lock_guard<std::mutex> lg(mtx_);
     while (!running_cos_.empty()) {
-      auto co = running_cos_.front();
       running_cos_.pop();
-
-      co_count_--;
-      cos_.erase(co);
     }
 
     co_count_ -= cos_.size();
@@ -129,7 +145,33 @@ public:
     assert(running_);
     auto co = running_;
     running_ = nullptr;
-    // resume(co);
+    store_context(context_, co->context);
+  }
+
+  template<typename Rep_, typename Period_>
+  void yield_for(const std::chrono::duration<Rep_, Period_>& rtime)
+  {
+  }
+
+  void yield_for(const timespec& duration)
+  {
+    assert(running_);
+    auto co = running_;
+    running_ = nullptr;
+
+    auto timer = std::make_shared<CoTimer>();
+    timer->duration = duration;
+    timer->co = { running_ };
+
+    {
+      std::lock_guard<std::mutex> lg(mtx_);
+      assert(timers_.find(timer) == timers_.end());
+      timers_.insert(timer);
+      timers_que_.push(timer);
+    }
+
+    running_ = nullptr;
+
     store_context(context_, co->context);
   }
 
@@ -140,7 +182,8 @@ public:
       return;
 
     std::unique_lock<std::mutex> ul(mtx_);
-    if (cos_.find(sco) == cos_.end()) // 不属于该sch的co
+    // 存在已经调用stop方法，cos_为空，此时不应在继续投递任务
+    if (cos_.find(sco) == cos_.end())
       return;
 
     running_cos_.push(sco);
@@ -171,6 +214,9 @@ private:
   std::shared_ptr<Coroutine> running_;
   std::queue<std::shared_ptr<Coroutine>> running_cos_;
   int32_t co_count_;
+  std::priority_queue<CoTimerPtr, std::vector<CoTimerPtr>, CoTimerPtrGreater>
+    timers_que_;
+  std::unordered_set<CoTimerPtr> timers_; // TODO 删除时，以Coroutinue为查找条件
   std::mutex mtx_;
   std::condition_variable cv_;
 };

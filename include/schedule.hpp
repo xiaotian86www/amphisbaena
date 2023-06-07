@@ -43,6 +43,8 @@ public:
 
   void yield();
 
+  void wait_for();
+
   CoroutineRef this_co();
 
 public:
