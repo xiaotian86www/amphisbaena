@@ -204,8 +204,7 @@ public:
     running_ = nullptr;
 
     std::lock_guard<std::mutex> lg(mtx_);
-    co_count_--;
-    cos_.erase(co);
+    co_count_ -= cos_.erase(co);
   }
 
 private:
