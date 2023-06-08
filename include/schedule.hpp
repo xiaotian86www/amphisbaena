@@ -1,6 +1,8 @@
 #pragma once
 
 #include <atomic>
+#include <bits/types/struct_timespec.h>
+#include <chrono>
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
@@ -43,9 +45,18 @@ public:
 
   void yield();
 
-  void wait_for();
+  template<typename Rep_, typename Period_>
+  void yield_for(const std::chrono::duration<Rep_, Period_>& rtime)
+  {
+    auto s = std::chrono::duration_cast<std::chrono::seconds>(rtime);
+    auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(rtime - s);
+    yield_for_({ s.count(), ns.count() });
+  }
 
   CoroutineRef this_co();
+
+private:
+  void yield_for_(const timespec& rtime);
 
 public:
   class Impl;
@@ -64,7 +75,18 @@ public:
 
   void yield();
 
+  template<typename Rep_, typename Period_>
+  void yield_for(const std::chrono::duration<Rep_, Period_>& rtime)
+  {
+    auto s = std::chrono::duration_cast<std::chrono::seconds>(rtime);
+    auto ns = std::chrono::duration_cast<std::chrono::nanoseconds>(rtime - s);
+    yield_for_({ s.count(), ns.count() });
+  }
+
   Schedule::CoroutineRef this_co();
+
+private:
+  void yield_for_(const timespec& rtime);
 
 private:
   std::weak_ptr<Schedule::Impl> ptr_;

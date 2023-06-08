@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstdint>
 #include <cstring>
+#include <ctime>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -30,8 +31,8 @@ struct Schedule::Coroutine
 
 struct CoTimer
 {
-  timespec duration;
-  Schedule::CoroutineRef co;
+  timespec timeout;
+  std::shared_ptr<Schedule::Coroutine> co;
 };
 
 typedef std::shared_ptr<CoTimer> CoTimerPtr;
@@ -40,9 +41,9 @@ struct CoTimerPtrGreater
 {
   bool operator()(const CoTimerPtr& left, const CoTimerPtr& right) const
   {
-    return left->duration.tv_sec > right->duration.tv_sec ||
-           (left->duration.tv_sec == right->duration.tv_sec &&
-            left->duration.tv_nsec > right->duration.tv_nsec);
+    return left->timeout.tv_sec > right->timeout.tv_sec ||
+           (left->timeout.tv_sec == right->timeout.tv_sec &&
+            left->timeout.tv_nsec > right->timeout.tv_nsec);
   }
 };
 
@@ -96,13 +97,34 @@ public:
   void run()
   {
     while (true) {
+
+      assert(!running_);
+
+      bool need_wait = true;
+      std::chrono::nanoseconds wait_time = check_timer();
+      if (running_) {
+        load_context(context_, running_->context);
+        need_wait = false;
+      }
+
       assert(!running_);
       {
         std::unique_lock<std::mutex> ul(mtx_);
-        cv_.wait(ul, [this] { return !co_count_ || !running_cos_.empty(); });
+
+        if (need_wait) {
+          auto pred = [this] { return !co_count_ || !running_cos_.empty(); };
+          if (wait_time.count()) {
+            cv_.wait_for(ul, wait_time, pred);
+          } else {
+            cv_.wait(ul, pred);
+          }
+        }
 
         if (!co_count_)
           break;
+
+        if (running_cos_.empty())
+          continue;
 
         running_ = running_cos_.front();
         running_cos_.pop();
@@ -115,10 +137,19 @@ public:
   void stop()
   {
     std::lock_guard<std::mutex> lg(mtx_);
+    // 清除定时器
+    while (!timers_que_.empty()) {
+      timers_que_.pop();
+    }
+
+    timers_.clear();
+
+    // 清除待运行队列
     while (!running_cos_.empty()) {
       running_cos_.pop();
     }
 
+    // 清除协程
     co_count_ -= cos_.size();
     cos_.clear();
 
@@ -148,28 +179,28 @@ public:
     store_context(context_, co->context);
   }
 
-  template<typename Rep_, typename Period_>
-  void yield_for(const std::chrono::duration<Rep_, Period_>& rtime)
-  {
-  }
-
   void yield_for(const timespec& duration)
   {
     assert(running_);
-    auto co = running_;
-    running_ = nullptr;
 
     auto timer = std::make_shared<CoTimer>();
-    timer->duration = duration;
+    // 取系统启动时间，避免时间回调
+    clock_gettime(CLOCK_MONOTONIC, &timer->timeout);
+    timer->timeout.tv_nsec += duration.tv_nsec;
+    timer->timeout.tv_sec += duration.tv_sec;
+    // 调整进位
+    timer->timeout.tv_sec += timer->timeout.tv_nsec / 1000000000;
+    timer->timeout.tv_nsec = timer->timeout.tv_nsec % 1000000000;
     timer->co = { running_ };
 
     {
       std::lock_guard<std::mutex> lg(mtx_);
-      assert(timers_.find(timer) == timers_.end());
-      timers_.insert(timer);
+      assert(timers_.find(running_) == timers_.end());
+      timers_.insert(std::make_pair(running_, timer));
       timers_que_.push(timer);
     }
 
+    auto co = running_;
     running_ = nullptr;
 
     store_context(context_, co->context);
@@ -185,6 +216,9 @@ public:
     // 存在已经调用stop方法，cos_为空，此时不应在继续投递任务
     if (cos_.find(sco) == cos_.end())
       return;
+
+    // 取消定时器
+    timers_.erase(sco);
 
     running_cos_.push(sco);
     cv_.notify_all();
@@ -208,6 +242,37 @@ public:
   }
 
 private:
+  std::chrono::nanoseconds check_timer()
+  {
+    std::unique_lock<std::mutex> ul(mtx_);
+
+    timespec n;
+    clock_gettime(CLOCK_MONOTONIC, &n);
+    while (!timers_que_.empty()) {
+      auto timer = timers_que_.top();
+      // 未触发
+      if (n.tv_sec < timer->timeout.tv_sec ||
+          (n.tv_sec == timer->timeout.tv_sec &&
+           n.tv_nsec < timer->timeout.tv_nsec))
+        return std::chrono::nanoseconds((n.tv_sec - timer->timeout.tv_sec) *
+                                          1000 * 1000 * 1000 +
+                                        (n.tv_nsec - timer->timeout.tv_nsec));
+
+      timers_que_.pop();
+
+      // 已取消
+      if (auto iter = timers_.find(timer->co);
+          iter != timers_.end() && iter->second->co == timer->co) {
+        running_ = timer->co;
+        timers_.erase(iter);
+        return std::chrono::nanoseconds(0);
+      }
+    }
+
+    return std::chrono::nanoseconds(0);
+  }
+
+private:
   CoContext context_;
   std::unordered_set<std::shared_ptr<Coroutine>> cos_;
   std::shared_ptr<Coroutine> running_;
@@ -215,7 +280,8 @@ private:
   int32_t co_count_;
   std::priority_queue<CoTimerPtr, std::vector<CoTimerPtr>, CoTimerPtrGreater>
     timers_que_;
-  std::unordered_set<CoTimerPtr> timers_; // TODO 删除时，以Coroutinue为查找条件
+  std::unordered_map<std::shared_ptr<Coroutine>, CoTimerPtr>
+    timers_; // TODO 删除时，以Coroutinue为查找条件
   std::mutex mtx_;
   std::condition_variable cv_;
 };
@@ -266,6 +332,12 @@ Schedule::resume(CoroutineRef co)
   impl_->resume(co);
 }
 
+void
+Schedule::yield_for_(const timespec& rtime)
+{
+  impl_->yield_for(rtime);
+}
+
 Schedule::CoroutineRef
 Schedule::this_co()
 {
@@ -299,6 +371,14 @@ ScheduleRef::yield()
   auto impl = ptr_.lock();
   if (impl)
     impl->yield();
+}
+
+void
+ScheduleRef::yield_for_(const timespec& rtime)
+{
+  auto impl = ptr_.lock();
+  if (impl)
+    impl->yield_for(rtime);
 }
 
 Schedule::CoroutineRef
