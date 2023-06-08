@@ -10,6 +10,7 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <utility>
 
 #define STACK_SIZE (1024 * 1024)
 
@@ -97,40 +98,14 @@ public:
   void run()
   {
     while (true) {
+      std::unique_lock<std::mutex> ul(mtx_);
+      check_timer(ul, [this] { return !co_count_ || !running_cos_.empty(); });
 
-      assert(!running_);
+      if (!co_count_)
+        break;
 
-      bool need_wait = true;
-      std::chrono::nanoseconds wait_time = check_timer();
-      if (running_) {
-        load_context(context_, running_->context);
-        need_wait = false;
-      }
-
-      assert(!running_);
-      {
-        std::unique_lock<std::mutex> ul(mtx_);
-
-        if (need_wait) {
-          auto pred = [this] { return !co_count_ || !running_cos_.empty(); };
-          if (wait_time.count()) {
-            cv_.wait_for(ul, wait_time, pred);
-          } else {
-            cv_.wait(ul, pred);
-          }
-        }
-
-        if (!co_count_)
-          break;
-
-        if (running_cos_.empty())
-          continue;
-
-        running_ = running_cos_.front();
-        running_cos_.pop();
-      }
-
-      load_context(context_, running_->context);
+      if (!running_cos_.empty())
+        run_once(ul);
     }
   }
 
@@ -242,10 +217,9 @@ public:
   }
 
 private:
-  std::chrono::nanoseconds check_timer()
+  template<typename Func_>
+  void check_timer(std::unique_lock<std::mutex>& ul, Func_&& pred)
   {
-    std::unique_lock<std::mutex> ul(mtx_);
-
     timespec n;
     clock_gettime(CLOCK_MONOTONIC, &n);
     while (!timers_que_.empty()) {
@@ -253,23 +227,43 @@ private:
       // 未触发
       if (n.tv_sec < timer->timeout.tv_sec ||
           (n.tv_sec == timer->timeout.tv_sec &&
-           n.tv_nsec < timer->timeout.tv_nsec))
-        return std::chrono::nanoseconds((n.tv_sec - timer->timeout.tv_sec) *
-                                          1000 * 1000 * 1000 +
-                                        (n.tv_nsec - timer->timeout.tv_nsec));
+           n.tv_nsec < timer->timeout.tv_nsec)) {
+        std::chrono::nanoseconds wait_time(
+          (n.tv_sec - timer->timeout.tv_sec) * 1000 * 1000 * 1000 +
+          (n.tv_nsec - timer->timeout.tv_nsec));
+        cv_.wait_for(ul, wait_time, std::forward<Func_>(pred));
+        return;
+      }
 
       timers_que_.pop();
 
-      // 已取消
+      // 未取消
       if (auto iter = timers_.find(timer->co);
           iter != timers_.end() && iter->second->co == timer->co) {
+        assert(!running_);
         running_ = timer->co;
         timers_.erase(iter);
-        return std::chrono::nanoseconds(0);
+        ul.unlock();
+        load_context(context_, running_->context);
+        ul.lock();
+        return;
       }
     }
 
-    return std::chrono::nanoseconds(0);
+    cv_.wait(ul, std::forward<Func_>(pred));
+  }
+
+  void run_once(std::unique_lock<std::mutex>& ul)
+  {
+    assert(!running_);
+    assert(!running_cos_.empty());
+
+    running_ = running_cos_.front();
+    running_cos_.pop();
+
+    ul.unlock();
+    load_context(context_, running_->context);
+    ul.lock();
   }
 
 private:
