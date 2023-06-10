@@ -1,11 +1,11 @@
 #pragma once
 
 #include <atomic>
-#include <bits/types/struct_timespec.h>
 #include <chrono>
 #include <condition_variable>
 #include <cstddef>
 #include <cstdint>
+#include <ctime>
 #include <functional>
 #include <memory>
 #include <queue>

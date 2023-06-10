@@ -20,10 +20,38 @@ foo(translator::ScheduleRef sch,
   }
 }
 
-TEST(coroutine, test1)
+TEST(coroutine, resume)
 {
   testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
   auto invoke_foo = [](translator::ScheduleRef sch, int) {
+    sch.resume(sch.this_co());
+    sch.yield();
+  };
+
+  testing::Sequence seq;
+  EXPECT_CALL(foo_mock, Call(testing::_, 0))
+    .Times(2)
+    .WillRepeatedly(testing::Invoke(invoke_foo));
+  EXPECT_CALL(foo_mock, Call(testing::_, 1))
+    .Times(2)
+    .WillRepeatedly(testing::Invoke(invoke_foo));
+
+  auto sch = std::make_shared<translator::Schedule>();
+  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+
+  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+
+  if (th.joinable())
+    th.join();
+}
+
+TEST(coroutine, multi_resume)
+{
+  testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
+  auto invoke_foo = [](translator::ScheduleRef sch, int) {
+    sch.resume(sch.this_co());
+    sch.resume(sch.this_co());
     sch.resume(sch.this_co());
     sch.yield();
   };
@@ -50,7 +78,7 @@ TEST(coroutine, test1)
  * @brief 中途停止
  *
  */
-TEST(coroutine, test2)
+TEST(coroutine, stop)
 {
   testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
   auto invoke_foo = [](translator::ScheduleRef sch, int) {
@@ -75,7 +103,7 @@ TEST(coroutine, test2)
  * @brief yield_for
  *
  */
-TEST(coroutine, test3)
+TEST(coroutine, yield_for)
 {
   testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
   auto invoke_foo = [](translator::ScheduleRef sch, int) {

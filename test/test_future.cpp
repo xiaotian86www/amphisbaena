@@ -1,9 +1,8 @@
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 #include <thread>
 
 #include "future.hpp"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 static void
 foo(translator::ScheduleRef sch,
@@ -28,10 +27,14 @@ TEST(future, test_1)
   EXPECT_CALL(foo_mock2, Call(0)).Times(2);
 
   auto sch = std::make_shared<translator::Schedule>();
-  sch->post(
-    std::bind(foo, std::placeholders::_1, foo_mock1.AsStdFunction(), foo_mock2.AsStdFunction()));
-  sch->post(
-    std::bind(foo, std::placeholders::_1, foo_mock1.AsStdFunction(), foo_mock2.AsStdFunction()));
+  sch->post(std::bind(foo,
+                      std::placeholders::_1,
+                      foo_mock1.AsStdFunction(),
+                      foo_mock2.AsStdFunction()));
+  sch->post(std::bind(foo,
+                      std::placeholders::_1,
+                      foo_mock1.AsStdFunction(),
+                      foo_mock2.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch.get()));
 

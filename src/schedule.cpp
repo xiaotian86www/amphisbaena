@@ -1,7 +1,5 @@
 #include "schedule.hpp"
 
-#include <bits/types/struct_timespec.h>
-#include <bits/types/time_t.h>
 #include <cassert>
 #include <chrono>
 #include <cstdint>
@@ -22,18 +20,10 @@ struct CoContext
   ucontext_t uct_;
 };
 
-struct Schedule::Coroutine
-{
-  Coroutine() = default;
-
-  CoContext context;
-  task func;
-};
-
 struct CoTimer
 {
   timespec timeout;
-  std::shared_ptr<Schedule::Coroutine> co;
+  std::weak_ptr<Schedule::Coroutine> co;
 };
 
 typedef std::shared_ptr<CoTimer> CoTimerPtr;
@@ -46,6 +36,15 @@ struct CoTimerPtrGreater
            (left->timeout.tv_sec == right->timeout.tv_sec &&
             left->timeout.tv_nsec > right->timeout.tv_nsec);
   }
+};
+
+struct Schedule::Coroutine
+{
+  Coroutine() = default;
+
+  task func;
+  CoContext context;
+  CoTimerPtr timer;
 };
 
 static void
@@ -104,8 +103,8 @@ public:
       if (!co_count_)
         break;
 
-      if (!running_cos_.empty())
-        run_once(ul);
+      while (!running_cos_.empty() && !run_once(ul)) {
+      }
     }
   }
 
@@ -116,8 +115,6 @@ public:
     while (!timers_que_.empty()) {
       timers_que_.pop();
     }
-
-    timers_.clear();
 
     // 清除待运行队列
     while (!running_cos_.empty()) {
@@ -161,6 +158,7 @@ public:
     // 存在已经调用stop方法，cos_为空，此时不应在继续投递任务
     if (std::lock_guard<std::mutex> lg(mtx_);
         cos_.find(running_) != cos_.end()) {
+
       auto timer = std::make_shared<CoTimer>();
       // 取系统启动时间，避免时间回调
       clock_gettime(CLOCK_MONOTONIC, &timer->timeout);
@@ -169,10 +167,11 @@ public:
       // 调整进位
       timer->timeout.tv_sec += timer->timeout.tv_nsec / 1000000000;
       timer->timeout.tv_nsec = timer->timeout.tv_nsec % 1000000000;
-      timer->co = { running_ };
+      timer->co = running_;
 
-      assert(timers_.find(running_) == timers_.end());
-      timers_.insert(std::make_pair(running_, timer));
+      assert(!running_->timer);
+      running_->timer = timer;
+
       timers_que_.push(timer);
     }
 
@@ -181,19 +180,9 @@ public:
 
   void resume(CoroutineRef co)
   {
-    auto sco = co.ptr_.lock();
-    if (!sco)
-      return;
-
     std::unique_lock<std::mutex> ul(mtx_);
-    // 存在已经调用stop方法，cos_为空，此时不应在继续投递任务
-    if (cos_.find(sco) == cos_.end())
-      return;
 
-    // 取消定时器
-    timers_.erase(sco);
-
-    running_cos_.push(sco);
+    running_cos_.push(co.ptr_);
     cv_.notify_all();
   }
 
@@ -236,11 +225,13 @@ private:
       timers_que_.pop();
 
       // 未取消
-      if (auto iter = timers_.find(timer->co);
-          iter != timers_.end() && iter->second->co == timer->co) {
+      auto sco = timer->co.lock();
+      if (sco && cos_.find(sco) != cos_.end() && sco->timer == timer) {
         assert(!running_);
-        running_ = timer->co;
-        timers_.erase(iter);
+        assert(sco->timer);
+        sco->timer.reset();
+
+        running_ = sco;
         ul.unlock();
         load_context(context_, running_->context);
         ul.lock();
@@ -251,29 +242,37 @@ private:
     cv_.wait(ul, std::forward<Func_>(pred));
   }
 
-  void run_once(std::unique_lock<std::mutex>& ul)
+  bool run_once(std::unique_lock<std::mutex>& ul)
   {
-    assert(!running_);
     assert(!running_cos_.empty());
 
-    running_ = running_cos_.front();
+    auto co = running_cos_.front();
     running_cos_.pop();
 
-    ul.unlock();
-    load_context(context_, running_->context);
-    ul.lock();
+    auto sco = co.lock();
+    if (sco && cos_.find(sco) != cos_.end()) {
+      sco->timer.reset();
+
+      assert(!running_);
+      running_ = sco;
+      ul.unlock();
+      load_context(context_, running_->context);
+      ul.lock();
+
+      return true;
+    }
+
+    return false;
   }
 
 private:
   CoContext context_;
   std::unordered_set<std::shared_ptr<Coroutine>> cos_;
   std::shared_ptr<Coroutine> running_;
-  std::queue<std::shared_ptr<Coroutine>> running_cos_;
+  std::queue<std::weak_ptr<Coroutine>> running_cos_;
   int32_t co_count_;
   std::priority_queue<CoTimerPtr, std::vector<CoTimerPtr>, CoTimerPtrGreater>
     timers_que_;
-  std::unordered_map<std::shared_ptr<Coroutine>, CoTimerPtr>
-    timers_; // TODO 删除时，以Coroutinue为查找条件
   std::mutex mtx_;
   std::condition_variable cv_;
 };
