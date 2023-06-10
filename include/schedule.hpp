@@ -24,6 +24,16 @@ public:
   struct Coroutine;
   typedef std::weak_ptr<Schedule::Coroutine> CoroutinePtr;
 
+  class Worker
+  {
+  public:
+    Worker(Schedule& sch);
+    ~Worker();
+
+  private:
+    Schedule& sch_;
+  };
+
 public:
   Schedule();
   virtual ~Schedule();

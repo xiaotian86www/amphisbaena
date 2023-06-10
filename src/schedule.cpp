@@ -192,6 +192,20 @@ public:
     return running_;
   }
 
+  void increase()
+  {
+    std::lock_guard<std::mutex> lg(mtx_);
+    ++co_count_;
+    cv_.notify_all();
+  }
+
+  void decrease()
+  {
+    std::lock_guard<std::mutex> lg(mtx_);
+    --co_count_;
+    cv_.notify_all();
+  }
+
   void co_func()
   {
     assert(running_);
@@ -276,6 +290,17 @@ private:
   std::mutex mtx_;
   std::condition_variable cv_;
 };
+
+Schedule::Worker::Worker(Schedule& sch)
+  : sch_(sch)
+{
+  sch_.impl_->increase();
+}
+
+Schedule::Worker::~Worker()
+{
+  sch_.impl_->decrease();
+}
 
 void
 co_func_wrapper(uint32_t low32, uint32_t high32)
