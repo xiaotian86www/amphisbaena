@@ -4,14 +4,14 @@ namespace translator {
 void
 ServerPool::add(std::string_view name, std::shared_ptr<Server> server)
 {
-  pool[name] = server;
+  servers_[name] = server;
 }
 
 Server*
-ServerPool::get(std::string_view name)
+ServerPool::get(std::string_view name) const
 {
-  auto it = pool.find(name);
-  if (it != pool.end())
+  auto it = servers_.find(name);
+  if (it != servers_.end())
     return it->second.get();
 
   std::stringstream ss;

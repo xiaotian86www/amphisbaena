@@ -22,10 +22,10 @@ public:
 public:
   void add(std::string_view name, std::shared_ptr<Server> server);
 
-  Server* get(std::string_view name);
+  Server* get(std::string_view name) const;
 
 private:
-  std::map<std::string_view, std::shared_ptr<Server>> pool;
+  std::map<std::string_view, std::shared_ptr<Server>> servers_;
 };
 
 typedef std::shared_ptr<ServerPool> ServerPoolPtr;

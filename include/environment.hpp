@@ -11,7 +11,7 @@ class Environment
 {
 public:
   Environment(ObjectFactoryPtr object_factory, ServerPoolPtr server_pool)
-    : object_factory_(object_factory)
+    : object_pool_(object_factory)
     , server_pool_(server_pool)
   {
   }
@@ -24,8 +24,7 @@ public:
   Server* get_server(std::string_view name);
 
 private:
-  std::unordered_map<std::string_view, ObjectPtr> objects_;
-  ObjectFactoryPtr object_factory_;
+  ObjectPool object_pool_;
   ServerPoolPtr server_pool_;
 };
 } // namespace translator
