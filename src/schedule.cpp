@@ -342,6 +342,14 @@ ScheduleRef::ScheduleRef(std::weak_ptr<Schedule::Impl> impl)
 }
 
 void
+ScheduleRef::stop()
+{
+  auto impl = ptr_.lock();
+  if (impl)
+    impl->stop();
+}
+
+void
 ScheduleRef::post(task&& func)
 {
   auto impl = ptr_.lock();
