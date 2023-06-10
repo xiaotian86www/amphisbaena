@@ -284,7 +284,7 @@ private:
   std::unordered_set<std::shared_ptr<Coroutine>> cos_;
   std::shared_ptr<Coroutine> running_;
   std::queue<CoroutinePtr> running_cos_;
-  int32_t co_count_;
+  int32_t co_count_ = 0;
   std::priority_queue<CoTimerPtr, std::vector<CoTimerPtr>, CoTimerPtrGreater>
     timers_que_;
   std::mutex mtx_;

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <mutex>
+#include <optional>
+
 #include "schedule.hpp"
 
 namespace translator {
@@ -11,10 +14,10 @@ class Future
 {
   friend class Promise<Tp_>;
 
-public:
-  Future(ScheduleRef sch)
-    : sch_(sch)
-    , co_(sch_.this_co())
+private:
+  Future(Promise<Tp_>& pms, ScheduleRef sch)
+    : pms_(pms)
+    , sch_(sch)
   {
   }
 
@@ -22,24 +25,59 @@ public:
   Future<Tp_>& operator=(const Future<Tp_>&) = delete;
 
 public:
-  Tp_&& get()
+  Tp_&& get() &&
   {
     sch_.yield();
-    return std::move(value_);
+    return std::move(pms_.value().value());
+  }
+
+  const Tp_& get() const&
+  {
+    if (!has_get_) {
+      sch_.yield();
+      value_ = std::move(pms_.value());
+      has_get_ = true;
+    }
+    return value_.value();
+  }
+
+  template<typename Rep_, typename Period_>
+  Tp_&& get_for(const std::chrono::duration<Rep_, Period_>& rtime,
+                Tp_&& default_value) &&
+  {
+    sch_.yield_for(rtime);
+    return std::move(pms_.value().value_or(std::forward<Tp_>(default_value)));
+  }
+
+  template<typename Rep_, typename Period_>
+  const Tp_& get_for(const std::chrono::duration<Rep_, Period_>& rtime,
+                     Tp_&& default_value) const&
+  {
+    if (!has_get_) {
+      sch_.yield_for(rtime);
+      value_ = std::move(pms_.value());
+      has_get_ = true;
+    }
+
+    return pms_.value().value_or(std::forward<Tp_>(default_value));
   }
 
 private:
-  Tp_ value_;
-  ScheduleRef sch_;
-  Schedule::CoroutinePtr co_;
+  Promise<Tp_>& pms_;
+  mutable ScheduleRef sch_;
+  mutable std::optional<Tp_> value_;
+  mutable bool has_get_ = false;
 };
 
 template<typename Tp_>
 class Promise
 {
+  friend class Future<Tp_>;
+
 public:
   Promise(ScheduleRef sch)
-    : ftr_(sch)
+    : sch_(sch)
+    , co_(sch_.this_co())
   {
   }
 
@@ -50,15 +88,26 @@ public:
   template<typename ValueTp_>
   void set(ValueTp_&& value)
   {
-    ftr_.value_ = std::forward<ValueTp_>(value);
+    std::lock_guard<std::mutex> lg(mtx_);
+    value_ = std::forward<ValueTp_>(value);
 
-    ftr_.sch_.resume(ftr_.co_);
+    sch_.resume(co_);
   }
 
-  Future<Tp_>& future() { return ftr_; }
+  Future<Tp_> future() { return Future<Tp_>(*this, sch_); }
 
 private:
-  Future<Tp_> ftr_;
+  std::optional<Tp_>&& value()
+  {
+    std::lock_guard<std::mutex> lg(mtx_);
+    return std::move(value_);
+  }
+
+private:
+  ScheduleRef sch_;
+  Schedule::CoroutinePtr co_;
+  std::mutex mtx_;
+  std::optional<Tp_> value_;
 };
 
 } // namespace translator
