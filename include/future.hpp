@@ -31,7 +31,7 @@ public:
 private:
   Tp_ value_;
   ScheduleRef sch_;
-  Schedule::CoroutineRef co_;
+  Schedule::CoroutinePtr co_;
 };
 
 template<typename Tp_>

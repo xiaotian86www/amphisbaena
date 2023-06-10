@@ -23,7 +23,7 @@ struct CoContext
 struct CoTimer
 {
   timespec timeout;
-  std::weak_ptr<Schedule::Coroutine> co;
+  Schedule::CoroutinePtr co;
 };
 
 typedef std::shared_ptr<CoTimer> CoTimerPtr;
@@ -178,18 +178,18 @@ public:
     yield();
   }
 
-  void resume(CoroutineRef co)
+  void resume(CoroutinePtr co)
   {
     std::unique_lock<std::mutex> ul(mtx_);
 
-    running_cos_.push(co.ptr_);
+    running_cos_.push(co);
     cv_.notify_all();
   }
 
-  CoroutineRef this_co()
+  CoroutinePtr this_co()
   {
     assert(running_);
-    return CoroutineRef{ running_ };
+    return running_;
   }
 
   void co_func()
@@ -269,7 +269,7 @@ private:
   CoContext context_;
   std::unordered_set<std::shared_ptr<Coroutine>> cos_;
   std::shared_ptr<Coroutine> running_;
-  std::queue<std::weak_ptr<Coroutine>> running_cos_;
+  std::queue<CoroutinePtr> running_cos_;
   int32_t co_count_;
   std::priority_queue<CoTimerPtr, std::vector<CoTimerPtr>, CoTimerPtrGreater>
     timers_que_;
@@ -318,7 +318,7 @@ Schedule::yield()
 }
 
 void
-Schedule::resume(CoroutineRef co)
+Schedule::resume(CoroutinePtr co)
 {
   impl_->resume(co);
 }
@@ -329,7 +329,7 @@ Schedule::yield_for_(const timespec& rtime)
   impl_->yield_for(rtime);
 }
 
-Schedule::CoroutineRef
+Schedule::CoroutinePtr
 Schedule::this_co()
 {
   return impl_->this_co();
@@ -357,7 +357,7 @@ ScheduleRef::post(task&& func)
 }
 
 void
-ScheduleRef::resume(Schedule::CoroutineRef co)
+ScheduleRef::resume(Schedule::CoroutinePtr co)
 {
   auto impl = ptr_.lock();
   if (impl)
@@ -380,14 +380,14 @@ ScheduleRef::yield_for_(const timespec& rtime)
     impl->yield_for(rtime);
 }
 
-Schedule::CoroutineRef
+Schedule::CoroutinePtr
 ScheduleRef::this_co()
 {
   auto impl = ptr_.lock();
   if (impl)
     return impl->this_co();
   else
-    return { std::weak_ptr<Schedule::Coroutine>() };
+    return Schedule::CoroutinePtr();
 }
 
 } // namespace translator

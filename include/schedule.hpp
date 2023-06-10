@@ -22,10 +22,7 @@ class Schedule
 {
 public:
   struct Coroutine;
-  struct CoroutineRef
-  {
-    std::weak_ptr<Schedule::Coroutine> ptr_;
-  };
+  typedef std::weak_ptr<Schedule::Coroutine> CoroutinePtr;
 
 public:
   Schedule();
@@ -40,7 +37,7 @@ public:
 
   void post(task&& func);
 
-  void resume(CoroutineRef co);
+  void resume(CoroutinePtr co);
 
   void yield();
 
@@ -52,7 +49,7 @@ public:
     yield_for_({ s.count(), ns.count() });
   }
 
-  CoroutineRef this_co();
+  CoroutinePtr this_co();
 
 private:
   void yield_for_(const timespec& rtime);
@@ -72,7 +69,7 @@ public:
 
   void post(task&& func);
 
-  void resume(Schedule::CoroutineRef co);
+  void resume(Schedule::CoroutinePtr co);
 
   void yield();
 
@@ -84,7 +81,7 @@ public:
     yield_for_({ s.count(), ns.count() });
   }
 
-  Schedule::CoroutineRef this_co();
+  Schedule::CoroutinePtr this_co();
 
 private:
   void yield_for_(const timespec& rtime);
