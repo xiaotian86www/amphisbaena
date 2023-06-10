@@ -136,4 +136,33 @@ TEST(coroutine, yield_for)
  * @brief yield_for 不等到超时时间
  *
  */
-TEST(coroutine, test4) {}
+TEST(coroutine, stop_yield_for)
+{
+  testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
+
+  testing::Sequence seq;
+  EXPECT_CALL(foo_mock, Call(testing::_, 0))
+    .WillOnce(testing::Invoke([](translator::ScheduleRef sch, int) {
+      sch.yield_for(std::chrono::milliseconds(10));
+    }))
+    .WillOnce(testing::Invoke([](translator::ScheduleRef sch, int) {
+      sch.stop();
+      sch.yield();
+    }));
+
+  auto sch = std::make_shared<translator::Schedule>();
+  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+
+  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+
+  timespec start, stop;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  if (th.joinable())
+    th.join();
+  clock_gettime(CLOCK_MONOTONIC, &stop);
+
+  EXPECT_LT((stop.tv_sec - start.tv_sec) * 1000000000 +
+              (stop.tv_nsec - start.tv_nsec),
+            10000000);
+}
