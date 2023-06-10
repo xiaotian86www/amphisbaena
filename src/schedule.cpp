@@ -158,27 +158,25 @@ public:
   {
     assert(running_);
 
-    auto timer = std::make_shared<CoTimer>();
-    // 取系统启动时间，避免时间回调
-    clock_gettime(CLOCK_MONOTONIC, &timer->timeout);
-    timer->timeout.tv_nsec += duration.tv_nsec;
-    timer->timeout.tv_sec += duration.tv_sec;
-    // 调整进位
-    timer->timeout.tv_sec += timer->timeout.tv_nsec / 1000000000;
-    timer->timeout.tv_nsec = timer->timeout.tv_nsec % 1000000000;
-    timer->co = { running_ };
+    // 存在已经调用stop方法，cos_为空，此时不应在继续投递任务
+    if (std::lock_guard<std::mutex> lg(mtx_);
+        cos_.find(running_) != cos_.end()) {
+      auto timer = std::make_shared<CoTimer>();
+      // 取系统启动时间，避免时间回调
+      clock_gettime(CLOCK_MONOTONIC, &timer->timeout);
+      timer->timeout.tv_nsec += duration.tv_nsec;
+      timer->timeout.tv_sec += duration.tv_sec;
+      // 调整进位
+      timer->timeout.tv_sec += timer->timeout.tv_nsec / 1000000000;
+      timer->timeout.tv_nsec = timer->timeout.tv_nsec % 1000000000;
+      timer->co = { running_ };
 
-    {
-      std::lock_guard<std::mutex> lg(mtx_);
       assert(timers_.find(running_) == timers_.end());
       timers_.insert(std::make_pair(running_, timer));
       timers_que_.push(timer);
     }
 
-    auto co = running_;
-    running_ = nullptr;
-
-    store_context(context_, co->context);
+    yield();
   }
 
   void resume(CoroutineRef co)

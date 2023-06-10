@@ -17,9 +17,9 @@ foo(translator::ScheduleRef sch, std::function<void(int)> func)
 {
   for (int i = 0; i < 2; i++) {
     func(i);
-    // TODO 这种写法不合理，但为了达到自我唤醒效果先如此实现
-    sch.resume(sch.this_co());
-    sch.yield();
+    // // TODO 这种写法不合理，但为了达到自我唤醒效果先如此实现
+    // sch.resume(sch.this_co());
+    sch.yield_for(std::chrono::seconds(0));
   }
 }
 
