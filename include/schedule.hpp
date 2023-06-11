@@ -1,16 +1,8 @@
 #pragma once
 
-#include <atomic>
-#include <chrono>
-#include <condition_variable>
-#include <cstddef>
-#include <cstdint>
-#include <ctime>
 #include <functional>
 #include <memory>
-#include <queue>
-#include <ucontext.h>
-#include <unordered_set>
+#include <chrono>
 
 namespace translator {
 class Schedule;

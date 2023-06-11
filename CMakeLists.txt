@@ -10,6 +10,7 @@ enable_testing()
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
 aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC_LIST)
+aux_source_directory(${PROJECT_SOURCE_DIR}/src/detail SRC_LIST)
 
 add_library(${PROJECT_NAME} ${SRC_LIST})
 
