@@ -1,5 +1,11 @@
 #include "schedule_impl.hpp"
 
+#include <chrono>
+#include <mutex>
+#include <sys/epoll.h>
+#include <sys/eventfd.h>
+#include <unistd.h>
+
 namespace translator {
 
 void
@@ -41,11 +47,24 @@ make_context(CoContext& main, CoContext& context, Schedule::Impl* impl)
 Schedule::Impl::Impl(Schedule* sch)
 {
   context_.stack_.resize(STACK_SIZE);
+
+  event_fd = eventfd(0, EFD_NONBLOCK | EFD_SEMAPHORE);
+  epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+
+  epoll_event event;
+  event.data.fd = event_fd;
+  event.events = EPOLLIN;
+
+  epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &event);
 }
 
 Schedule::Impl::~Impl()
 {
   stop();
+
+  // TODO 构造函数失败时，fd泄漏
+  close(epoll_fd);
+  close(event_fd);
 }
 
 void
@@ -81,7 +100,9 @@ Schedule::Impl::stop()
   co_count_ -= cos_.size();
   cos_.clear();
 
-  cv_.notify_all();
+  eventfd_write(event_fd, 1);
+
+  //   cv_.notify_all();
 }
 
 void
@@ -97,7 +118,9 @@ Schedule::Impl::post(task&& func)
   co_count_++;
 
   running_cos_.push(co);
-  cv_.notify_all();
+
+  eventfd_write(event_fd, 1);
+  //   cv_.notify_all();
 }
 
 void
@@ -142,7 +165,9 @@ Schedule::Impl::resume(CoroutinePtr co)
   std::unique_lock<std::mutex> ul(mtx_);
 
   running_cos_.push(co);
-  cv_.notify_all();
+
+  eventfd_write(event_fd, 1);
+  //   cv_.notify_all();
 }
 
 void
@@ -170,18 +195,38 @@ template<typename Func_>
 void
 Schedule::Impl::check_timer(std::unique_lock<std::mutex>& ul, Func_&& pred)
 {
-  timespec n;
-  clock_gettime(CLOCK_MONOTONIC, &n);
+  epoll_event events[EPOLL_MAX_EVENTS];
+
   while (!timers_que_.empty()) {
+    timespec n;
+    clock_gettime(CLOCK_MONOTONIC, &n);
+
     auto timer = timers_que_.top();
     // 未触发
     if (n.tv_sec < timer->timeout.tv_sec ||
         (n.tv_sec == timer->timeout.tv_sec &&
          n.tv_nsec < timer->timeout.tv_nsec)) {
-      std::chrono::nanoseconds wait_time((n.tv_sec - timer->timeout.tv_sec) *
-                                           1000 * 1000 * 1000 +
-                                         (n.tv_nsec - timer->timeout.tv_nsec));
-      cv_.wait_for(ul, wait_time, std::forward<Func_>(pred));
+      std::chrono::milliseconds wait_time(
+        (timer->timeout.tv_sec - n.tv_sec) * 1000 +
+        (timer->timeout.tv_nsec - n.tv_nsec + 500000) /
+          1000000); // 加500000为了四舍五入
+      //   cv_.wait_for(ul, wait_time, std::forward<Func_>(pred));
+
+      if (pred())
+        return;
+
+      ul.unlock();
+      int len =
+        epoll_wait(epoll_fd, events, EPOLL_MAX_EVENTS, wait_time.count());
+      for (int i = 0; i < len; ++i) {
+        if (events[i].events == EPOLLIN) {
+          eventfd_t count;
+          eventfd_read(event_fd, &count);
+        }
+      }
+
+      ul.lock(); // TODO 抛出异常时该行没有执行
+
       return;
     }
 
@@ -202,7 +247,19 @@ Schedule::Impl::check_timer(std::unique_lock<std::mutex>& ul, Func_&& pred)
     }
   }
 
-  cv_.wait(ul, std::forward<Func_>(pred));
+  if (pred())
+    return;
+
+  ul.unlock();
+  int len = epoll_wait(epoll_fd, events, EPOLL_MAX_EVENTS, -1);
+  for (int i = 0; i < len; ++i) {
+    if (events[i].events == EPOLLIN) {
+      eventfd_t count;
+      eventfd_read(event_fd, &count);
+    }
+  }
+
+  ul.lock(); // TODO 抛出异常时该行没有执行
 }
 
 bool

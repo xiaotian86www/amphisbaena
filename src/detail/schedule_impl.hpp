@@ -6,6 +6,8 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <sys/epoll.h>
+#include <sys/eventfd.h>
 #include <ucontext.h>
 #include <unordered_set>
 #include <vector>
@@ -13,6 +15,7 @@
 #include "schedule.hpp"
 
 #define STACK_SIZE (1024 * 1024)
+#define EPOLL_MAX_EVENTS 16
 
 namespace translator {
 
@@ -112,6 +115,9 @@ private:
     timers_que_;
   std::mutex mtx_;
   std::condition_variable cv_;
+
+  int epoll_fd = 0;
+  int event_fd = 0;
 };
 
 }
