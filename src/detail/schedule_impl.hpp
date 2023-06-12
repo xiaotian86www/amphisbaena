@@ -100,8 +100,7 @@ public:
 private:
   void co_func();
 
-  template<typename Func_>
-  void check_timer(std::unique_lock<std::mutex>& ul, Func_&& pred);
+  int check_timer();
 
   bool run_once(std::unique_lock<std::mutex>& ul);
 

@@ -71,13 +71,28 @@ void
 Schedule::Impl::run()
 {
   while (true) {
+    int timeout = check_timer();
     std::unique_lock<std::mutex> ul(mtx_);
-    check_timer(ul, [this] { return !co_count_ || !running_cos_.empty(); });
 
     if (!co_count_)
       break;
 
-    while (!running_cos_.empty() && !run_once(ul)) {
+    while (!running_cos_.empty()) {
+      if (run_once(ul)) {
+        continue;
+      }
+    }
+
+    ul.unlock();
+
+    epoll_event events[EPOLL_MAX_EVENTS];
+
+    int len = epoll_wait(epoll_fd, events, EPOLL_MAX_EVENTS, timeout);
+    for (int i = 0; i < len; ++i) {
+      if (events[i].events == EPOLLIN) {
+        eventfd_t count;
+        eventfd_read(event_fd, &count);
+      }
     }
   }
 }
@@ -191,43 +206,23 @@ Schedule::Impl::co_func()
   co_count_ -= cos_.erase(co);
 }
 
-template<typename Func_>
-void
-Schedule::Impl::check_timer(std::unique_lock<std::mutex>& ul, Func_&& pred)
+int
+Schedule::Impl::check_timer()
 {
-  epoll_event events[EPOLL_MAX_EVENTS];
+  std::unique_lock<std::mutex> ul(mtx_);
+
+  timespec n;
+  clock_gettime(CLOCK_MONOTONIC, &n);
 
   while (!timers_que_.empty()) {
-    timespec n;
-    clock_gettime(CLOCK_MONOTONIC, &n);
-
     auto timer = timers_que_.top();
+
     // 未触发
     if (n.tv_sec < timer->timeout.tv_sec ||
         (n.tv_sec == timer->timeout.tv_sec &&
          n.tv_nsec < timer->timeout.tv_nsec)) {
-      std::chrono::milliseconds wait_time(
-        (timer->timeout.tv_sec - n.tv_sec) * 1000 +
-        (timer->timeout.tv_nsec - n.tv_nsec + 500000) /
-          1000000); // 加500000为了四舍五入
-      //   cv_.wait_for(ul, wait_time, std::forward<Func_>(pred));
-
-      if (pred())
-        return;
-
-      ul.unlock();
-      int len =
-        epoll_wait(epoll_fd, events, EPOLL_MAX_EVENTS, wait_time.count());
-      for (int i = 0; i < len; ++i) {
-        if (events[i].events == EPOLLIN) {
-          eventfd_t count;
-          eventfd_read(event_fd, &count);
-        }
-      }
-
-      ul.lock(); // TODO 抛出异常时该行没有执行
-
-      return;
+      return (timer->timeout.tv_sec - n.tv_sec) * 1000 +
+             (timer->timeout.tv_nsec - n.tv_nsec + 500000) / 1000000;
     }
 
     timers_que_.pop();
@@ -242,24 +237,11 @@ Schedule::Impl::check_timer(std::unique_lock<std::mutex>& ul, Func_&& pred)
       running_ = sco;
       ul.unlock();
       load_context(context_, running_->context);
-      ul.lock();
-      return;
+      return 0;
     }
   }
 
-  if (pred())
-    return;
-
-  ul.unlock();
-  int len = epoll_wait(epoll_fd, events, EPOLL_MAX_EVENTS, -1);
-  for (int i = 0; i < len; ++i) {
-    if (events[i].events == EPOLLIN) {
-      eventfd_t count;
-      eventfd_read(event_fd, &count);
-    }
-  }
-
-  ul.lock(); // TODO 抛出异常时该行没有执行
+  return -1;
 }
 
 bool
