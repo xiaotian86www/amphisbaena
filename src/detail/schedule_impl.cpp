@@ -144,7 +144,7 @@ Schedule::Impl::yield()
 }
 
 void
-Schedule::Impl::yield_for(const timespec& duration)
+Schedule::Impl::yield_for(int milli)
 {
   assert(running_);
 
@@ -154,8 +154,8 @@ Schedule::Impl::yield_for(const timespec& duration)
     auto timer = std::make_shared<CoTimer>();
     // 取系统启动时间，避免时间回调
     clock_gettime(CLOCK_MONOTONIC, &timer->timeout);
-    timer->timeout.tv_nsec += duration.tv_nsec;
-    timer->timeout.tv_sec += duration.tv_sec;
+    timer->timeout.tv_sec += milli / 1000;
+    timer->timeout.tv_nsec += (milli % 1000) * 1000000;
     // 调整进位
     timer->timeout.tv_sec += timer->timeout.tv_nsec / 1000000000;
     timer->timeout.tv_nsec = timer->timeout.tv_nsec % 1000000000;

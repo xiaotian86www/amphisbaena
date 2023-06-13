@@ -41,20 +41,18 @@ public:
     return value_.value();
   }
 
-  template<typename Rep_, typename Period_>
-  Tp_&& get_for(const std::chrono::duration<Rep_, Period_>& rtime,
+  Tp_&& get_for(int milli,
                 Tp_&& default_value) &&
   {
-    sch_.yield_for(rtime);
+    sch_.yield_for(milli);
     return std::move(pms_.value().value_or(std::forward<Tp_>(default_value)));
   }
 
-  template<typename Rep_, typename Period_>
-  const Tp_& get_for(const std::chrono::duration<Rep_, Period_>& rtime,
+  const Tp_& get_for(int milli,
                      Tp_&& default_value) const&
   {
     if (!has_get_) {
-      sch_.yield_for(rtime);
+      sch_.yield_for(milli);
       value_ = std::move(pms_.value());
       has_get_ = true;
     }

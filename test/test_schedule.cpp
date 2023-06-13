@@ -107,7 +107,7 @@ TEST(coroutine, yield_for_timeout)
 {
   testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
   auto invoke_foo = [](translator::ScheduleRef sch, int) {
-    sch.yield_for(std::chrono::milliseconds(1));
+    sch.yield_for(1);
   };
 
   testing::Sequence seq;
@@ -141,7 +141,7 @@ TEST(coroutine, resume_yield_for)
   testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
   auto invoke_foo = [](translator::ScheduleRef sch, int) {
     sch.resume(sch.this_co());
-    sch.yield_for(std::chrono::milliseconds(1));
+    sch.yield_for(1);
   };
 
   testing::Sequence seq;
@@ -177,7 +177,7 @@ TEST(coroutine, stop_yield_for)
   testing::Sequence seq;
   EXPECT_CALL(foo_mock, Call(testing::_, 0))
     .WillOnce(testing::Invoke([](translator::ScheduleRef sch, int) {
-      sch.yield_for(std::chrono::milliseconds(10));
+      sch.yield_for(10);
     }))
     .WillOnce(testing::Invoke([](translator::ScheduleRef sch, int) {
       sch.stop();

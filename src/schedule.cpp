@@ -41,21 +41,21 @@ Schedule::post(task&& func)
 }
 
 void
-Schedule::yield()
-{
-  impl_->yield();
-}
-
-void
 Schedule::resume(CoroutinePtr co)
 {
   impl_->resume(co);
 }
 
 void
-Schedule::yield_for_(const timespec& rtime)
+Schedule::yield()
 {
-  impl_->yield_for(rtime);
+  impl_->yield();
+}
+
+void
+Schedule::yield_for(int milli)
+{
+  impl_->yield_for(milli);
 }
 
 Schedule::CoroutinePtr
@@ -102,11 +102,11 @@ ScheduleRef::yield()
 }
 
 void
-ScheduleRef::yield_for_(const timespec& rtime)
+ScheduleRef::yield_for(int milli)
 {
   auto impl = ptr_.lock();
   if (impl)
-    impl->yield_for(rtime);
+    impl->yield_for(milli);
 }
 
 Schedule::CoroutinePtr

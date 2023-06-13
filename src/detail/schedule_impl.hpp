@@ -71,7 +71,7 @@ public:
 
   void yield();
 
-  void yield_for(const timespec& duration);
+  void yield_for(int milli);
 
   void resume(CoroutinePtr co);
 
