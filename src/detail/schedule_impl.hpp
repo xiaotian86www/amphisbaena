@@ -87,14 +87,14 @@ public:
   {
     std::lock_guard<std::mutex> lg(mtx_);
     ++co_count_;
-    cv_.notify_all();
+    eventfd_write(event_fd, 1);
   }
 
   void decrease()
   {
     std::lock_guard<std::mutex> lg(mtx_);
     --co_count_;
-    cv_.notify_all();
+    eventfd_write(event_fd, 1);
   }
 
 private:
