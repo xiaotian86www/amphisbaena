@@ -45,6 +45,7 @@ make_context(CoContext& main, CoContext& context, Schedule::Impl* impl)
 }
 
 Schedule::Impl::Impl(Schedule* sch)
+  : co_count_(0)
 {
   context_.stack_.resize(STACK_SIZE);
 
@@ -71,28 +72,23 @@ void
 Schedule::Impl::run()
 {
   while (true) {
-    int timeout = check_timer();
-    std::unique_lock<std::mutex> ul(mtx_);
+    int timeout = run_timer();
 
-    if (!co_count_)
-      break;
+    int count = run_once();
+    if (count == 0 && timeout != 0) {
+      epoll_event events[EPOLL_MAX_EVENTS];
 
-    while (!running_cos_.empty()) {
-      if (run_once(ul)) {
-        continue;
+      int len = epoll_wait(epoll_fd, events, EPOLL_MAX_EVENTS, timeout);
+      for (int i = 0; i < len; ++i) {
+        if (events[i].events == EPOLLIN) {
+          eventfd_t count;
+          eventfd_read(event_fd, &count);
+        }
       }
     }
 
-    ul.unlock();
-
-    epoll_event events[EPOLL_MAX_EVENTS];
-
-    int len = epoll_wait(epoll_fd, events, EPOLL_MAX_EVENTS, timeout);
-    for (int i = 0; i < len; ++i) {
-      if (events[i].events == EPOLLIN) {
-        eventfd_t count;
-        eventfd_read(event_fd, &count);
-      }
+    if (co_count_ == 0) {
+      break;
     }
   }
 }
@@ -202,12 +198,11 @@ Schedule::Impl::co_func()
   auto co = running_;
   running_ = nullptr;
 
-  std::lock_guard<std::mutex> lg(mtx_);
   co_count_ -= cos_.erase(co);
 }
 
 int
-Schedule::Impl::check_timer()
+Schedule::Impl::run_timer()
 {
   std::unique_lock<std::mutex> ul(mtx_);
 
@@ -244,28 +239,29 @@ Schedule::Impl::check_timer()
   return -1;
 }
 
-bool
-Schedule::Impl::run_once(std::unique_lock<std::mutex>& ul)
+int
+Schedule::Impl::run_once()
 {
-  assert(!running_cos_.empty());
+  std::unique_lock<std::mutex> ul(mtx_);
 
-  auto co = running_cos_.front();
-  running_cos_.pop();
+  while (!running_cos_.empty()) {
+    auto co = running_cos_.front();
+    running_cos_.pop();
 
-  auto sco = co.lock();
-  if (sco && cos_.find(sco) != cos_.end()) {
-    sco->timer.reset();
+    auto sco = co.lock();
+    if (sco && cos_.find(sco) != cos_.end()) {
+      sco->timer.reset();
 
-    assert(!running_);
-    running_ = sco;
-    ul.unlock();
-    load_context(context_, running_->context);
-    ul.lock();
+      assert(!running_);
+      running_ = sco;
+      ul.unlock();
+      load_context(context_, running_->context);
 
-    return true;
+      return 1;
+    }
   }
 
-  return false;
+  return 0;
 }
 
 }

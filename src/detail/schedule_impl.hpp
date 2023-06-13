@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cassert>
 #include <condition_variable>
 #include <cstring>
@@ -85,14 +86,12 @@ public:
 
   void increase()
   {
-    std::lock_guard<std::mutex> lg(mtx_);
     ++co_count_;
     eventfd_write(event_fd, 1);
   }
 
   void decrease()
   {
-    std::lock_guard<std::mutex> lg(mtx_);
     --co_count_;
     eventfd_write(event_fd, 1);
   }
@@ -100,16 +99,16 @@ public:
 private:
   void co_func();
 
-  int check_timer();
+  int run_timer();
 
-  bool run_once(std::unique_lock<std::mutex>& ul);
+  int run_once();
 
 private:
   CoContext context_;
   std::unordered_set<std::shared_ptr<Coroutine>> cos_;
   std::shared_ptr<Coroutine> running_;
   std::queue<CoroutinePtr> running_cos_;
-  int32_t co_count_ = 0;
+  std::atomic<int32_t> co_count_;
   std::priority_queue<CoTimerPtr, std::vector<CoTimerPtr>, CoTimerPtrGreater>
     timers_que_;
   std::mutex mtx_;
