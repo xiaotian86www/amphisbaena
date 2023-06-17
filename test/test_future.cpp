@@ -20,9 +20,11 @@ foo2(translator::ScheduleRef sch,
      std::function<int()> func1,
      std::function<void(int)> func2)
 {
-  translator::Promise<int> pms(sch);
-  pms.set(func1());
-  func2(pms.future().get_for(1, 0));
+  // translator::Promise<int> pms(sch);
+  // pms.set(func1());
+  // func2(pms.future().get_for(0, 1));
+  sch.yield_for(0);
+  func2(func1());
 }
 
 static void

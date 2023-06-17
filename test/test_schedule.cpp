@@ -176,9 +176,8 @@ TEST(coroutine, stop_yield_for)
 
   testing::Sequence seq;
   EXPECT_CALL(foo_mock, Call(testing::_, 0))
-    .WillOnce(testing::Invoke([](translator::ScheduleRef sch, int) {
-      sch.yield_for(10);
-    }))
+    .WillOnce(testing::Invoke(
+      [](translator::ScheduleRef sch, int) { sch.yield_for(10); }))
     .WillOnce(testing::Invoke([](translator::ScheduleRef sch, int) {
       sch.stop();
       sch.yield();

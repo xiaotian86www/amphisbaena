@@ -1,6 +1,8 @@
 #include "schedule_impl.hpp"
 
 #include <chrono>
+#include <cstdio>
+#include <cstdlib>
 #include <mutex>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
@@ -11,8 +13,9 @@ namespace translator {
 void
 load_context(CoContext& main, const CoContext& in)
 {
-  memcpy(
-    &main.stack_.back() - in.stack_.size(), in.stack_.data(), in.stack_.size());
+  memcpy(main.stack_.data() + main.stack_.size() - in.stack_.size(),
+         in.stack_.data(),
+         in.stack_.size());
 
   swapcontext(&main.uct_, &in.uct_);
 }
@@ -22,7 +25,7 @@ store_context(const CoContext& main, CoContext& out)
 {
   char dummy = 0;
   assert(main.stack_.data() <= &dummy); // 栈未被消耗完
-  out.stack_.resize(&main.stack_.back() - &dummy);
+  out.stack_.resize(main.stack_.data() + main.stack_.size() - &dummy);
   memcpy(out.stack_.data(), &dummy, out.stack_.size());
 
   swapcontext(&out.uct_, &main.uct_);
@@ -42,6 +45,8 @@ make_context(CoContext& main, CoContext& context, Schedule::Impl* impl)
               2,
               (uint32_t)ptr,
               (uint32_t)(ptr >> 32));
+
+  swapcontext(&main.uct_, &context.uct_);
 }
 
 Schedule::Impl::Impl(Schedule* sch)
@@ -71,13 +76,11 @@ Schedule::Impl::~Impl()
 void
 Schedule::Impl::run()
 {
+  epoll_event events[EPOLL_MAX_EVENTS];
   while (true) {
-    int timeout = run_timer();
-
     int count = run_once();
+    int timeout = run_timer();
     if (count == 0 && timeout != 0) {
-      epoll_event events[EPOLL_MAX_EVENTS];
-
       int len = epoll_wait(epoll_fd, events, EPOLL_MAX_EVENTS, timeout);
       for (int i = 0; i < len; ++i) {
         if (events[i].events == EPOLLIN) {
@@ -108,12 +111,13 @@ Schedule::Impl::stop()
   }
 
   // 清除协程
+  for (auto item : cos_) {
+    item->context.state_ = CoroutineState::DEAD;
+  }
   co_count_ -= cos_.size();
   cos_.clear();
 
   eventfd_write(event_fd, 1);
-
-  //   cv_.notify_all();
 }
 
 void
@@ -121,7 +125,6 @@ Schedule::Impl::post(task&& func)
 {
   auto co = std::make_shared<Coroutine>();
   co->func = std::move(func);
-  make_context(context_, co->context, this);
 
   std::lock_guard<std::mutex> lg(mtx_);
 
@@ -131,16 +134,18 @@ Schedule::Impl::post(task&& func)
   running_cos_.push(co);
 
   eventfd_write(event_fd, 1);
-  //   cv_.notify_all();
 }
 
 void
 Schedule::Impl::yield()
 {
   assert(running_);
-  auto co = running_;
-  running_ = nullptr;
-  store_context(context_, co->context);
+  // assert(running_->context.state_ == CoroutineState::RUNNING);
+  // TODO coroutine 内调用stop会出现不符合以上的情况
+  if (running_->context.state_ == CoroutineState::RUNNING) {
+    running_->context.state_ = CoroutineState::SUSPEND;
+  }
+  store_context(context_, running_->context);
 }
 
 void
@@ -152,13 +157,11 @@ Schedule::Impl::yield_for(int milli)
   if (std::lock_guard<std::mutex> lg(mtx_); cos_.find(running_) != cos_.end()) {
 
     auto timer = std::make_shared<CoTimer>();
-    // 取系统启动时间，避免时间回调
-    clock_gettime(CLOCK_MONOTONIC, &timer->timeout);
-    timer->timeout.tv_sec += milli / 1000;
-    timer->timeout.tv_nsec += (milli % 1000) * 1000000;
-    // 调整进位
-    timer->timeout.tv_sec += timer->timeout.tv_nsec / 1000000000;
-    timer->timeout.tv_nsec = timer->timeout.tv_nsec % 1000000000;
+    // 取系统启动时间，避免时间回调，自己写转换函数，实现四舍五入
+    timer->timeout =
+      (std::chrono::steady_clock::now().time_since_epoch().count() + 500000) /
+        1000000 +
+      milli;
     timer->co = running_;
 
     assert(!running_->timer);
@@ -178,7 +181,6 @@ Schedule::Impl::resume(CoroutinePtr co)
   running_cos_.push(co);
 
   eventfd_write(event_fd, 1);
-  //   cv_.notify_all();
 }
 
 void
@@ -195,10 +197,9 @@ Schedule::Impl::co_func()
 {
   assert(running_);
   running_->func(ScheduleRef(shared_from_this()));
-  auto co = running_;
-  running_ = nullptr;
 
-  co_count_ -= cos_.erase(co);
+  std::lock_guard<std::mutex> lg(mtx_);
+  co_count_ -= cos_.erase(running_);
 }
 
 int
@@ -206,32 +207,34 @@ Schedule::Impl::run_timer()
 {
   std::unique_lock<std::mutex> ul(mtx_);
 
-  timespec n;
-  clock_gettime(CLOCK_MONOTONIC, &n);
+  int now =
+    (std::chrono::steady_clock::now().time_since_epoch().count() + 500000) /
+    1000000;
 
   while (!timers_que_.empty()) {
     auto timer = timers_que_.top();
 
     // 未触发
-    if (n.tv_sec < timer->timeout.tv_sec ||
-        (n.tv_sec == timer->timeout.tv_sec &&
-         n.tv_nsec < timer->timeout.tv_nsec)) {
-      return (timer->timeout.tv_sec - n.tv_sec) * 1000 +
-             (timer->timeout.tv_nsec - n.tv_nsec + 500000) / 1000000;
+    if (now < timer->timeout) {
+      return timer->timeout - now;
     }
 
     timers_que_.pop();
 
     // 未取消
-    auto sco = timer->co.lock();
-    if (sco && cos_.find(sco) != cos_.end() && sco->timer == timer) {
-      assert(!running_);
-      assert(sco->timer);
+    if (auto sco = timer->co.lock();
+        sco && sco->context.state_ != CoroutineState::DEAD &&
+        sco->timer == timer) {
       sco->timer.reset();
-
-      running_ = sco;
       ul.unlock();
+
+      assert(!running_);
+      running_ = sco;
+      assert(running_->context.state_ == CoroutineState::SUSPEND);
+      running_->context.state_ = CoroutineState::RUNNING;
       load_context(context_, running_->context);
+      running_ = nullptr;
+
       return 0;
     }
   }
@@ -248,14 +251,26 @@ Schedule::Impl::run_once()
     auto co = running_cos_.front();
     running_cos_.pop();
 
-    auto sco = co.lock();
-    if (sco && cos_.find(sco) != cos_.end()) {
+    if (auto sco = co.lock();
+        sco && sco->context.state_ != CoroutineState::DEAD) {
       sco->timer.reset();
+      ul.unlock();
 
       assert(!running_);
       running_ = sco;
-      ul.unlock();
-      load_context(context_, running_->context);
+      switch (running_->context.state_) {
+        case CoroutineState::READY:
+          running_->context.state_ = CoroutineState::RUNNING;
+          make_context(context_, running_->context, this);
+          break;
+        case CoroutineState::SUSPEND:
+          running_->context.state_ = CoroutineState::RUNNING;
+          load_context(context_, running_->context);
+          break;
+        default:
+          assert(false);
+      }
+      running_ = nullptr;
 
       return 1;
     }

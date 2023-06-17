@@ -20,15 +20,24 @@
 
 namespace translator {
 
+enum class CoroutineState : int
+{
+  DEAD = 0,
+  READY = 1,
+  RUNNING = 2,
+  SUSPEND = 3
+};
+
 struct CoContext
 {
   std::vector<char> stack_;
   ucontext_t uct_;
+  CoroutineState state_ = CoroutineState::READY;
 };
 
 struct CoTimer
 {
-  timespec timeout;
+  int timeout = 0;
   Schedule::CoroutinePtr co;
 };
 
@@ -38,16 +47,12 @@ struct CoTimerPtrGreater
 {
   bool operator()(const CoTimerPtr& left, const CoTimerPtr& right) const
   {
-    return left->timeout.tv_sec > right->timeout.tv_sec ||
-           (left->timeout.tv_sec == right->timeout.tv_sec &&
-            left->timeout.tv_nsec > right->timeout.tv_nsec);
+    return left->timeout > right->timeout;
   }
 };
 
 struct Schedule::Coroutine
 {
-  Coroutine() = default;
-
   task func;
   CoContext context;
   CoTimerPtr timer;
@@ -112,7 +117,6 @@ private:
   std::priority_queue<CoTimerPtr, std::vector<CoTimerPtr>, CoTimerPtrGreater>
     timers_que_;
   std::mutex mtx_;
-  std::condition_variable cv_;
 
   int epoll_fd = 0;
   int event_fd = 0;
