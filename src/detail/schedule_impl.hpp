@@ -25,7 +25,8 @@ enum class CoroutineState : int
   DEAD = 0,
   READY = 1,
   RUNNING = 2,
-  SUSPEND = 3
+  DYING = 3,
+  SUSPEND = 4
 };
 
 struct CoContext
@@ -107,6 +108,10 @@ private:
   int run_timer();
 
   int run_once();
+
+  void do_create(std::shared_ptr<Coroutine> co);
+
+  void do_resume(std::shared_ptr<Coroutine> co);
 
 private:
   CoContext context_;

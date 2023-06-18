@@ -3,6 +3,7 @@
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <memory>
 #include <mutex>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
@@ -46,6 +47,7 @@ make_context(CoContext& main, CoContext& context, Schedule::Impl* impl)
               (uint32_t)ptr,
               (uint32_t)(ptr >> 32));
 
+  // makecontext 后必须 swapcontext，否则会在协程执行结束后会出现异常退出的问题
   swapcontext(&main.uct_, &context.uct_);
 }
 
@@ -112,7 +114,19 @@ Schedule::Impl::stop()
 
   // 清除协程
   for (auto item : cos_) {
-    item->context.state_ = CoroutineState::DEAD;
+    switch (item->context.state_) {
+      case CoroutineState::READY:
+      case CoroutineState::SUSPEND:
+        item->context.state_ = CoroutineState::DEAD;
+        break;
+      case CoroutineState::RUNNING:
+        item->context.state_ = CoroutineState::DYING;
+        break;
+      case CoroutineState::DEAD:
+        break;
+      default:
+        assert(false);
+    }
   }
   co_count_ -= cos_.size();
   cos_.clear();
@@ -140,11 +154,20 @@ void
 Schedule::Impl::yield()
 {
   assert(running_);
-  // assert(running_->context.state_ == CoroutineState::RUNNING);
-  // TODO coroutine 内调用stop会出现不符合以上的情况
-  if (running_->context.state_ == CoroutineState::RUNNING) {
-    running_->context.state_ = CoroutineState::SUSPEND;
+  std::unique_lock<std::mutex> ul(mtx_);
+  switch (running_->context.state_) {
+    case CoroutineState::RUNNING:
+      running_->context.state_ = CoroutineState::SUSPEND;
+      break;
+    case CoroutineState::DYING:
+      running_->context.state_ = CoroutineState::DEAD;
+      break;
+    default:
+      assert(false);
+      break;
   }
+  ul.unlock();
+
   store_context(context_, running_->context);
 }
 
@@ -199,6 +222,15 @@ Schedule::Impl::co_func()
   running_->func(ScheduleRef(shared_from_this()));
 
   std::lock_guard<std::mutex> lg(mtx_);
+  switch (running_->context.state_) {
+    case CoroutineState::RUNNING:
+    case CoroutineState::DYING:
+      running_->context.state_ = CoroutineState::DEAD;
+      break;
+    default:
+      assert(false);
+      break;
+  }
   co_count_ -= cos_.erase(running_);
 }
 
@@ -226,14 +258,11 @@ Schedule::Impl::run_timer()
         sco && sco->context.state_ != CoroutineState::DEAD &&
         sco->timer == timer) {
       sco->timer.reset();
+      assert(sco->context.state_ == CoroutineState::SUSPEND);
+      sco->context.state_ = CoroutineState::RUNNING;
       ul.unlock();
 
-      assert(!running_);
-      running_ = sco;
-      assert(running_->context.state_ == CoroutineState::SUSPEND);
-      running_->context.state_ = CoroutineState::RUNNING;
-      load_context(context_, running_->context);
-      running_ = nullptr;
+      do_resume(sco);
 
       return 0;
     }
@@ -254,29 +283,47 @@ Schedule::Impl::run_once()
     if (auto sco = co.lock();
         sco && sco->context.state_ != CoroutineState::DEAD) {
       sco->timer.reset();
-      ul.unlock();
 
-      assert(!running_);
-      running_ = sco;
-      switch (running_->context.state_) {
+      switch (sco->context.state_) {
         case CoroutineState::READY:
-          running_->context.state_ = CoroutineState::RUNNING;
-          make_context(context_, running_->context, this);
+          sco->context.state_ = CoroutineState::RUNNING;
+          ul.unlock();
+
+          do_create(sco);
           break;
         case CoroutineState::SUSPEND:
-          running_->context.state_ = CoroutineState::RUNNING;
-          load_context(context_, running_->context);
+          sco->context.state_ = CoroutineState::RUNNING;
+          ul.unlock();
+
+          do_resume(sco);
           break;
         default:
           assert(false);
       }
-      running_ = nullptr;
 
       return 1;
     }
   }
 
   return 0;
+}
+
+void
+Schedule::Impl::do_create(std::shared_ptr<Coroutine> co)
+{
+  assert(!running_);
+  running_ = co;
+  make_context(context_, running_->context, this);
+  running_ = nullptr;
+}
+
+void
+Schedule::Impl::do_resume(std::shared_ptr<Coroutine> co)
+{
+  assert(!running_);
+  running_ = co;
+  load_context(context_, running_->context);
+  running_ = nullptr;
 }
 
 }
