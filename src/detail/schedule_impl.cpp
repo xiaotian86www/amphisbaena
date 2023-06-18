@@ -79,21 +79,19 @@ void
 Schedule::Impl::run()
 {
   epoll_event events[EPOLL_MAX_EVENTS];
-  while (true) {
+  while (co_count_ > 0) {
     int count = run_once();
     int timeout = run_timer();
-    if (count == 0 && timeout != 0) {
-      int len = epoll_wait(epoll_fd, events, EPOLL_MAX_EVENTS, timeout);
-      for (int i = 0; i < len; ++i) {
-        if (events[i].events == EPOLLIN) {
-          eventfd_t count;
-          eventfd_read(event_fd, &count);
-        }
-      }
-    }
 
-    if (co_count_ == 0) {
-      break;
+    if (count > 0)
+      timeout = 0;
+
+    int len = epoll_wait(epoll_fd, events, EPOLL_MAX_EVENTS, timeout);
+    for (int i = 0; i < len; ++i) {
+      if (events[i].events == EPOLLIN) {
+        eventfd_t count;
+        eventfd_read(event_fd, &count);
+      }
     }
   }
 }
@@ -175,25 +173,35 @@ void
 Schedule::Impl::yield_for(int milli)
 {
   assert(running_);
+  std::unique_lock<std::mutex> ul(mtx_);
+  switch (running_->context.state_) {
+    case CoroutineState::RUNNING: {
+      auto timer = std::make_shared<CoTimer>();
+      // 取系统启动时间，避免时间回调，自己写转换函数，实现四舍五入
+      timer->timeout =
+        (std::chrono::steady_clock::now().time_since_epoch().count() + 500000) /
+          1000000 +
+        milli;
+      timer->co = running_;
 
-  // 存在已经调用stop方法，cos_为空，此时不应在继续投递任务
-  if (std::lock_guard<std::mutex> lg(mtx_); cos_.find(running_) != cos_.end()) {
+      assert(!running_->timer);
+      running_->timer = timer;
 
-    auto timer = std::make_shared<CoTimer>();
-    // 取系统启动时间，避免时间回调，自己写转换函数，实现四舍五入
-    timer->timeout =
-      (std::chrono::steady_clock::now().time_since_epoch().count() + 500000) /
-        1000000 +
-      milli;
-    timer->co = running_;
+      timers_que_.push(timer);
 
-    assert(!running_->timer);
-    running_->timer = timer;
-
-    timers_que_.push(timer);
+      running_->context.state_ = CoroutineState::SUSPEND;
+      break;
+    }
+    case CoroutineState::DYING:
+      running_->context.state_ = CoroutineState::DEAD;
+      break;
+    default:
+      assert(false);
+      break;
   }
+  ul.unlock();
 
-  yield();
+  store_context(context_, running_->context);
 }
 
 void
