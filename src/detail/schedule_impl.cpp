@@ -1,5 +1,6 @@
 #include "schedule_impl.hpp"
 
+#include <bits/types/struct_timespec.h>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
@@ -11,6 +12,20 @@
 #include <unistd.h>
 
 namespace translator {
+
+bool
+timespec_gt(const timespec& left, const timespec& right)
+{
+  return left.tv_sec > right.tv_sec ||
+         (left.tv_sec == right.tv_sec && left.tv_nsec > right.tv_nsec);
+}
+
+bool
+CoTimerPtrGreater::operator()(const CoTimerPtr& left,
+                              const CoTimerPtr& right) const
+{
+  return timespec_gt(left->timeout2, right->timeout2);
+}
 
 void
 load_context(CoContext& main, const CoContext& in)
@@ -42,7 +57,8 @@ store_context(const CoContext& main, CoContext& out)
 void
 make_context(CoContext& main, CoContext& context, Schedule::Impl* impl)
 {
-  if (getcontext(&context.uct_) == -1) { // 只是为了获取帧结构，以下动作完善帧结构
+  if (getcontext(&context.uct_) ==
+      -1) { // 只是为了获取帧结构，以下动作完善帧结构
     perror("getcontext");
     throw new std::runtime_error("getcontext failed");
   }
@@ -190,11 +206,10 @@ Schedule::Impl::yield_for(int milli)
   switch (running_->context.state_) {
     case CoroutineState::RUNNING: {
       auto timer = std::make_shared<CoTimer>();
-      // 取系统启动时间，避免时间回调，自己写转换函数，实现四舍五入
-      timer->timeout =
-        (std::chrono::steady_clock::now().time_since_epoch().count() + 500000) /
-          1000000 +
-        milli;
+      // 取系统启动时间，避免时间回调
+      clock_gettime(CLOCK_MONOTONIC, &timer->timeout2);
+      timer->timeout2.tv_nsec += milli * 1000000;
+      timer->timeout2.tv_sec += timer->timeout2.tv_nsec / 1000000000;
       timer->co = running_;
 
       assert(!running_->timer);
@@ -260,16 +275,19 @@ Schedule::Impl::run_timer()
 {
   std::unique_lock<std::mutex> ul(mtx_);
 
-  int now =
-    (std::chrono::steady_clock::now().time_since_epoch().count() + 500000) /
-    1000000;
+  timespec now;
+  // 取系统启动时间，避免时间回调
+  clock_gettime(CLOCK_MONOTONIC, &now);
 
   while (!timers_que_.empty()) {
     auto timer = timers_que_.top();
 
     // 未触发
-    if (now < timer->timeout) {
-      return timer->timeout - now;
+    if (timespec_gt(timer->timeout2, now)) {
+      // 向上取整
+      return (timer->timeout2.tv_sec - now.tv_sec) * 1000 +
+                   (timer->timeout2.tv_nsec - now.tv_nsec) / 1000000 +
+                   (timer->timeout2.tv_nsec - now.tv_nsec) % 1000000 > 0 ? 1 : 0;
     }
 
     timers_que_.pop();

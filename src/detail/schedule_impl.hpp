@@ -1,6 +1,7 @@
 #pragma once
 
 #include <atomic>
+#include <bits/types/struct_timespec.h>
 #include <cassert>
 #include <condition_variable>
 #include <cstring>
@@ -38,7 +39,7 @@ struct CoContext
 
 struct CoTimer
 {
-  int timeout = 0;
+  timespec timeout2;
   Schedule::CoroutinePtr co;
 };
 
@@ -46,10 +47,7 @@ typedef std::shared_ptr<CoTimer> CoTimerPtr;
 
 struct CoTimerPtrGreater
 {
-  bool operator()(const CoTimerPtr& left, const CoTimerPtr& right) const
-  {
-    return left->timeout > right->timeout;
-  }
+  bool operator()(const CoTimerPtr& left, const CoTimerPtr& right) const;
 };
 
 struct Schedule::Coroutine
