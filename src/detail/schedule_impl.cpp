@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <memory>
 #include <mutex>
+#include <stdexcept>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
@@ -18,7 +19,10 @@ load_context(CoContext& main, const CoContext& in)
          in.stack_.data(),
          in.stack_.size());
 
-  swapcontext(&main.uct_, &in.uct_);
+  if (swapcontext(&main.uct_, &in.uct_) == -1) {
+    perror("load_context");
+    throw new std::runtime_error("load_context failed");
+  }
 }
 
 void
@@ -29,13 +33,19 @@ store_context(const CoContext& main, CoContext& out)
   out.stack_.resize(main.stack_.data() + main.stack_.size() - &dummy);
   memcpy(out.stack_.data(), &dummy, out.stack_.size());
 
-  swapcontext(&out.uct_, &main.uct_);
+  if (swapcontext(&out.uct_, &main.uct_) == -1) {
+    perror("store_context");
+    throw new std::runtime_error("store_context failed");
+  }
 }
 
 void
 make_context(CoContext& main, CoContext& context, Schedule::Impl* impl)
 {
-  getcontext(&context.uct_); // 只是为了获取帧结构，以下动作完善帧结构
+  if (getcontext(&context.uct_) == -1) { // 只是为了获取帧结构，以下动作完善帧结构
+    perror("getcontext");
+    throw new std::runtime_error("getcontext failed");
+  }
   context.uct_.uc_stack.ss_sp = main.stack_.data();
   context.uct_.uc_stack.ss_size = main.stack_.size();
   context.uct_.uc_link = &main.uct_;
@@ -48,7 +58,10 @@ make_context(CoContext& main, CoContext& context, Schedule::Impl* impl)
               (uint32_t)(ptr >> 32));
 
   // makecontext 后必须 swapcontext，否则会在协程执行结束后会出现异常退出的问题
-  swapcontext(&main.uct_, &context.uct_);
+  if (swapcontext(&main.uct_, &context.uct_) == -1) {
+    perror("make_context");
+    throw new std::runtime_error("make_context failed");
+  }
 }
 
 Schedule::Impl::Impl(Schedule* sch)
