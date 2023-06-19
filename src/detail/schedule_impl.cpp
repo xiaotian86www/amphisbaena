@@ -1,14 +1,16 @@
 #include "schedule_impl.hpp"
 
-#include <bits/types/struct_timespec.h>
 #include <chrono>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <mutex>
 #include <stdexcept>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 namespace translator {
@@ -24,7 +26,7 @@ bool
 CoTimerPtrGreater::operator()(const CoTimerPtr& left,
                               const CoTimerPtr& right) const
 {
-  return timespec_gt(left->timeout2, right->timeout2);
+  return timespec_gt(left->timeout, right->timeout);
 }
 
 void
@@ -34,7 +36,7 @@ load_context(CoContext& main, const CoContext& in)
          in.stack_.data(),
          in.stack_.size());
 
-  if (swapcontext(&main.uct_, &in.uct_) == -1) {
+  if (swapcontext(&main.uct_, &in.uct_) < 0) {
     perror("load_context");
     throw new std::runtime_error("load_context failed");
   }
@@ -48,7 +50,7 @@ store_context(const CoContext& main, CoContext& out)
   out.stack_.resize(main.stack_.data() + main.stack_.size() - &dummy);
   memcpy(out.stack_.data(), &dummy, out.stack_.size());
 
-  if (swapcontext(&out.uct_, &main.uct_) == -1) {
+  if (swapcontext(&out.uct_, &main.uct_) < 0) {
     perror("store_context");
     throw new std::runtime_error("store_context failed");
   }
@@ -74,25 +76,35 @@ make_context(CoContext& main, CoContext& context, Schedule::Impl* impl)
               (uint32_t)(ptr >> 32));
 
   // makecontext 后必须 swapcontext，否则会在协程执行结束后会出现异常退出的问题
-  if (swapcontext(&main.uct_, &context.uct_) == -1) {
+  if (swapcontext(&main.uct_, &context.uct_) < 0) {
     perror("make_context");
     throw new std::runtime_error("make_context failed");
   }
 }
 
-Schedule::Impl::Impl(Schedule* sch)
+Schedule::Impl::Impl(Schedule* sch, std::string_view socket_path)
   : co_count_(0)
+  , socket_path_(socket_path)
 {
   context_.stack_.resize(STACK_SIZE);
 
-  event_fd = eventfd(0, EFD_NONBLOCK | EFD_SEMAPHORE);
-  epoll_fd = epoll_create1(EPOLL_CLOEXEC);
+  epoll_fd_ = epoll_create1(EPOLL_CLOEXEC);
+  if (event_fd_ < 0) {
+    perror("eventfd");
+    throw new std::runtime_error("eventfd failed");
+  }
 
-  epoll_event event;
-  event.data.fd = event_fd;
-  event.events = EPOLLIN;
+  event_fd_ = eventfd(0, EFD_NONBLOCK | EFD_SEMAPHORE);
+  if (event_fd_ < 0) {
+    perror("eventfd");
+    throw new std::runtime_error("eventfd failed");
+  }
 
-  epoll_ctl(epoll_fd, EPOLL_CTL_ADD, event_fd, &event);
+  listen_fd_ = socket(AF_UNIX, SOCK_STREAM, 0);
+  if (listen_fd_ < 0) {
+    perror("socket");
+    throw new std::runtime_error("socket failed");
+  }
 }
 
 Schedule::Impl::~Impl()
@@ -100,14 +112,22 @@ Schedule::Impl::~Impl()
   stop();
 
   // TODO 构造函数失败时，fd泄漏
-  close(epoll_fd);
-  close(event_fd);
+  close(listen_fd_);
+  close(event_fd_);
+  close(epoll_fd_);
 }
 
 void
 Schedule::Impl::run()
 {
   epoll_event events[EPOLL_MAX_EVENTS];
+
+  // 注册event_fd
+  epoll_event event;
+  event.data.fd = event_fd_;
+  event.events = EPOLLIN;
+  epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, event_fd_, &event);
+
   while (co_count_ > 0) {
     int count = run_once();
     int timeout = run_timer();
@@ -115,11 +135,12 @@ Schedule::Impl::run()
     if (count > 0)
       timeout = 0;
 
-    int len = epoll_wait(epoll_fd, events, EPOLL_MAX_EVENTS, timeout);
+    int len = epoll_wait(epoll_fd_, events, EPOLL_MAX_EVENTS, timeout);
     for (int i = 0; i < len; ++i) {
-      if (events[i].events == EPOLLIN) {
+      if (events[i].data.fd == event_fd_) {
+        assert(events[i].events == EPOLLIN);
         eventfd_t count;
-        eventfd_read(event_fd, &count);
+        eventfd_read(event_fd_, &count);
       }
     }
   }
@@ -158,7 +179,7 @@ Schedule::Impl::stop()
   co_count_ -= cos_.size();
   cos_.clear();
 
-  eventfd_write(event_fd, 1);
+  eventfd_write(event_fd_, 1);
 }
 
 void
@@ -174,7 +195,7 @@ Schedule::Impl::post(task&& func)
 
   running_cos_.push(co);
 
-  eventfd_write(event_fd, 1);
+  eventfd_write(event_fd_, 1);
 }
 
 void
@@ -207,9 +228,9 @@ Schedule::Impl::yield_for(int milli)
     case CoroutineState::RUNNING: {
       auto timer = std::make_shared<CoTimer>();
       // 取系统启动时间，避免时间回调
-      clock_gettime(CLOCK_MONOTONIC, &timer->timeout2);
-      timer->timeout2.tv_nsec += milli * 1000000;
-      timer->timeout2.tv_sec += timer->timeout2.tv_nsec / 1000000000;
+      clock_gettime(CLOCK_MONOTONIC, &timer->timeout);
+      timer->timeout.tv_nsec += milli * 1000000;
+      timer->timeout.tv_sec += timer->timeout.tv_nsec / 1000000000;
       timer->co = running_;
 
       assert(!running_->timer);
@@ -239,7 +260,7 @@ Schedule::Impl::resume(CoroutinePtr co)
 
   running_cos_.push(co);
 
-  eventfd_write(event_fd, 1);
+  eventfd_write(event_fd_, 1);
 }
 
 void
@@ -283,11 +304,14 @@ Schedule::Impl::run_timer()
     auto timer = timers_que_.top();
 
     // 未触发
-    if (timespec_gt(timer->timeout2, now)) {
+    if (timespec_gt(timer->timeout, now)) {
       // 向上取整
-      return (timer->timeout2.tv_sec - now.tv_sec) * 1000 +
-                   (timer->timeout2.tv_nsec - now.tv_nsec) / 1000000 +
-                   (timer->timeout2.tv_nsec - now.tv_nsec) % 1000000 > 0 ? 1 : 0;
+      return (timer->timeout.tv_sec - now.tv_sec) * 1000 +
+                   (timer->timeout.tv_nsec - now.tv_nsec) / 1000000 +
+                   (timer->timeout.tv_nsec - now.tv_nsec) % 1000000 >
+                 0
+               ? 1
+               : 0;
     }
 
     timers_que_.pop();
@@ -345,6 +369,35 @@ Schedule::Impl::run_once()
   }
 
   return 0;
+}
+
+void
+Schedule::Impl::do_listen()
+{
+  sockaddr_un serun;
+  memset(&serun, 0, sizeof(serun));
+  serun.sun_family = AF_UNIX;
+  strcpy(serun.sun_path, socket_path_.c_str());
+  int size = offsetof(sockaddr_un, sun_path) + strlen(serun.sun_path);
+  // 删除sock文件
+  unlink(socket_path_.c_str());
+  if (bind(listen_fd_, (sockaddr*)&serun, size) < 0) {
+    perror("bind");
+    throw new std::runtime_error("listen failed");
+  }
+
+  if (listen(listen_fd_, 20) < 0) {
+    perror("listen");
+    throw new std::runtime_error("listen failed");
+  }
+
+  epoll_event event;
+  event.data.fd = listen_fd_;
+  event.events = EPOLLIN;
+  if (epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, event_fd_, &event) < 0) {
+    perror("epoll_ctl: listen");
+    throw new std::runtime_error("listen failed");
+  }
 }
 
 void

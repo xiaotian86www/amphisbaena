@@ -8,6 +8,7 @@
 #include <memory>
 #include <mutex>
 #include <queue>
+#include <string_view>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <ucontext.h>
@@ -39,7 +40,7 @@ struct CoContext
 
 struct CoTimer
 {
-  timespec timeout2;
+  timespec timeout;
   Schedule::CoroutinePtr co;
 };
 
@@ -62,7 +63,7 @@ class Schedule::Impl : public std::enable_shared_from_this<Schedule::Impl>
   friend void co_func_wrapper(uint32_t low32, uint32_t high32);
 
 public:
-  Impl(Schedule* sch);
+  Impl(Schedule* sch, std::string_view socket_path);
 
   ~Impl();
 
@@ -91,13 +92,13 @@ public:
   void increase()
   {
     ++co_count_;
-    eventfd_write(event_fd, 1);
+    eventfd_write(event_fd_, 1);
   }
 
   void decrease()
   {
     --co_count_;
-    eventfd_write(event_fd, 1);
+    eventfd_write(event_fd_, 1);
   }
 
 private:
@@ -106,6 +107,8 @@ private:
   int run_timer();
 
   int run_once();
+
+  void do_listen();
 
   void do_create(std::shared_ptr<Coroutine> co);
 
@@ -121,8 +124,11 @@ private:
     timers_que_;
   std::mutex mtx_;
 
-  int epoll_fd = 0;
-  int event_fd = 0;
+  std::string socket_path_;
+
+  int epoll_fd_ = 0;
+  int event_fd_ = 0;
+  int listen_fd_ = 0;
 };
 
 }

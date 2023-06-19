@@ -16,7 +16,7 @@ Schedule::Worker::~Worker()
 }
 
 Schedule::Schedule()
-  : impl_(std::make_shared<Impl>(this))
+  : impl_(std::make_shared<Impl>(this, "server.socket"))
 {
 }
 
