@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(translator VERSION 0.1.0)
+project(main VERSION 0.1.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,11 +9,7 @@ enable_testing()
 
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-aux_source_directory(${PROJECT_SOURCE_DIR}/src SRC_LIST)
-aux_source_directory(${PROJECT_SOURCE_DIR}/src/detail SRC_LIST)
-
-add_library(${PROJECT_NAME} ${SRC_LIST})
-
+add_subdirectory(src)
 add_subdirectory(test)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
