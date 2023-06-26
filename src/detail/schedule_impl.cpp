@@ -82,6 +82,17 @@ make_context(CoContext& main, CoContext& context, Schedule::Impl* impl)
   }
 }
 
+Schedule::Worker::Worker(Schedule& sch)
+  : sch_(sch)
+{
+  sch_.impl_->increase();
+}
+
+Schedule::Worker::~Worker()
+{
+  sch_.impl_->decrease();
+}
+
 Schedule::Impl::Impl(Schedule* sch, std::string_view socket_path)
   : co_count_(0)
   , socket_path_(socket_path)

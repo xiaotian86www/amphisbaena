@@ -1,8 +1,8 @@
 #pragma once
 
+#include <chrono>
 #include <functional>
 #include <memory>
-#include <chrono>
 
 namespace translator {
 class Schedule;
@@ -55,7 +55,10 @@ public:
 class ScheduleRef
 {
 public:
-  ScheduleRef(std::weak_ptr<Schedule::Impl> impl);
+  explicit ScheduleRef(std::weak_ptr<Schedule::Impl> impl)
+    : ptr_(impl)
+  {
+  }
 
 public:
   void stop();

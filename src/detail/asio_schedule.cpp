@@ -9,7 +9,8 @@
 
 namespace translator {
 
-Schedule2::Schedule2()
+
+Schedule::Impl::Impl()
 //   : acceptor_(ios_)
 //   , awake_(std::bind(&Schedule2::do_accept, this, std::placeholders::_1))
 {

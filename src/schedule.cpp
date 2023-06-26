@@ -1,22 +1,12 @@
 #include "schedule.hpp"
 
-#include "detail/schedule_impl.hpp"
+#include "detail/asio_schedule.hpp"
+#include <memory>
 
 namespace translator {
 
-Schedule::Worker::Worker(Schedule& sch)
-  : sch_(sch)
-{
-  sch_.impl_->increase();
-}
-
-Schedule::Worker::~Worker()
-{
-  sch_.impl_->decrease();
-}
-
 Schedule::Schedule()
-  : impl_(std::make_shared<Impl>(this, "server.socket"))
+  : impl_(std::make_shared<Impl>())
 {
 }
 
@@ -62,11 +52,6 @@ Schedule::CoroutinePtr
 Schedule::this_co()
 {
   return impl_->this_co();
-}
-
-ScheduleRef::ScheduleRef(std::weak_ptr<Schedule::Impl> impl)
-  : ptr_(impl)
-{
 }
 
 void

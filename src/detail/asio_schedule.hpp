@@ -1,8 +1,10 @@
 #include <array>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/local/stream_protocol.hpp>
+#include <boost/asio/steady_timer.hpp>
 #include <boost/coroutine2/coroutine.hpp>
 #include <boost/system/error_code.hpp>
+#include <chrono>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -16,24 +18,29 @@ using namespace boost::asio::local;
 
 namespace translator {
 
-struct Coroutine2 : public std::enable_shared_from_this<Coroutine2>
+struct Schedule::Coroutine : public std::enable_shared_from_this<Coroutine>
 {
   template<typename Fn>
-  Coroutine2(Fn&& fn)
-    : yield(nullptr)
-    , resume([this, fn = std::forward<Fn>(fn)](
-               coroutine<boost::system::error_code>::pull_type& pl) {
-      yield = &pl;
-      fn(shared_from_this());
-    })
+  Coroutine(boost::asio::io_service& ios,
+            Fn&& fn)
+    : timer(ios)
+    , resume(
+        [this, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
+          yield = &pl;
+          boost::system::error_code ec;
+          timer.cancel(ec);
+          fn();
+        })
+    , yield(nullptr)
   {
   }
 
-  coroutine<boost::system::error_code>::pull_type* yield;
-  coroutine<boost::system::error_code>::push_type resume;
+  boost::asio::steady_timer timer;
+  coroutine<void>::push_type resume;
+  coroutine<void>::pull_type* yield;
 };
 
-class Schedule2 : public std::enable_shared_from_this<Schedule2>
+class Schedule::Impl : public std::enable_shared_from_this<Schedule::Impl>
 {
   // public:
   //   struct awake_context : public std::enable_shared_from_this<awake_context>
@@ -99,21 +106,71 @@ class Schedule2 : public std::enable_shared_from_this<Schedule2>
   //   };
 
 public:
-  Schedule2();
+  Impl();
 
 public:
-  template<typename Fn>
-  void post(Fn&& fn)
+  void run() { ios_.run(); }
+
+  void stop()
   {
-    auto co = std::make_shared<Coroutine2>(std::forward<Fn>(fn));
+    if (!ios_.stopped())
+      ios_.stop();
+  }
+
+  void post(task&& fn)
+  {
+    auto co = std::make_shared<Coroutine>(ios_, [this, fn = std::move(fn)] {
+      fn(ScheduleRef(shared_from_this()));
+    });
     cos_.insert(co);
-    ios_.post([co] {
-      co->resume(
-        boost::system::errc::make_error_code(boost::system::errc::success));
+    ios_.post([this, co]() mutable {
+      assert(!running_co_);
+      running_co_ = co;
+      running_co_->resume();
+      running_co_.reset();
     });
   }
 
-  void yield();
+  void yield()
+  {
+    assert(running_co_);
+    assert(running_co_->yield);
+    (*running_co_->yield)();
+  }
+
+  void yield_for(int milli)
+  {
+    assert(running_co_);
+    assert(running_co_->yield);
+    Schedule::CoroutinePtr co = running_co_;
+    running_co_->timer.expires_from_now(std::chrono::milliseconds(milli));
+    running_co_->timer.async_wait(
+      [this, co](boost::system::error_code ec) mutable {
+        if (!ec)
+          resume(co);
+      });
+    (*running_co_->yield)();
+  }
+
+  void resume(Schedule::CoroutinePtr co)
+  {
+    ios_.post([this, co]() mutable {
+      assert(!running_co_);
+      running_co_ = co.lock();
+      if (running_co_) {
+        if (running_co_->resume) {
+          running_co_->resume();
+        }
+        running_co_.reset();
+      }
+    });
+  }
+
+  CoroutinePtr this_co()
+  {
+    assert(running_co_);
+    return running_co_;
+  }
 
 public:
   // void do_accept(await_context await);
@@ -125,8 +182,8 @@ private:
   boost::asio::io_service ios_;
   // stream_protocol::acceptor acceptor_;
   // std::array<char, 1024> recv_buffer_;
-  std::unordered_set<std::shared_ptr<Coroutine2>> cos_;
-  std::shared_ptr<Coroutine2> running_co_;
+  std::unordered_set<std::shared_ptr<Coroutine>> cos_;
+  std::shared_ptr<Coroutine> running_co_;
 };
 
 }
