@@ -35,7 +35,6 @@ struct CoContext
 {
   std::vector<char> stack_;
   ucontext_t uct_;
-  CoroutineState state_ = CoroutineState::READY;
 };
 
 struct CoTimer
@@ -56,6 +55,7 @@ struct Schedule::Coroutine
   task func;
   CoContext context;
   CoTimerPtr timer;
+  CoroutineState state_ = CoroutineState::READY;
 };
 
 class Schedule::Impl : public std::enable_shared_from_this<Schedule::Impl>
@@ -63,7 +63,7 @@ class Schedule::Impl : public std::enable_shared_from_this<Schedule::Impl>
   friend void co_func_wrapper(uint32_t low32, uint32_t high32);
 
 public:
-  Impl(Schedule* sch, std::string_view socket_path);
+  Impl();
 
   ~Impl();
 
