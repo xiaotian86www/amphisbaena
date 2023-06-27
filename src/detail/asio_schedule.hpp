@@ -21,8 +21,7 @@ namespace translator {
 struct AsioCoroutine : Schedule::Coroutine
 {
   template<typename Fn>
-  AsioCoroutine(boost::asio::io_service& ios,
-            Fn&& fn)
+  AsioCoroutine(boost::asio::io_service& ios, Fn&& fn)
     : timer(ios)
     , resume(
         [this, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
@@ -109,63 +108,19 @@ public:
   Impl();
 
 public:
-  void run() { ios_.run(); }
+  void run();
 
-  void stop()
-  {
-    if (!ios_.stopped())
-      ios_.stop();
-  }
+  void stop();
 
-  void post(task&& fn)
-  {
-    auto co = std::make_shared<AsioCoroutine>(ios_, [this, fn = std::move(fn)] {
-      fn(ScheduleRef(shared_from_this()));
-    });
-    cos_.insert(co);
-    ios_.post([this, co]() mutable {
-      assert(!running_co_);
-      running_co_ = co;
-      running_co_->resume();
-      running_co_.reset();
-    });
-  }
+  void post(task&& fn);
 
-  void yield()
-  {
-    assert(running_co_);
-    assert(running_co_->yield);
-    (*running_co_->yield)();
-  }
+  void yield();
 
-  void yield_for(int milli)
-  {
-    assert(running_co_);
-    assert(running_co_->yield);
-    std::weak_ptr<Schedule::Coroutine> co = running_co_;
-    running_co_->timer.expires_from_now(std::chrono::milliseconds(milli));
-    running_co_->timer.async_wait(
-      [this, co](boost::system::error_code ec) mutable {
-        if (!ec)
-          resume(co);
-      });
-    (*running_co_->yield)();
-  }
+  void yield_for(int milli);
 
-  void resume(std::weak_ptr<Schedule::Coroutine> co)
-  {
-    ios_.post([this, co]() mutable {
-      assert(!running_co_);
-      running_co_ = std::static_pointer_cast<AsioCoroutine>(co.lock());
-      if (running_co_) {
-        if (running_co_->resume) {
-          running_co_->resume();
-        }
-        running_co_.reset();
-      }
-    });
-  }
+  void resume(std::weak_ptr<Schedule::Coroutine> co);
 
+public:
   std::weak_ptr<Coroutine> this_co()
   {
     assert(running_co_);
