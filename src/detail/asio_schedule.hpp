@@ -18,10 +18,10 @@ using namespace boost::asio::local;
 
 namespace translator {
 
-struct Schedule::Coroutine : public std::enable_shared_from_this<Coroutine>
+struct AsioCoroutine : Schedule::Coroutine
 {
   template<typename Fn>
-  Coroutine(boost::asio::io_service& ios,
+  AsioCoroutine(boost::asio::io_service& ios,
             Fn&& fn)
     : timer(ios)
     , resume(
@@ -119,7 +119,7 @@ public:
 
   void post(task&& fn)
   {
-    auto co = std::make_shared<Coroutine>(ios_, [this, fn = std::move(fn)] {
+    auto co = std::make_shared<AsioCoroutine>(ios_, [this, fn = std::move(fn)] {
       fn(ScheduleRef(shared_from_this()));
     });
     cos_.insert(co);
@@ -142,7 +142,7 @@ public:
   {
     assert(running_co_);
     assert(running_co_->yield);
-    Schedule::CoroutinePtr co = running_co_;
+    std::weak_ptr<Schedule::Coroutine> co = running_co_;
     running_co_->timer.expires_from_now(std::chrono::milliseconds(milli));
     running_co_->timer.async_wait(
       [this, co](boost::system::error_code ec) mutable {
@@ -152,11 +152,11 @@ public:
     (*running_co_->yield)();
   }
 
-  void resume(Schedule::CoroutinePtr co)
+  void resume(std::weak_ptr<Schedule::Coroutine> co)
   {
     ios_.post([this, co]() mutable {
       assert(!running_co_);
-      running_co_ = co.lock();
+      running_co_ = std::static_pointer_cast<AsioCoroutine>(co.lock());
       if (running_co_) {
         if (running_co_->resume) {
           running_co_->resume();
@@ -166,7 +166,7 @@ public:
     });
   }
 
-  CoroutinePtr this_co()
+  std::weak_ptr<Coroutine> this_co()
   {
     assert(running_co_);
     return running_co_;
@@ -182,8 +182,8 @@ private:
   boost::asio::io_service ios_;
   // stream_protocol::acceptor acceptor_;
   // std::array<char, 1024> recv_buffer_;
-  std::unordered_set<std::shared_ptr<Coroutine>> cos_;
-  std::shared_ptr<Coroutine> running_co_;
+  std::unordered_set<std::shared_ptr<AsioCoroutine>> cos_;
+  std::shared_ptr<AsioCoroutine> running_co_;
 };
 
 }

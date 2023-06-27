@@ -103,7 +103,7 @@ private:
 
 private:
   ScheduleRef sch_;
-  Schedule::CoroutinePtr co_;
+  std::weak_ptr<Schedule::Coroutine> co_;
   std::mutex mtx_;
   std::optional<Tp_> value_;
 };

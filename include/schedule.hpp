@@ -13,8 +13,19 @@ typedef std::function<void(ScheduleRef)> task;
 class Schedule
 {
 public:
-  struct Coroutine;
-  typedef std::weak_ptr<Schedule::Coroutine> CoroutinePtr;
+  enum class CoroutineState : int
+  {
+    DEAD = 0,
+    READY = 1,
+    RUNNING = 2,
+    DYING = 3,
+    SUSPEND = 4
+  };
+
+  struct Coroutine : std::enable_shared_from_this<Coroutine>
+  {
+    CoroutineState state_ = CoroutineState::READY;
+  };
 
   class Worker
   {
@@ -39,13 +50,13 @@ public:
 
   void post(task&& func);
 
-  void resume(CoroutinePtr co);
+  void resume(std::weak_ptr<Coroutine> co);
 
   void yield();
 
   void yield_for(int milli);
 
-  CoroutinePtr this_co();
+  std::weak_ptr<Coroutine> this_co();
 
 public:
   class Impl;
@@ -65,13 +76,13 @@ public:
 
   void post(task&& func);
 
-  void resume(Schedule::CoroutinePtr co);
+  void resume(std::weak_ptr<Schedule::Coroutine> co);
 
   void yield();
 
   void yield_for(int milli);
 
-  Schedule::CoroutinePtr this_co();
+  std::weak_ptr<Schedule::Coroutine> this_co();
 
 private:
   std::weak_ptr<Schedule::Impl> ptr_;

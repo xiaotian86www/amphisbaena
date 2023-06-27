@@ -195,7 +195,7 @@ Schedule::Impl::stop()
 void
 Schedule::Impl::post(task&& func)
 {
-  auto co = std::make_shared<Coroutine>();
+  auto co = std::make_shared<UContextCoroutine>();
   co->func = std::move(func);
 
   std::lock_guard<std::mutex> lg(mtx_);
@@ -264,7 +264,7 @@ Schedule::Impl::yield_for(int milli)
 }
 
 void
-Schedule::Impl::resume(CoroutinePtr co)
+Schedule::Impl::resume(std::weak_ptr<Coroutine> co)
 {
   std::unique_lock<std::mutex> ul(mtx_);
 
@@ -328,8 +328,7 @@ Schedule::Impl::run_timer()
 
     // 未取消
     if (auto sco = timer->co.lock();
-        sco && sco->state_ != CoroutineState::DEAD &&
-        sco->timer == timer) {
+        sco && sco->state_ != CoroutineState::DEAD && sco->timer == timer) {
       sco->timer.reset();
       assert(sco->state_ == CoroutineState::SUSPEND);
       sco->state_ = CoroutineState::RUNNING;
@@ -353,7 +352,7 @@ Schedule::Impl::run_once()
     auto co = running_cos_.front();
     running_cos_.pop();
 
-    if (auto sco = co.lock();
+    if (auto sco = std::static_pointer_cast<UContextCoroutine>(co.lock());
         sco && sco->state_ != CoroutineState::DEAD) {
       sco->timer.reset();
 
@@ -411,7 +410,7 @@ Schedule::Impl::do_listen()
 }
 
 void
-Schedule::Impl::do_create(std::shared_ptr<Coroutine> co)
+Schedule::Impl::do_create(std::shared_ptr<UContextCoroutine> co)
 {
   assert(!running_);
   running_ = co;
@@ -420,7 +419,7 @@ Schedule::Impl::do_create(std::shared_ptr<Coroutine> co)
 }
 
 void
-Schedule::Impl::do_resume(std::shared_ptr<Coroutine> co)
+Schedule::Impl::do_resume(std::shared_ptr<UContextCoroutine> co)
 {
   assert(!running_);
   running_ = co;

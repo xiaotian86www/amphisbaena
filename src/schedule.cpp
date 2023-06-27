@@ -31,7 +31,7 @@ Schedule::post(task&& func)
 }
 
 void
-Schedule::resume(CoroutinePtr co)
+Schedule::resume(std::weak_ptr<Coroutine> co)
 {
   impl_->resume(co);
 }
@@ -48,7 +48,7 @@ Schedule::yield_for(int milli)
   impl_->yield_for(milli);
 }
 
-Schedule::CoroutinePtr
+std::weak_ptr<Schedule::Coroutine>
 Schedule::this_co()
 {
   return impl_->this_co();
@@ -71,7 +71,7 @@ ScheduleRef::post(task&& func)
 }
 
 void
-ScheduleRef::resume(Schedule::CoroutinePtr co)
+ScheduleRef::resume(std::weak_ptr<Schedule::Coroutine> co)
 {
   auto impl = ptr_.lock();
   if (impl)
@@ -94,14 +94,14 @@ ScheduleRef::yield_for(int milli)
     impl->yield_for(milli);
 }
 
-Schedule::CoroutinePtr
+std::weak_ptr<Schedule::Coroutine>
 ScheduleRef::this_co()
 {
   auto impl = ptr_.lock();
   if (impl)
     return impl->this_co();
   else
-    return Schedule::CoroutinePtr();
+    return std::weak_ptr<Schedule::Coroutine>();
 }
 
 } // namespace translator

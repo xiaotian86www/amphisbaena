@@ -22,14 +22,7 @@
 
 namespace translator {
 
-enum class CoroutineState : int
-{
-  DEAD = 0,
-  READY = 1,
-  RUNNING = 2,
-  DYING = 3,
-  SUSPEND = 4
-};
+struct UContextCoroutine;
 
 struct CoContext
 {
@@ -40,7 +33,7 @@ struct CoContext
 struct CoTimer
 {
   timespec timeout;
-  Schedule::CoroutinePtr co;
+  std::weak_ptr<UContextCoroutine> co;
 };
 
 typedef std::shared_ptr<CoTimer> CoTimerPtr;
@@ -50,12 +43,11 @@ struct CoTimerPtrGreater
   bool operator()(const CoTimerPtr& left, const CoTimerPtr& right) const;
 };
 
-struct Schedule::Coroutine
+struct UContextCoroutine : Schedule::Coroutine
 {
   task func;
   CoContext context;
   CoTimerPtr timer;
-  CoroutineState state_ = CoroutineState::READY;
 };
 
 class Schedule::Impl : public std::enable_shared_from_this<Schedule::Impl>
@@ -78,12 +70,12 @@ public:
 
   void yield_for(int milli);
 
-  void resume(CoroutinePtr co);
+  void resume(std::weak_ptr<Coroutine> co);
 
   static void co_func_wrapper(uint32_t low32, uint32_t high32);
 
 public:
-  CoroutinePtr this_co()
+  std::weak_ptr<Coroutine> this_co()
   {
     assert(running_);
     return running_;
@@ -110,15 +102,15 @@ private:
 
   void do_listen();
 
-  void do_create(std::shared_ptr<Coroutine> co);
+  void do_create(std::shared_ptr<UContextCoroutine> co);
 
-  void do_resume(std::shared_ptr<Coroutine> co);
+  void do_resume(std::shared_ptr<UContextCoroutine> co);
 
 private:
   CoContext context_;
-  std::unordered_set<std::shared_ptr<Coroutine>> cos_;
-  std::shared_ptr<Coroutine> running_;
-  std::queue<CoroutinePtr> running_cos_;
+  std::unordered_set<std::shared_ptr<UContextCoroutine>> cos_;
+  std::shared_ptr<UContextCoroutine> running_;
+  std::queue<std::weak_ptr<Coroutine>> running_cos_;
   std::atomic<int32_t> co_count_;
   std::priority_queue<CoTimerPtr, std::vector<CoTimerPtr>, CoTimerPtrGreater>
     timers_que_;
