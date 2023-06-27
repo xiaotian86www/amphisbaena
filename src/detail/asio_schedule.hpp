@@ -26,9 +26,9 @@ struct AsioCoroutine : Schedule::Coroutine
     , resume(
         [this, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
           yield = &pl;
-          boost::system::error_code ec;
-          timer.cancel(ec);
+          state = Schedule::CoroutineState::RUNNING;
           fn();
+          state = Schedule::CoroutineState::DEAD;
         })
     , yield(nullptr)
   {
@@ -126,6 +126,9 @@ public:
     assert(running_co_);
     return running_co_;
   }
+
+private:
+  void do_resume(std::shared_ptr<AsioCoroutine> co);
 
 public:
   // void do_accept(await_context await);

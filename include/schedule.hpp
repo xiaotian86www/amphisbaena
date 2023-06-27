@@ -24,7 +24,7 @@ public:
 
   struct Coroutine : std::enable_shared_from_this<Coroutine>
   {
-    CoroutineState state_ = CoroutineState::READY;
+    CoroutineState state = CoroutineState::READY;
   };
 
   class Worker

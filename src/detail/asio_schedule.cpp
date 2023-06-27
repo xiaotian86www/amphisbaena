@@ -19,7 +19,11 @@ Schedule::Impl::Impl()
 void
 Schedule::Impl::run()
 {
-  ios_.run();
+  try {
+    ios_.run();
+  } catch (...) {
+  }
+  cos_.clear();
 }
 
 void
@@ -33,12 +37,9 @@ Schedule::Impl::post(task&& fn)
 {
   auto co = std::make_shared<AsioCoroutine>(
     ios_, [this, fn = std::move(fn)] { fn(ScheduleRef(shared_from_this())); });
-  cos_.insert(co);
   ios_.post([this, co]() mutable {
-    assert(!running_co_);
-    running_co_ = co;
-    running_co_->resume();
-    running_co_.reset();
+    cos_.insert(co);
+    do_resume(co);
   });
 }
 
@@ -69,15 +70,53 @@ void
 Schedule::Impl::resume(std::weak_ptr<Schedule::Coroutine> co)
 {
   ios_.post([this, co]() mutable {
-    assert(!running_co_);
-    running_co_ = std::static_pointer_cast<AsioCoroutine>(co.lock());
-    if (running_co_) {
-      if (running_co_->resume) {
-        running_co_->resume();
+    auto sco = std::static_pointer_cast<AsioCoroutine>(co.lock());
+    if (sco) {
+      switch (sco->state) {
+        case CoroutineState::SUSPEND:
+          sco->state = CoroutineState::RUNNING;
+          do_resume(sco);
+          break;
+        case CoroutineState::DYING:
+          sco->state = CoroutineState::DEAD;
+        case CoroutineState::DEAD:
+          cos_.erase(sco);
+          break;
+        case CoroutineState::READY:
+        case CoroutineState::RUNNING:
+          assert(false);
+          break;
       }
-      running_co_.reset();
     }
   });
+}
+
+void
+Schedule::Impl::do_resume(std::shared_ptr<AsioCoroutine> co)
+{
+  assert(!running_co_);
+  assert(co);
+  running_co_ = co;
+
+  boost::system::error_code ec;
+  running_co_->timer.cancel(ec);
+
+  running_co_->resume();
+  switch (running_co_->state) {
+    case CoroutineState::RUNNING:
+      running_co_->state = CoroutineState::SUSPEND;
+      break;
+    case CoroutineState::DYING:
+      running_co_->state = CoroutineState::DEAD;
+    case CoroutineState::DEAD:
+      cos_.erase(running_co_);
+      break;
+    case CoroutineState::READY:
+    case CoroutineState::SUSPEND:
+      assert(false);
+      break;
+  }
+  running_co_.reset();
 }
 
 // void

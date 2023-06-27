@@ -172,13 +172,13 @@ Schedule::Impl::stop()
 
   // 清除协程
   for (auto item : cos_) {
-    switch (item->state_) {
+    switch (item->state) {
       case CoroutineState::READY:
       case CoroutineState::SUSPEND:
-        item->state_ = CoroutineState::DEAD;
+        item->state = CoroutineState::DEAD;
         break;
       case CoroutineState::RUNNING:
-        item->state_ = CoroutineState::DYING;
+        item->state = CoroutineState::DYING;
         break;
       case CoroutineState::DEAD:
         break;
@@ -213,12 +213,12 @@ Schedule::Impl::yield()
 {
   assert(running_);
   std::unique_lock<std::mutex> ul(mtx_);
-  switch (running_->state_) {
+  switch (running_->state) {
     case CoroutineState::RUNNING:
-      running_->state_ = CoroutineState::SUSPEND;
+      running_->state = CoroutineState::SUSPEND;
       break;
     case CoroutineState::DYING:
-      running_->state_ = CoroutineState::DEAD;
+      running_->state = CoroutineState::DEAD;
       break;
     default:
       assert(false);
@@ -234,7 +234,7 @@ Schedule::Impl::yield_for(int milli)
 {
   assert(running_);
   std::unique_lock<std::mutex> ul(mtx_);
-  switch (running_->state_) {
+  switch (running_->state) {
     case CoroutineState::RUNNING: {
       auto timer = std::make_shared<CoTimer>();
       // 取系统启动时间，避免时间回调
@@ -248,11 +248,11 @@ Schedule::Impl::yield_for(int milli)
 
       timers_que_.push(timer);
 
-      running_->state_ = CoroutineState::SUSPEND;
+      running_->state = CoroutineState::SUSPEND;
       break;
     }
     case CoroutineState::DYING:
-      running_->state_ = CoroutineState::DEAD;
+      running_->state = CoroutineState::DEAD;
       break;
     default:
       assert(false);
@@ -289,10 +289,10 @@ Schedule::Impl::co_func()
   running_->func(ScheduleRef(shared_from_this()));
 
   std::lock_guard<std::mutex> lg(mtx_);
-  switch (running_->state_) {
+  switch (running_->state) {
     case CoroutineState::RUNNING:
     case CoroutineState::DYING:
-      running_->state_ = CoroutineState::DEAD;
+      running_->state = CoroutineState::DEAD;
       break;
     default:
       assert(false);
@@ -328,10 +328,10 @@ Schedule::Impl::run_timer()
 
     // 未取消
     if (auto sco = timer->co.lock();
-        sco && sco->state_ != CoroutineState::DEAD && sco->timer == timer) {
+        sco && sco->state != CoroutineState::DEAD && sco->timer == timer) {
       sco->timer.reset();
-      assert(sco->state_ == CoroutineState::SUSPEND);
-      sco->state_ = CoroutineState::RUNNING;
+      assert(sco->state == CoroutineState::SUSPEND);
+      sco->state = CoroutineState::RUNNING;
       ul.unlock();
 
       do_resume(sco);
@@ -353,18 +353,18 @@ Schedule::Impl::run_once()
     running_cos_.pop();
 
     if (auto sco = std::static_pointer_cast<UContextCoroutine>(co.lock());
-        sco && sco->state_ != CoroutineState::DEAD) {
+        sco && sco->state != CoroutineState::DEAD) {
       sco->timer.reset();
 
-      switch (sco->state_) {
+      switch (sco->state) {
         case CoroutineState::READY:
-          sco->state_ = CoroutineState::RUNNING;
+          sco->state = CoroutineState::RUNNING;
           ul.unlock();
 
           do_create(sco);
           break;
         case CoroutineState::SUSPEND:
-          sco->state_ = CoroutineState::RUNNING;
+          sco->state = CoroutineState::RUNNING;
           ul.unlock();
 
           do_resume(sco);
