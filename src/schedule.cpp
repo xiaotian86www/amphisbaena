@@ -5,6 +5,11 @@
 
 namespace translator {
 
+void Schedule::Coroutine::resume()
+{
+  
+}
+
 Schedule::Schedule()
   : impl_(std::make_shared<Impl>())
 {

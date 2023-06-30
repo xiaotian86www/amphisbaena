@@ -47,23 +47,14 @@ void
 Schedule::Impl::yield()
 {
   assert(running_co_);
-  assert(running_co_->yield);
-  (*running_co_->yield)();
+  running_co_->yield();
 }
 
 void
 Schedule::Impl::yield_for(int milli)
 {
   assert(running_co_);
-  assert(running_co_->yield);
-  std::weak_ptr<Schedule::Coroutine> co = running_co_;
-  running_co_->timer.expires_from_now(std::chrono::milliseconds(milli));
-  running_co_->timer.async_wait(
-    [this, co](boost::system::error_code ec) mutable {
-      if (!ec)
-        resume(co);
-    });
-  (*running_co_->yield)();
+  running_co_->yield_for(milli);
 }
 
 void
@@ -92,14 +83,11 @@ Schedule::Impl::resume(std::weak_ptr<Schedule::Coroutine> co)
 }
 
 void
-Schedule::Impl::do_resume(std::shared_ptr<AsioCoroutine> co)
+Schedule::Impl::do_resume(std::shared_ptr<Coroutine> co)
 {
   assert(!running_co_);
   assert(co);
   running_co_ = co;
-
-  boost::system::error_code ec;
-  running_co_->timer.cancel(ec);
 
   running_co_->resume();
   switch (running_co_->state) {

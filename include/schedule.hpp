@@ -22,9 +22,20 @@ public:
     SUSPEND = 4
   };
 
-  struct Coroutine : std::enable_shared_from_this<Coroutine>
+  class Coroutine : std::enable_shared_from_this<Coroutine>
   {
+  public:
     CoroutineState state = CoroutineState::READY;
+
+  public:
+    virtual ~Coroutine() = default;
+
+  public:
+    virtual void yield() = 0;
+
+    virtual void yield_for(int milli) = 0;
+
+    virtual void resume() = 0;
   };
 
   class Worker
