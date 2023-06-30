@@ -38,69 +38,6 @@ struct AsioCoroutine : Schedule::Coroutine
 
 class Schedule::Impl : public std::enable_shared_from_this<Schedule::Impl>
 {
-  // public:
-  //   struct awake_context : public std::enable_shared_from_this<awake_context>
-  //   {
-  //     template<typename Fn>
-  //     explicit awake_context(std::weak_ptr<Schedule2> sch, Fn&& fn)
-  //       : sch_(sch)
-  //       , ps_(std::forward<Fn>(fn))
-  //     {
-  //     }
-
-  //     void operator()(boost::system::error_code&& ec)
-  //     {
-  //       auto sch = sch_.lock();
-  //       if (sch) {
-  //         assert(!sch->current_awake_);
-  //         sch->current_awake_ = shared_from_this();
-  //         ps_(std::move(ec));
-  //       }
-  //     }
-
-  //     void operator()(const boost::system::error_code& ec)
-  //     {
-  //       auto sch = sch_.lock();
-  //       if (sch) {
-  //         assert(!sch->current_awake_);
-  //         sch->current_awake_ = shared_from_this();
-  //         ps_(ec);
-  //         sch->current_awake_.reset();
-  //       }
-  //     }
-
-  //     bool invalid() { return !ps_; }
-
-  //     coroutine<boost::system::error_code>::push_type ps_;
-  //     std::weak_ptr<Schedule2> sch_;
-  //   };
-
-  //   struct await_context
-  //   {
-  //     await_context(std::weak_ptr<Schedule2> sch,
-  //                   coroutine<boost::system::error_code>::pull_type& pl)
-  //       : sch_(sch)
-  //       , pl_(pl)
-  //     {
-  //     }
-
-  //     boost::system::error_code operator()() { return pl_().get(); }
-
-  //     std::weak_ptr<awake_context> awake()
-  //     {
-  //       auto sch = sch_.lock();
-  //       if (sch) {
-  //         assert(sch->current_awake_);
-  //         return sch->current_awake_;
-  //       }
-
-  //       return std::weak_ptr<awake_context>();
-  //     }
-
-  //     coroutine<boost::system::error_code>::pull_type& pl_;
-  //     std::weak_ptr<Schedule2> sch_;
-  //   };
-
 public:
   Impl();
 
@@ -132,16 +69,8 @@ public:
 private:
   void do_resume(std::shared_ptr<AsioCoroutine> co);
 
-public:
-  // void do_accept(await_context await);
-
-  // void do_read(std::shared_ptr<stream_protocol::socket> sock,
-  //              await_context await);
-
 private:
   boost::asio::io_service ios_;
-  // stream_protocol::acceptor acceptor_;
-  // std::array<char, 1024> recv_buffer_;
   std::unordered_set<std::shared_ptr<AsioCoroutine>> cos_;
   std::shared_ptr<AsioCoroutine> running_co_;
 };
