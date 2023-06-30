@@ -1,6 +1,4 @@
-#include <array>
 #include <boost/asio/io_service.hpp>
-#include <boost/asio/local/stream_protocol.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/coroutine2/coroutine.hpp>
 #include <boost/system/error_code.hpp>
@@ -14,7 +12,6 @@
 #include "schedule.hpp"
 
 using namespace boost::coroutines2;
-using namespace boost::asio::local;
 
 namespace translator {
 
@@ -125,6 +122,11 @@ public:
   {
     assert(running_co_);
     return running_co_;
+  }
+
+  boost::asio::io_service& io_service()
+  {
+    return ios_;
   }
 
 private:
