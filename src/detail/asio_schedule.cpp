@@ -13,44 +13,39 @@ namespace translator {
 AsioCoroutine::AsioCoroutine(std::shared_ptr<Schedule::Impl> sch)
   : sch_(sch)
   , timer_(sch->io_service())
-  , ps_([](coroutine<void>::pull_type&) {})
-  , pl_(nullptr)
+  , pl_([](coroutine<void>::push_type&) {})
+  , ps_(nullptr)
 {
 }
 
 void
-AsioCoroutine::spawn(std::shared_ptr<Schedule::Impl> sch, task&& fn)
+AsioCoroutine::spawn(task&& fn)
 {
-  auto co = std::make_shared<AsioCoroutine>(sch);
-
-  co->ps_ = coroutine<void>::push_type(
-    [co, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
-      co->pl_ = &pl;
-      // state = CoroutineState::RUNNING;
+  pl_ = coroutine<void>::pull_type(
+    [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this()),
+     fn = std::move(fn)](coroutine<void>::push_type& ps) mutable {
+      co->ps_ = &ps;
       fn(co);
-      // state = CoroutineState::DEAD;
     });
-
-  co->resume();
 }
 
 void
 AsioCoroutine::yield()
 {
-  if (pl_ && *pl_)
-    (*pl_)();
+  if (ps_ && *ps_)
+    (*ps_)();
 }
 
 void
 AsioCoroutine::yield_for(int milli)
 {
-  if (pl_ && *pl_) {
+  if (ps_ && *ps_) {
     timer_.expires_from_now(std::chrono::milliseconds(milli));
     timer_.async_wait([this](boost::system::error_code ec) mutable {
       if (!ec)
         resume();
     });
-    (*pl_)();
+    (*ps_)();
   }
 }
 
@@ -65,8 +60,8 @@ AsioCoroutine::resume()
     [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())] {
       boost::system::error_code ec;
       co->timer_.cancel(ec);
-      if (co->ps_)
-        co->ps_();
+      if (co->pl_)
+        co->pl_();
     });
 }
 
@@ -89,7 +84,8 @@ void
 Schedule::Impl::post(task&& fn)
 {
   ios_.post([this, fn = std::move(fn)]() mutable {
-    AsioCoroutine::spawn(shared_from_this(), std::move(fn));
+    auto co = std::make_shared<AsioCoroutine>(shared_from_this());
+    co->spawn(std::move(fn));
   });
 }
 

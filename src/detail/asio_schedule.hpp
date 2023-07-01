@@ -21,7 +21,7 @@ public:
   AsioCoroutine(std::shared_ptr<Schedule::Impl> sch);
 
 public:
-  static void spawn(std::shared_ptr<Schedule::Impl> sch, task&& fn);
+  void spawn(task&& fn);
 
 public:
   void yield() override;
@@ -33,8 +33,8 @@ public:
 private:
   std::weak_ptr<Schedule::Impl> sch_;
   boost::asio::steady_timer timer_;
-  coroutine<void>::push_type ps_;
-  coroutine<void>::pull_type* pl_;
+  coroutine<void>::pull_type pl_;
+  coroutine<void>::push_type* ps_;
 };
 
 class Schedule::Impl : public std::enable_shared_from_this<Schedule::Impl>
