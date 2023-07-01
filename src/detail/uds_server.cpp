@@ -1,5 +1,6 @@
 #include "detail/uds_server.hpp"
 
+#include <boost/asio/buffer.hpp>
 #include <boost/asio/local/stream_protocol.hpp>
 #include <memory>
 #include <unistd.h>
@@ -33,8 +34,40 @@ UDSServer::listen()
 }
 
 void
-UDSServer::on_data(std::string_view data)
+UDSServer::on_data(std::shared_ptr<stream_protocol::socket> sock,
+                   std::shared_ptr<Coroutine> co,
+                   std::string_view data)
 {
+}
+
+void
+UDSServer::send(std::shared_ptr<stream_protocol::socket> sock,
+                std::shared_ptr<Coroutine> co,
+                std::string_view data)
+{
+  std::size_t send_size = 0;
+  for (;;) {
+    std::size_t size = 0;
+    boost::system::error_code ec;
+    sock->async_write_some(
+      boost::asio::const_buffer(data.data() + send_size,
+                                data.size() - send_size),
+      [&size, &ec, co](boost::system::error_code in_ec, std::size_t in_size) {
+        ec = in_ec;
+        size = in_size;
+        co->resume();
+      });
+
+    co->yield();
+
+    if (ec)
+      throw ec;
+
+    send_size += size;
+
+    if (send_size == data.size())
+      break;
+  }
 }
 
 void
@@ -52,7 +85,7 @@ UDSServer::do_accept(std::shared_ptr<Coroutine> co)
     co->yield();
 
     if (ec)
-      break;
+      continue;
 
     sch_->post(
       std::bind(&UDSServer::do_read, this, sock, std::placeholders::_1));
@@ -79,9 +112,9 @@ UDSServer::do_read(std::shared_ptr<stream_protocol::socket> sock,
     co->yield();
 
     if (ec)
-      break;
+      throw ec;
 
-    on_data({ data.data(), size });
+    on_data(sock, co, { data.data(), size });
   }
 }
 

@@ -21,7 +21,13 @@ public:
   void listen();
 
 protected:
-  virtual void on_data(std::string_view data);
+  virtual void on_data(std::shared_ptr<stream_protocol::socket> sock,
+                       std::shared_ptr<Coroutine> co,
+                       std::string_view data);
+
+  void send(std::shared_ptr<stream_protocol::socket> sock,
+            std::shared_ptr<Coroutine> co,
+            std::string_view data);
 
 private:
   void do_accept(std::shared_ptr<Coroutine> sch);
