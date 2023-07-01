@@ -15,10 +15,12 @@ using namespace boost::coroutines2;
 
 namespace translator {
 
+class AsioSchedule;
+
 class AsioCoroutine : public Coroutine
 {
 public:
-  AsioCoroutine(std::shared_ptr<Schedule::Impl> sch);
+  AsioCoroutine(std::shared_ptr<AsioSchedule> sch);
 
 public:
   void spawn(task&& fn);
@@ -31,24 +33,24 @@ public:
   void resume() override;
 
 private:
-  std::weak_ptr<Schedule::Impl> sch_;
+  std::weak_ptr<AsioSchedule> sch_;
   boost::asio::steady_timer timer_;
   coroutine<void>::pull_type pl_;
   coroutine<void>::push_type* ps_;
 };
 
-class Schedule::Impl : public std::enable_shared_from_this<Schedule::Impl>
+class AsioSchedule : public Schedule
 {
 public:
-  Impl() = default;
-  ~Impl() = default;
+  AsioSchedule() = default;
+  ~AsioSchedule() override = default;
 
 public:
-  void run();
+  void run() override;
 
-  void stop();
+  void stop() override;
 
-  void post(task&& fn);
+  void post(task&& fn) override;
 
 public:
   boost::asio::io_service& io_service() { return ios_; }

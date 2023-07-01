@@ -1,4 +1,4 @@
-#include "asio_schedule.hpp"
+#include "detail/asio_schedule.hpp"
 
 #include <boost/asio/local/stream_protocol.hpp>
 #include <boost/coroutine/exceptions.hpp>
@@ -10,7 +10,7 @@
 
 namespace translator {
 
-AsioCoroutine::AsioCoroutine(std::shared_ptr<Schedule::Impl> sch)
+AsioCoroutine::AsioCoroutine(std::shared_ptr<AsioSchedule> sch)
   : sch_(sch)
   , timer_(sch->io_service())
   , pl_([](coroutine<void>::push_type&) {})
@@ -66,7 +66,7 @@ AsioCoroutine::resume()
 }
 
 void
-Schedule::Impl::run()
+AsioSchedule::run()
 {
   try {
     ios_.run();
@@ -75,16 +75,17 @@ Schedule::Impl::run()
 }
 
 void
-Schedule::Impl::stop()
+AsioSchedule::stop()
 {
   ios_.stop();
 }
 
 void
-Schedule::Impl::post(task&& fn)
+AsioSchedule::post(task&& fn)
 {
   ios_.post([this, fn = std::move(fn)]() mutable {
-    auto co = std::make_shared<AsioCoroutine>(shared_from_this());
+    auto co = std::make_shared<AsioCoroutine>(
+      std::static_pointer_cast<AsioSchedule>(shared_from_this()));
     co->spawn(std::move(fn));
   });
 }

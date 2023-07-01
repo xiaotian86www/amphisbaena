@@ -1,6 +1,7 @@
 #include <chrono>
 #include <thread>
 
+#include "detail/asio_schedule.hpp"
 #include "future.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -44,7 +45,7 @@ TEST(future, get)
   EXPECT_CALL(foo_mock1, Call()).Times(2).WillRepeatedly(testing::Return(1));
   EXPECT_CALL(foo_mock2, Call(1)).Times(2);
 
-  auto sch = std::make_shared<translator::Schedule>();
+  auto sch = std::make_shared<translator::AsioSchedule>();
   sch->post(std::bind(foo,
                       std::placeholders::_1,
                       foo_mock1.AsStdFunction(),
@@ -68,7 +69,7 @@ TEST(future, get_for)
   EXPECT_CALL(foo_mock1, Call()).Times(2).WillRepeatedly(testing::Return(1));
   EXPECT_CALL(foo_mock2, Call(1)).Times(2);
 
-  auto sch = std::make_shared<translator::Schedule>();
+  auto sch = std::make_shared<translator::AsioSchedule>();
   sch->post(std::bind(foo2,
                       std::placeholders::_1,
                       foo_mock1.AsStdFunction(),
@@ -91,7 +92,7 @@ TEST(future, get_for_timeout)
 
   EXPECT_CALL(foo_mock2, Call(0)).Times(2);
 
-  auto sch = std::make_shared<translator::Schedule>();
+  auto sch = std::make_shared<translator::AsioSchedule>();
   sch->post(std::bind(foo3,
                       std::placeholders::_1,
                       foo_mock1.AsStdFunction(),

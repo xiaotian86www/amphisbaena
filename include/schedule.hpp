@@ -21,7 +21,7 @@ public:
 
 typedef std::function<void(std::shared_ptr<Coroutine>)> task;
 
-class Schedule
+class Schedule : public std::enable_shared_from_this<Schedule>
 {
 public:
   class Worker
@@ -35,21 +35,18 @@ public:
   };
 
 public:
-  Schedule();
-  virtual ~Schedule();
+  Schedule() = default;
+  virtual ~Schedule() = default;
   Schedule(const Schedule&) = delete;
   Schedule& operator=(const Schedule&) = delete;
 
 public:
-  void run();
+  virtual void run() = 0;
 
-  void stop();
+  virtual void stop() = 0;
 
-  void post(task&& func);
+  virtual void post(task&& func) = 0;
 
-public:
-  class Impl;
-  std::shared_ptr<Impl> impl_;
 };
 
 } // namespace translator

@@ -3,27 +3,26 @@
 #include <memory>
 
 namespace translator {
-HttpServer::HttpServer(std::shared_ptr<Schedule> sch)
+HttpServer::HttpServer(std::shared_ptr<AsioSchedule> sch)
   : sch_(sch)
-  , acceptor_(sch_->impl_->io_service())
+  , acceptor_(sch_->io_service())
 {
 }
 
 void
-HttpServer::do_accept(ScheduleRef)
+HttpServer::do_accept(std::shared_ptr<Coroutine> co)
 {
   for (;;) {
-    auto co = sch_->this_co();
     auto sock =
-      std::make_shared<stream_protocol::socket>(sch_->impl_->io_service());
+      std::make_shared<stream_protocol::socket>(sch_->io_service());
     boost::system::error_code ec;
     acceptor_.async_accept(*sock,
                            [this, co, &ec](boost::system::error_code in_ec) {
                              ec = in_ec;
-                             sch_->resume(co);
+                             co->resume();
                            });
 
-    sch_->yield();
+    co->yield();
 
     if (ec)
       break;
@@ -34,23 +33,22 @@ HttpServer::do_accept(ScheduleRef)
 }
 
 void
-HttpServer::do_read(std::shared_ptr<stream_protocol::socket> sock, ScheduleRef)
+HttpServer::do_read(std::shared_ptr<stream_protocol::socket> sock, std::shared_ptr<Coroutine> co)
 {
   std::array<char, 8192> data;
   for (;;) {
-    auto co = sch_->this_co();
     boost::system::error_code ec;
     std::size_t size;
     sock->async_read_some(
       boost::asio::buffer(data, data.size()),
-      [this, co, &size, &ec](boost::system::error_code in_ec,
+      [this, co, &ec, &size](boost::system::error_code in_ec,
                              std::size_t in_size) mutable {
         size = in_size;
         ec = in_ec;
-        sch_->resume(co);
+        co->resume();
       });
 
-    sch_->yield();
+    co->yield();
 
     if (ec)
       break;

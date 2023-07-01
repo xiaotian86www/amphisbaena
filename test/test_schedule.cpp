@@ -2,7 +2,7 @@
 #include <ctime>
 #include <thread>
 
-#include "schedule.hpp"
+#include "detail/asio_schedule.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
@@ -37,7 +37,7 @@ TEST(coroutine, resume)
     .Times(2)
     .WillRepeatedly(testing::Invoke(invoke_foo));
 
-  auto sch = std::make_shared<translator::Schedule>();
+  auto sch = std::make_shared<translator::AsioSchedule>();
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
@@ -66,7 +66,7 @@ TEST(coroutine, multi_resume)
     .Times(2)
     .WillRepeatedly(testing::Invoke(invoke_foo));
 
-  auto sch = std::make_shared<translator::Schedule>();
+  auto sch = std::make_shared<translator::AsioSchedule>();
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
@@ -82,7 +82,7 @@ TEST(coroutine, multi_resume)
  */
 TEST(coroutine, stop)
 {
-  auto sch = std::make_shared<translator::Schedule>();
+  auto sch = std::make_shared<translator::AsioSchedule>();
 
   testing::MockFunction<void(std::shared_ptr<translator::Coroutine>, int)>
     foo_mock;
@@ -121,7 +121,7 @@ TEST(coroutine, yield_for_timeout)
   EXPECT_CALL(foo_mock, Call(testing::_, 1))
     .WillOnce(testing::Invoke(invoke_foo));
 
-  auto sch = std::make_shared<translator::Schedule>();
+  auto sch = std::make_shared<translator::AsioSchedule>();
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch.get()));
@@ -156,7 +156,7 @@ TEST(coroutine, resume_yield_for)
   EXPECT_CALL(foo_mock, Call(testing::_, 1))
     .WillOnce(testing::Invoke(invoke_foo));
 
-  auto sch = std::make_shared<translator::Schedule>();
+  auto sch = std::make_shared<translator::AsioSchedule>();
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch.get()));
@@ -178,7 +178,7 @@ TEST(coroutine, resume_yield_for)
  */
 TEST(coroutine, stop_yield_for)
 {
-  auto sch = std::make_shared<translator::Schedule>();
+  auto sch = std::make_shared<translator::AsioSchedule>();
 
   testing::MockFunction<void(std::shared_ptr<translator::Coroutine>, int)>
     foo_mock;
