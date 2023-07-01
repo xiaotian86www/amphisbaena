@@ -22,7 +22,7 @@ TEST(uds_server, on_data)
 
   std::string_view data("1234567890");
 
-  server->set_server(protocol);
+  server->set_protocol(protocol);
   server->listen();
 
   std::thread th(std::bind(&translator::AsioSchedule::run, sch.get()));

@@ -38,7 +38,7 @@ public:
   void listen();
 
 public:
-  void set_server(std::shared_ptr<Protocol> protocol) { protocol_ = protocol; }
+  void set_protocol(std::shared_ptr<Protocol> protocol) { protocol_ = protocol; }
 
 private:
   void do_accept(std::shared_ptr<Coroutine> sch);
