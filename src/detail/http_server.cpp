@@ -7,14 +7,14 @@ HttpServer::HttpServer(std::shared_ptr<AsioSchedule> sch)
   : sch_(sch)
   , acceptor_(sch_->io_service())
 {
+  sch_->post(std::bind(&HttpServer::do_accept, this, std::placeholders::_1));
 }
 
 void
 HttpServer::do_accept(std::shared_ptr<Coroutine> co)
 {
   for (;;) {
-    auto sock =
-      std::make_shared<stream_protocol::socket>(sch_->io_service());
+    auto sock = std::make_shared<stream_protocol::socket>(sch_->io_service());
     boost::system::error_code ec;
     acceptor_.async_accept(*sock,
                            [this, co, &ec](boost::system::error_code in_ec) {
@@ -33,7 +33,8 @@ HttpServer::do_accept(std::shared_ptr<Coroutine> co)
 }
 
 void
-HttpServer::do_read(std::shared_ptr<stream_protocol::socket> sock, std::shared_ptr<Coroutine> co)
+HttpServer::do_read(std::shared_ptr<stream_protocol::socket> sock,
+                    std::shared_ptr<Coroutine> co)
 {
   std::array<char, 8192> data;
   for (;;) {

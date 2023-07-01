@@ -17,7 +17,8 @@ public:
 private:
   void do_accept(std::shared_ptr<Coroutine> sch);
 
-  void do_read(std::shared_ptr<stream_protocol::socket> sock, std::shared_ptr<Coroutine> sch);
+  void do_read(std::shared_ptr<stream_protocol::socket> sock,
+               std::shared_ptr<Coroutine> sch);
 
 private:
   std::shared_ptr<AsioSchedule> sch_;
