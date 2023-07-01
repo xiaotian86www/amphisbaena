@@ -19,16 +19,19 @@ AsioCoroutine::AsioCoroutine(std::shared_ptr<Schedule::Impl> sch)
 }
 
 void
-AsioCoroutine::set_func(task&& fn)
+AsioCoroutine::spawn(std::shared_ptr<Schedule::Impl> sch, task&& fn)
 {
-  ps_ = coroutine<void>::push_type(
-    [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this()),
-     fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
+  auto co = std::make_shared<AsioCoroutine>(sch);
+
+  co->ps_ = coroutine<void>::push_type(
+    [co, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
       co->pl_ = &pl;
       // state = CoroutineState::RUNNING;
       fn(co);
       // state = CoroutineState::DEAD;
     });
+
+  co->resume();
 }
 
 void
@@ -86,10 +89,7 @@ void
 Schedule::Impl::post(task&& fn)
 {
   ios_.post([this, fn = std::move(fn)]() mutable {
-    auto co = std::make_shared<AsioCoroutine>(shared_from_this());
-    // cos_.insert(co);
-    co->set_func(std::move(fn));
-    co->resume();
+    AsioCoroutine::spawn(shared_from_this(), std::move(fn));
   });
 }
 

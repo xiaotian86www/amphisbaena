@@ -21,8 +21,9 @@ public:
   AsioCoroutine(std::shared_ptr<Schedule::Impl> sch);
 
 public:
-  void set_func(task&& fn);
+  static void spawn(std::shared_ptr<Schedule::Impl> sch, task&& fn);
 
+public:
   void yield() override;
 
   void yield_for(int milli) override;
