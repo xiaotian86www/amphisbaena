@@ -7,20 +7,8 @@
 namespace translator {
 class Schedule;
 
-enum class CoroutineState : int
-{
-  DEAD = 0,
-  READY = 1,
-  RUNNING = 2,
-  DYING = 3,
-  SUSPEND = 4
-};
-
 class Coroutine : public std::enable_shared_from_this<Coroutine>
 {
-public:
-  CoroutineState state = CoroutineState::READY;
-
 public:
   Coroutine() = default;
   virtual ~Coroutine() = default;
