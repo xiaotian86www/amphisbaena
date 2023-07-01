@@ -8,11 +8,14 @@
 using namespace boost::asio::local;
 
 namespace translator {
-class HttpServer : public std::enable_shared_from_this<HttpServer>
+class UDSServer : public std::enable_shared_from_this<UDSServer>
 {
 public:
-  HttpServer(std::shared_ptr<AsioSchedule> sch);
-  ~HttpServer();
+  UDSServer(std::shared_ptr<AsioSchedule> sch);
+  ~UDSServer();
+
+protected:
+  virtual void on_data(const char* data, std::size_t data_len);
 
 private:
   void do_accept(std::shared_ptr<Coroutine> sch);
