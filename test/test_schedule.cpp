@@ -12,20 +12,21 @@ struct args
 };
 
 static void
-foo(translator::ScheduleRef sch,
-    std::function<void(translator::ScheduleRef, int)> func)
+foo(std::shared_ptr<translator::Coroutine> co,
+    std::function<void(std::shared_ptr<translator::Coroutine>, int)> func)
 {
   for (int i = 0; i < 2; i++) {
-    func(sch, i);
+    func(co, i);
   }
 }
 
 TEST(coroutine, resume)
 {
-  testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
-  auto invoke_foo = [](translator::ScheduleRef sch, int) {
-    sch.resume(sch.this_co());
-    sch.yield();
+  testing::MockFunction<void(std::shared_ptr<translator::Coroutine>, int)>
+    foo_mock;
+  auto invoke_foo = [](std::shared_ptr<translator::Coroutine> co, int) {
+    co->resume();
+    co->yield();
   };
 
   testing::Sequence seq;
@@ -48,12 +49,13 @@ TEST(coroutine, resume)
 
 TEST(coroutine, multi_resume)
 {
-  testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
-  auto invoke_foo = [](translator::ScheduleRef sch, int) {
-    sch.resume(sch.this_co());
-    sch.resume(sch.this_co());
-    sch.resume(sch.this_co());
-    sch.yield();
+  testing::MockFunction<void(std::shared_ptr<translator::Coroutine>, int)>
+    foo_mock;
+  auto invoke_foo = [](std::shared_ptr<translator::Coroutine> co, int) {
+    co->resume();
+    co->resume();
+    co->resume();
+    co->yield();
   };
 
   testing::Sequence seq;
@@ -80,17 +82,19 @@ TEST(coroutine, multi_resume)
  */
 TEST(coroutine, stop)
 {
-  testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
-  auto invoke_foo = [](translator::ScheduleRef sch, int) {
-    sch.stop();
-    sch.resume(sch.this_co());
-    sch.yield();
+  auto sch = std::make_shared<translator::Schedule>();
+
+  testing::MockFunction<void(std::shared_ptr<translator::Coroutine>, int)>
+    foo_mock;
+  auto invoke_foo = [sch](std::shared_ptr<translator::Coroutine> co, int) {
+    sch->stop();
+    co->resume();
+    co->yield();
   };
 
   EXPECT_CALL(foo_mock, Call(testing::_, 0))
     .WillOnce(testing::Invoke(invoke_foo));
 
-  auto sch = std::make_shared<translator::Schedule>();
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch.get()));
@@ -105,9 +109,10 @@ TEST(coroutine, stop)
  */
 TEST(coroutine, yield_for_timeout)
 {
-  testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
-  auto invoke_foo = [](translator::ScheduleRef sch, int) {
-    sch.yield_for(1);
+  testing::MockFunction<void(std::shared_ptr<translator::Coroutine>, int)>
+    foo_mock;
+  auto invoke_foo = [](std::shared_ptr<translator::Coroutine> co, int) {
+    co->yield_for(1);
   };
 
   testing::Sequence seq;
@@ -138,10 +143,11 @@ TEST(coroutine, yield_for_timeout)
  */
 TEST(coroutine, resume_yield_for)
 {
-  testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
-  auto invoke_foo = [](translator::ScheduleRef sch, int) {
-    sch.resume(sch.this_co());
-    sch.yield_for(1);
+  testing::MockFunction<void(std::shared_ptr<translator::Coroutine>, int)>
+    foo_mock;
+  auto invoke_foo = [](std::shared_ptr<translator::Coroutine> co, int) {
+    co->resume();
+    co->yield_for(1);
   };
 
   testing::Sequence seq;
@@ -172,18 +178,21 @@ TEST(coroutine, resume_yield_for)
  */
 TEST(coroutine, stop_yield_for)
 {
-  testing::MockFunction<void(translator::ScheduleRef, int)> foo_mock;
+  auto sch = std::make_shared<translator::Schedule>();
+
+  testing::MockFunction<void(std::shared_ptr<translator::Coroutine>, int)>
+    foo_mock;
 
   testing::Sequence seq;
   EXPECT_CALL(foo_mock, Call(testing::_, 0))
-    .WillOnce(testing::Invoke(
-      [](translator::ScheduleRef sch, int) { sch.yield_for(10); }))
-    .WillOnce(testing::Invoke([](translator::ScheduleRef sch, int) {
-      sch.stop();
-      sch.yield();
-    }));
+    .WillOnce(testing::Invoke([](std::shared_ptr<translator::Coroutine> co,
+                                 int) { co->yield_for(10); }))
+    .WillOnce(
+      testing::Invoke([sch](std::shared_ptr<translator::Coroutine> co, int) {
+        sch->stop();
+        co->yield();
+      }));
 
-  auto sch = std::make_shared<translator::Schedule>();
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 

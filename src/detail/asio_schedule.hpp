@@ -15,48 +15,23 @@ using namespace boost::coroutines2;
 
 namespace translator {
 
-struct AsioCoroutine : Schedule::Coroutine
+class AsioCoroutine : public Coroutine
 {
-  template<typename Fn>
-  AsioCoroutine(boost::asio::io_service& ios, Fn&& fn)
-    : timer(ios)
-    , ps_([this, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
-      pl_ = &pl;
-      state = Schedule::CoroutineState::RUNNING;
-      fn();
-      state = Schedule::CoroutineState::DEAD;
-    })
-    , pl_(nullptr)
-  {
-  }
+public:
+  AsioCoroutine(std::shared_ptr<Schedule::Impl> sch);
 
-  void yield() override
-  {
-    if (pl_ && *pl_)
-      (*pl_)();
-  }
+public:
+  void set_func(task&& fn);
 
-  void yield_for(int milli) override
-  {
-    if (pl_ && *pl_) {
-      timer.expires_from_now(std::chrono::milliseconds(milli));
-      timer.async_wait([this](boost::system::error_code ec) mutable {
-        if (!ec)
-          resume();
-      });
-      (*pl_)();
-    }
-  }
+  void yield() override;
 
-  void resume() override
-  {
-    boost::system::error_code ec;
-    timer.cancel(ec);
+  void yield_for(int milli) override;
 
-    ps_();
-  }
+  void resume() override;
 
-  boost::asio::steady_timer timer;
+private:
+  std::weak_ptr<Schedule::Impl> sch_;
+  boost::asio::steady_timer timer_;
   coroutine<void>::push_type ps_;
   coroutine<void>::pull_type* pl_;
 };
@@ -73,28 +48,28 @@ public:
 
   void post(task&& fn);
 
-  void yield();
+  // void yield();
 
-  void yield_for(int milli);
+  // void yield_for(int milli);
 
-  void resume(std::weak_ptr<Coroutine> co);
+  // void resume(std::weak_ptr<Coroutine> co);
 
 public:
-  std::weak_ptr<Coroutine> this_co()
-  {
-    assert(running_co_);
-    return running_co_;
-  }
+  // std::weak_ptr<Coroutine> this_co()
+  // {
+  //   assert(running_co_);
+  //   return running_co_;
+  // }
 
   boost::asio::io_service& io_service() { return ios_; }
 
-private:
-  void do_resume(std::shared_ptr<Coroutine> co);
+// private:
+//   void do_resume(std::shared_ptr<Coroutine> co);
 
 private:
   boost::asio::io_service ios_;
-  std::unordered_set<std::shared_ptr<Coroutine>> cos_;
-  std::shared_ptr<Coroutine> running_co_;
+  // std::unordered_set<std::shared_ptr<Coroutine>> cos_;
+  // std::shared_ptr<Coroutine> running_co_;
 };
 
 }

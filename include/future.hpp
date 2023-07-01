@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <mutex>
 #include <optional>
 
@@ -15,9 +16,8 @@ class Future
   friend class Promise<Tp_>;
 
 private:
-  Future(Promise<Tp_>& pms, ScheduleRef sch)
+  Future(Promise<Tp_>& pms)
     : pms_(pms)
-    , sch_(sch)
   {
   }
 
@@ -27,14 +27,14 @@ private:
 public:
   Tp_&& get() &&
   {
-    sch_.yield();
+    pms_.co_->yield();
     return std::move(pms_.value().value());
   }
 
-  const Tp_& get() const&
+  const Tp_& get() &
   {
     if (!has_get_) {
-      sch_.yield();
+      pms_.co_.yield();
       value_ = std::move(pms_.value());
       has_get_ = true;
     }
@@ -44,15 +44,15 @@ public:
   Tp_&& get_for(int milli,
                 Tp_&& default_value) &&
   {
-    sch_.yield_for(milli);
+    pms_.co_->yield_for(milli);
     return std::move(pms_.value().value_or(std::forward<Tp_>(default_value)));
   }
 
   const Tp_& get_for(int milli,
-                     Tp_&& default_value) const&
+                     Tp_&& default_value) &
   {
     if (!has_get_) {
-      sch_.yield_for(milli);
+      pms_.co_.yield_for(milli);
       value_ = std::move(pms_.value());
       has_get_ = true;
     }
@@ -62,9 +62,8 @@ public:
 
 private:
   Promise<Tp_>& pms_;
-  mutable ScheduleRef sch_;
-  mutable std::optional<Tp_> value_;
-  mutable bool has_get_ = false;
+  std::optional<Tp_> value_;
+  bool has_get_ = false;
 };
 
 template<typename Tp_>
@@ -73,9 +72,8 @@ class Promise
   friend class Future<Tp_>;
 
 public:
-  Promise(ScheduleRef sch)
-    : sch_(sch)
-    , co_(sch_.this_co())
+  Promise(std::shared_ptr<Coroutine> co)
+    : co_(co)
   {
   }
 
@@ -89,10 +87,10 @@ public:
     std::lock_guard<std::mutex> lg(mtx_);
     value_ = std::forward<ValueTp_>(value);
 
-    sch_.resume(co_);
+    co_->resume();
   }
 
-  Future<Tp_> future() { return Future<Tp_>(*this, sch_); }
+  Future<Tp_> future() { return Future<Tp_>(*this); }
 
 private:
   std::optional<Tp_>&& value()
@@ -102,8 +100,8 @@ private:
   }
 
 private:
-  ScheduleRef sch_;
-  std::weak_ptr<Schedule::Coroutine> co_;
+  // std::weak_ptr<Schedule> sch_;
+  std::shared_ptr<Coroutine> co_;
   std::mutex mtx_;
   std::optional<Tp_> value_;
 };

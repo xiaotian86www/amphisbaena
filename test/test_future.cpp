@@ -6,29 +6,29 @@
 #include "gtest/gtest.h"
 
 static void
-foo(translator::ScheduleRef sch,
+foo(std::shared_ptr<translator::Coroutine> co,
     std::function<int()> func1,
     std::function<void(int)> func2)
 {
-  translator::Promise<int> pms(sch);
+  translator::Promise<int> pms(co);
   pms.set(func1());
   func2(pms.future().get());
 }
 
 static void
-foo2(translator::ScheduleRef sch,
+foo2(std::shared_ptr<translator::Coroutine> co,
      std::function<int()> func1,
      std::function<void(int)> func2)
 {
   // translator::Promise<int> pms(sch);
   // pms.set(func1());
   // func2(pms.future().get_for(0, 1));
-  sch.yield_for(0);
+  co->yield_for(0);
   func2(func1());
 }
 
 static void
-foo3(translator::ScheduleRef sch,
+foo3(std::shared_ptr<translator::Coroutine> sch,
      std::function<int()> func1,
      std::function<void(int)> func2)
 {
