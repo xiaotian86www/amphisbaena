@@ -1,3 +1,5 @@
+#pragma once
+
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/coroutine2/coroutine.hpp>

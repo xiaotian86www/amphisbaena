@@ -1,17 +1,39 @@
-#include "uds_server.hpp"
+#include "detail/uds_server.hpp"
 
+#include <boost/asio/local/stream_protocol.hpp>
 #include <memory>
+#include <unistd.h>
 
 namespace translator {
-UDSServer::UDSServer(std::shared_ptr<AsioSchedule> sch)
+UDSServer::UDSServer(std::shared_ptr<AsioSchedule> sch, std::string_view file)
   : sch_(sch)
+  , ep_(file)
   , acceptor_(sch_->io_service())
 {
+}
+
+UDSServer::~UDSServer() {}
+
+void
+UDSServer::listen()
+{
+  if (acceptor_.is_open())
+    return;
+
+  acceptor_.open(ep_.protocol());
+
+  acceptor_.set_option(stream_protocol::acceptor::reuse_address(true));
+
+  unlink(ep_.path().c_str());
+  acceptor_.bind(ep_);
+
+  acceptor_.listen();
+
   sch_->post(std::bind(&UDSServer::do_accept, this, std::placeholders::_1));
 }
 
 void
-UDSServer::on_data(const char* data, std::size_t data_len)
+UDSServer::on_data(std::string_view data)
 {
 }
 
@@ -39,7 +61,7 @@ UDSServer::do_accept(std::shared_ptr<Coroutine> co)
 
 void
 UDSServer::do_read(std::shared_ptr<stream_protocol::socket> sock,
-                    std::shared_ptr<Coroutine> co)
+                   std::shared_ptr<Coroutine> co)
 {
   std::array<char, 8192> data;
   for (;;) {
@@ -59,7 +81,7 @@ UDSServer::do_read(std::shared_ptr<stream_protocol::socket> sock,
     if (ec)
       break;
 
-    on_data(data.data(), size);
+    on_data({ data.data(), size });
   }
 }
 
