@@ -10,9 +10,9 @@ namespace translator {
 class Environment
 {
 public:
-  Environment(ObjectFactoryPtr object_factory, ServerPoolPtr server_pool)
+  Environment(ObjectFactoryPtr object_factory/*, ServerPoolPtr server_pool*/)
     : object_pool_(object_factory)
-    , server_pool_(server_pool)
+    // , server_pool_(server_pool)
   {
   }
 
@@ -25,6 +25,6 @@ public:
 
 private:
   ObjectPool object_pool_;
-  ServerPoolPtr server_pool_;
+  // ServerPoolPtr server_pool_;
 };
 } // namespace translator

@@ -16,6 +16,7 @@ Environment::set_object(std::string_view name, ObjectPtr&& object)
 Server*
 Environment::get_server(std::string_view name)
 {
-  return server_pool_->get(name);
+  return nullptr;
+  // return server_pool_->get(name);
 }
 } // namespace translator

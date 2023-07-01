@@ -6,6 +6,39 @@
 #include <unistd.h>
 
 namespace translator {
+UDSSocket::UDSSocket(std::shared_ptr<AsioSchedule> sch)
+  : sock_(sch->io_service())
+{
+}
+
+void
+UDSSocket::send(std::shared_ptr<Coroutine> co, std::string_view data)
+{
+  std::size_t send_size = 0;
+  for (;;) {
+    std::size_t size = 0;
+    boost::system::error_code ec;
+    sock_.async_write_some(
+      boost::asio::const_buffer(data.data() + send_size,
+                                data.size() - send_size),
+      [&size, &ec, co](boost::system::error_code in_ec, std::size_t in_size) {
+        ec = in_ec;
+        size = in_size;
+        co->resume();
+      });
+
+    co->yield();
+
+    if (ec)
+      throw ec;
+
+    send_size += size;
+
+    if (send_size == data.size())
+      break;
+  }
+}
+
 UDSServer::UDSServer(std::shared_ptr<AsioSchedule> sch, std::string_view file)
   : sch_(sch)
   , ep_(file)
@@ -34,49 +67,12 @@ UDSServer::listen()
 }
 
 void
-UDSServer::on_data(std::shared_ptr<stream_protocol::socket> sock,
-                   std::shared_ptr<Coroutine> co,
-                   std::string_view data)
-{
-}
-
-void
-UDSServer::send(std::shared_ptr<stream_protocol::socket> sock,
-                std::shared_ptr<Coroutine> co,
-                std::string_view data)
-{
-  std::size_t send_size = 0;
-  for (;;) {
-    std::size_t size = 0;
-    boost::system::error_code ec;
-    sock->async_write_some(
-      boost::asio::const_buffer(data.data() + send_size,
-                                data.size() - send_size),
-      [&size, &ec, co](boost::system::error_code in_ec, std::size_t in_size) {
-        ec = in_ec;
-        size = in_size;
-        co->resume();
-      });
-
-    co->yield();
-
-    if (ec)
-      throw ec;
-
-    send_size += size;
-
-    if (send_size == data.size())
-      break;
-  }
-}
-
-void
 UDSServer::do_accept(std::shared_ptr<Coroutine> co)
 {
   for (;;) {
-    auto sock = std::make_shared<stream_protocol::socket>(sch_->io_service());
+    auto sock = std::make_shared<UDSSocket>(sch_);
     boost::system::error_code ec;
-    acceptor_.async_accept(*sock,
+    acceptor_.async_accept(sock->native(),
                            [this, co, &ec](boost::system::error_code in_ec) {
                              ec = in_ec;
                              co->resume();
@@ -93,14 +89,14 @@ UDSServer::do_accept(std::shared_ptr<Coroutine> co)
 }
 
 void
-UDSServer::do_read(std::shared_ptr<stream_protocol::socket> sock,
+UDSServer::do_read(std::shared_ptr<UDSSocket> sock,
                    std::shared_ptr<Coroutine> co)
 {
   std::array<char, 8192> data;
   for (;;) {
     boost::system::error_code ec;
     std::size_t size;
-    sock->async_read_some(
+    sock->native().async_read_some(
       boost::asio::buffer(data, data.size()),
       [this, co, &ec, &size](boost::system::error_code in_ec,
                              std::size_t in_size) mutable {
@@ -114,7 +110,7 @@ UDSServer::do_read(std::shared_ptr<stream_protocol::socket> sock,
     if (ec)
       throw ec;
 
-    on_data(sock, co, { data.data(), size });
+    server_->on_data(sock, co, { data.data(), size });
   }
 }
 

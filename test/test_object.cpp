@@ -11,9 +11,9 @@
 TEST(object, produce_object)
 {
   auto obj_factory = std::make_shared<translator::ObjectFactory>();
-  auto server_pool = std::make_shared<translator::ServerPool>();
+  // auto server_pool = std::make_shared<translator::ServerPool>();
   auto env =
-    std::make_shared<translator::Environment>(obj_factory, server_pool);
+    std::make_shared<translator::Environment>(obj_factory/*, server_pool*/);
 
   testing::MockFunction<std::unique_ptr<translator::Object>(
     translator::Environment*)>
@@ -29,9 +29,9 @@ TEST(object, produce_object)
 TEST(object, get_object)
 {
   auto obj_factory = std::make_shared<translator::ObjectFactory>();
-  auto server_pool = std::make_shared<translator::ServerPool>();
+  // auto server_pool = std::make_shared<translator::ServerPool>();
   auto env =
-    std::make_shared<translator::Environment>(obj_factory, server_pool);
+    std::make_shared<translator::Environment>(obj_factory/*, server_pool*/);
   auto obj_pool = std::make_shared<translator::ObjectPool>(obj_factory);
 
   auto obj = std::make_unique<MockObject>();

@@ -1,32 +1,45 @@
 #pragma once
 
 #include <map>
+#include <memory>
+#include <string_view>
 
-#include "object.hpp"
+#include "schedule.hpp"
 
 namespace translator {
+class Socket : public std::enable_shared_from_this<Socket>
+{
+public:
+  virtual ~Socket() = default;
+
+public:
+  virtual void send(std::shared_ptr<Coroutine> co, std::string_view data) = 0;
+};
+
 class Server
 {
 public:
   virtual ~Server() = default;
 
-  virtual std::unique_ptr<Object> call(std::string_view method,
-                                       const Object* args) = 0;
+public:
+  virtual void on_data(std::shared_ptr<Socket> sock,
+                       std::shared_ptr<Coroutine> co,
+                       std::string_view data) = 0;
 };
 
-class ServerPool
-{
-public:
-  ServerPool() = default;
+// class ServerPool
+// {
+// public:
+//   ServerPool() = default;
 
-public:
-  void add(std::string_view name, std::shared_ptr<Server> server);
+// public:
+//   void add(std::string_view name, std::shared_ptr<Server> server);
 
-  Server* get(std::string_view name) const;
+//   Server* get(std::string_view name) const;
 
-private:
-  std::map<std::string_view, std::shared_ptr<Server>> servers_;
-};
+// private:
+//   std::map<std::string_view, std::shared_ptr<Server>> servers_;
+// };
 
-typedef std::shared_ptr<ServerPool> ServerPoolPtr;
+// typedef std::shared_ptr<ServerPool> ServerPoolPtr;
 } // namespace translator
