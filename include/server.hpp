@@ -16,10 +16,10 @@ public:
   virtual void send(std::shared_ptr<Coroutine> co, std::string_view data) = 0;
 };
 
-class Server
+class Protocol
 {
 public:
-  virtual ~Server() = default;
+  virtual ~Protocol() = default;
 
 public:
   virtual void on_data(std::shared_ptr<Socket> sock,

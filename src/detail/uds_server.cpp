@@ -41,7 +41,7 @@ UDSSocket::send(std::shared_ptr<Coroutine> co, std::string_view data)
 
 UDSServer::UDSServer(std::shared_ptr<AsioSchedule> sch, std::string_view file)
   : sch_(sch)
-  , ep_(file)
+  , endpoint_(file)
   , acceptor_(sch_->io_service())
 {
 }
@@ -54,12 +54,12 @@ UDSServer::listen()
   if (acceptor_.is_open())
     return;
 
-  acceptor_.open(ep_.protocol());
+  acceptor_.open(endpoint_.protocol());
 
   acceptor_.set_option(stream_protocol::acceptor::reuse_address(true));
 
-  unlink(ep_.path().c_str());
-  acceptor_.bind(ep_);
+  unlink(endpoint_.path().c_str());
+  acceptor_.bind(endpoint_);
 
   acceptor_.listen();
 
@@ -110,7 +110,7 @@ UDSServer::do_read(std::shared_ptr<UDSSocket> sock,
     if (ec)
       throw ec;
 
-    server_->on_data(sock, co, { data.data(), size });
+    protocol_->on_data(sock, co, { data.data(), size });
   }
 }
 

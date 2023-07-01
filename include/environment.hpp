@@ -21,7 +21,7 @@ public:
 
   void set_object(std::string_view name, ObjectPtr&& object);
 
-  Server* get_server(std::string_view name);
+  Protocol* get_server(std::string_view name);
 
 private:
   ObjectPool object_pool_;

@@ -15,19 +15,19 @@ TEST(uds_server, on_data)
 {
   auto sch = std::make_shared<translator::AsioSchedule>();
   auto server = std::make_shared<translator::UDSServer>(sch, "server.socket");
-  auto protocol_server = std::make_shared<MockServer>();
+  auto protocol = std::make_shared<MockServer>();
 
   boost::asio::io_service io_service;
   boost::asio::local::stream_protocol::socket sock(io_service);
 
   std::string_view data("1234567890");
 
-  server->set_server(protocol_server);
+  server->set_server(protocol);
   server->listen();
 
   std::thread th(std::bind(&translator::AsioSchedule::run, sch.get()));
 
-  EXPECT_CALL(*protocol_server,
+  EXPECT_CALL(*protocol,
               on_data(testing::_, testing::_, testing::StrEq(data)))
     .WillOnce(testing::Invoke([](std::shared_ptr<translator::Socket> sock,
                                  std::shared_ptr<translator::Coroutine> co,

@@ -5,7 +5,7 @@
 #include "schedule.hpp"
 #include "server.hpp"
 
-class MockServer : public translator::Server
+class MockServer : public translator::Protocol
 {
 public:
   MOCK_METHOD(void,

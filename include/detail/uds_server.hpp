@@ -38,7 +38,7 @@ public:
   void listen();
 
 public:
-  void set_server(std::shared_ptr<Server> server) { server_ = server; }
+  void set_server(std::shared_ptr<Protocol> protocol) { protocol_ = protocol; }
 
 private:
   void do_accept(std::shared_ptr<Coroutine> sch);
@@ -48,8 +48,8 @@ private:
 
 private:
   std::shared_ptr<AsioSchedule> sch_;
-  std::shared_ptr<Server> server_;
-  stream_protocol::endpoint ep_;
+  std::shared_ptr<Protocol> protocol_;
+  stream_protocol::endpoint endpoint_;
   stream_protocol::acceptor acceptor_;
 };
 }

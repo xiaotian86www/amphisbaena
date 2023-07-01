@@ -53,7 +53,7 @@ public:
     object_funcs_.insert_or_assign(name, func);
   }
 
-  void set_server(std::string_view name, std::unique_ptr<Server>&& server)
+  void set_server(std::string_view name, std::unique_ptr<Protocol>&& server)
   {
     auto it = servers_.find(name);
     if (it != servers_.end())
@@ -62,7 +62,7 @@ public:
       servers_.insert(std::make_pair(name, std::move(server)));
   }
 
-  Server* get_server(std::string_view name)
+  Protocol* get_server(std::string_view name)
   {
     auto it = servers_.find(name);
     if (it != servers_.end())
@@ -82,7 +82,7 @@ private:
 private:
   std::map<std::string_view, std::unique_ptr<Object>> objects_;
   std::map<std::string_view, get_object_func_t> object_funcs_;
-  std::map<std::string_view, std::unique_ptr<Server>> servers_;
+  std::map<std::string_view, std::unique_ptr<Protocol>> servers_;
 };
 
 } // namespace translator

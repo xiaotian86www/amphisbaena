@@ -13,7 +13,7 @@ Environment::set_object(std::string_view name, ObjectPtr&& object)
   object_pool_.add(name, std::move(object));
 }
 
-Server*
+Protocol*
 Environment::get_server(std::string_view name)
 {
   return nullptr;
