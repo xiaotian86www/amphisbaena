@@ -39,7 +39,8 @@ private:
 class Schedule::Impl : public std::enable_shared_from_this<Schedule::Impl>
 {
 public:
-  Impl();
+  Impl() = default;
+  ~Impl() = default;
 
 public:
   void run();
@@ -48,28 +49,11 @@ public:
 
   void post(task&& fn);
 
-  // void yield();
-
-  // void yield_for(int milli);
-
-  // void resume(std::weak_ptr<Coroutine> co);
-
 public:
-  // std::weak_ptr<Coroutine> this_co()
-  // {
-  //   assert(running_co_);
-  //   return running_co_;
-  // }
-
   boost::asio::io_service& io_service() { return ios_; }
-
-// private:
-//   void do_resume(std::shared_ptr<Coroutine> co);
 
 private:
   boost::asio::io_service ios_;
-  // std::unordered_set<std::shared_ptr<Coroutine>> cos_;
-  // std::shared_ptr<Coroutine> running_co_;
 };
 
 }

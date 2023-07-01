@@ -67,13 +67,6 @@ AsioCoroutine::resume()
     });
 }
 
-Schedule::Impl::Impl()
-//   : acceptor_(ios_)
-//   , awake_(std::bind(&Schedule2::do_accept, this, std::placeholders::_1))
-{
-  //   awake_(boost::system::errc::make_error_code(boost::system::errc::success));
-}
-
 void
 Schedule::Impl::run()
 {
@@ -81,7 +74,6 @@ Schedule::Impl::run()
     ios_.run();
   } catch (...) {
   }
-  // cos_.clear();
 }
 
 void
@@ -100,69 +92,5 @@ Schedule::Impl::post(task&& fn)
     co->resume();
   });
 }
-
-// void
-// Schedule::Impl::yield()
-// {
-//   // assert(running_co_);
-//   // running_co_->yield();
-// }
-
-// void
-// Schedule::Impl::yield_for(int milli)
-// {
-//   // assert(running_co_);
-//   // running_co_->yield_for(milli);
-// }
-
-// void
-// Schedule::Impl::resume(std::weak_ptr<Coroutine> co)
-// {
-//   // ios_.post([this, co]() mutable {
-//   //   auto sco = std::static_pointer_cast<AsioCoroutine>(co.lock());
-//   //   if (sco) {
-//   //     switch (sco->state) {
-//   //       case CoroutineState::SUSPEND:
-//   //         sco->state = CoroutineState::RUNNING;
-//   //         do_resume(sco);
-//   //         break;
-//   //       case CoroutineState::DYING:
-//   //         sco->state = CoroutineState::DEAD;
-//   //       case CoroutineState::DEAD:
-//   //         cos_.erase(sco);
-//   //         break;
-//   //       case CoroutineState::READY:
-//   //       case CoroutineState::RUNNING:
-//   //         assert(false);
-//   //         break;
-//   //     }
-//   //   }
-//   // });
-// }
-
-// void
-// Schedule::Impl::do_resume(std::shared_ptr<Coroutine> co)
-// {
-//   assert(!running_co_);
-//   assert(co);
-//   running_co_ = co;
-
-//   running_co_->resume();
-//   switch (running_co_->state) {
-//     case CoroutineState::RUNNING:
-//       running_co_->state = CoroutineState::SUSPEND;
-//       break;
-//     case CoroutineState::DYING:
-//       running_co_->state = CoroutineState::DEAD;
-//     case CoroutineState::DEAD:
-//       cos_.erase(running_co_);
-//       break;
-//     case CoroutineState::READY:
-//     case CoroutineState::SUSPEND:
-//       assert(false);
-//       break;
-//   }
-//   running_co_.reset();
-// }
 
 }
