@@ -5,7 +5,7 @@
 #include "schedule.hpp"
 #include "server.hpp"
 
-class MockServer : public translator::Protocol
+class MockProtocol : public translator::Protocol
 {
 public:
   MOCK_METHOD(void,
@@ -13,5 +13,14 @@ public:
               (std::shared_ptr<translator::Socket>,
                std::shared_ptr<translator::Coroutine>,
                std::string_view),
+              (override));
+};
+
+class MockProtocolFactory : public translator::ProtocolFactory
+{
+public:
+  MOCK_METHOD(std::unique_ptr<translator::Protocol>,
+              create,
+              (),
               (override));
 };

@@ -24,6 +24,8 @@ class AsioCoroutine : public Coroutine
 public:
   AsioCoroutine(std::shared_ptr<AsioSchedule> sch);
 
+  ~AsioCoroutine() override;
+
 public:
   void spawn(task&& fn);
 

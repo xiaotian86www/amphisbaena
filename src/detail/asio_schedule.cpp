@@ -6,7 +6,6 @@
 #include <functional>
 #include <memory>
 #include <unordered_map>
-#include <utility>
 
 namespace translator {
 
@@ -15,6 +14,10 @@ AsioCoroutine::AsioCoroutine(std::shared_ptr<AsioSchedule> sch)
   , timer_(sch->io_service())
   , pl_([](coroutine<void>::push_type&) {})
   , ps_(nullptr)
+{
+}
+
+AsioCoroutine::~AsioCoroutine()
 {
 }
 
@@ -77,7 +80,8 @@ AsioSchedule::run()
 void
 AsioSchedule::stop()
 {
-  ios_.stop();
+  if (!ios_.stopped())
+    ios_.stop();
 }
 
 void

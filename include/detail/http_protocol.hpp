@@ -24,7 +24,13 @@ public:
                std::string_view data) override;
 
 private:
-    llhttp_t parser_;
-    llhttp_settings_t settings_;
+  llhttp_t parser_;
+  llhttp_settings_t settings_;
+};
+
+class HttpProtocolFactory : public ProtocolFactory
+{
+public:
+    std::unique_ptr<Protocol> create() override;
 };
 }

@@ -27,6 +27,15 @@ public:
                        std::string_view data) = 0;
 };
 
+class ProtocolFactory
+{
+public:
+  virtual ~ProtocolFactory() = default;
+
+public:
+  virtual std::unique_ptr<Protocol> create() = 0;
+};
+
 // class ServerPool
 // {
 // public:

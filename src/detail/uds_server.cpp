@@ -39,8 +39,11 @@ UDSSocket::send(std::shared_ptr<Coroutine> co, std::string_view data)
   }
 }
 
-UDSServer::UDSServer(std::shared_ptr<AsioSchedule> sch, std::string_view file)
+UDSServer::UDSServer(std::shared_ptr<AsioSchedule> sch,
+                     std::shared_ptr<ProtocolFactory> proto_factory,
+                     std::string_view file)
   : sch_(sch)
+  , proto_factory_(proto_factory)
   , endpoint_(file)
   , acceptor_(sch_->io_service())
 {
@@ -92,6 +95,7 @@ void
 UDSServer::do_read(std::shared_ptr<UDSSocket> sock,
                    std::shared_ptr<Coroutine> co)
 {
+  auto proto = proto_factory_->create();
   std::array<char, 8192> data;
   for (;;) {
     boost::system::error_code ec;
@@ -110,7 +114,7 @@ UDSServer::do_read(std::shared_ptr<UDSSocket> sock,
     if (ec)
       throw ec;
 
-    protocol_->on_data(sock, co, { data.data(), size });
+    proto->on_data(sock, co, { data.data(), size });
   }
 }
 
