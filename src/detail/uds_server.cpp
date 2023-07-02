@@ -66,7 +66,7 @@ UDSServer::listen()
 
   acceptor_.listen();
 
-  sch_->post(std::bind(&UDSServer::do_accept, this, std::placeholders::_1));
+  sch_->post(std::bind(&UDSServer::do_accept, shared_from_this(), std::placeholders::_1));
 }
 
 void
@@ -87,7 +87,7 @@ UDSServer::do_accept(std::shared_ptr<Coroutine> co)
       continue;
 
     sch_->post(
-      std::bind(&UDSServer::do_read, this, sock, std::placeholders::_1));
+      std::bind(&UDSServer::do_read, shared_from_this(), sock, std::placeholders::_1));
   }
 }
 

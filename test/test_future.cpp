@@ -102,7 +102,7 @@ TEST(future, get_for_timeout)
                       foo_mock1.AsStdFunction(),
                       foo_mock2.AsStdFunction()));
 
-  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+  std::thread th(std::bind(&translator::Schedule::run, sch));
 
   if (th.joinable())
     th.join();

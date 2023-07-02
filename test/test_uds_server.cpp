@@ -37,7 +37,7 @@ TEST(uds_server, on_data)
 
   server->listen();
 
-  std::thread th(std::bind(&translator::AsioSchedule::run, sch.get()));
+  std::thread th(std::bind(&translator::AsioSchedule::run, sch));
 
   sock.connect("server.socket");
   sock.write_some(boost::asio::buffer(data));

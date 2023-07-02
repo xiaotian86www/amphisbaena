@@ -41,7 +41,7 @@ TEST(coroutine, resume)
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
-  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+  std::thread th(std::bind(&translator::Schedule::run, sch));
 
   if (th.joinable())
     th.join();
@@ -70,7 +70,7 @@ TEST(coroutine, multi_resume)
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
-  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+  std::thread th(std::bind(&translator::Schedule::run, sch));
 
   if (th.joinable())
     th.join();
@@ -97,7 +97,7 @@ TEST(coroutine, stop)
 
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
-  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+  std::thread th(std::bind(&translator::Schedule::run, sch));
 
   if (th.joinable())
     th.join();
@@ -124,7 +124,7 @@ TEST(coroutine, yield_for_timeout)
   auto sch = std::make_shared<translator::AsioSchedule>();
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
-  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+  std::thread th(std::bind(&translator::Schedule::run, sch));
 
   timespec start, stop;
   clock_gettime(CLOCK_MONOTONIC, &start);
@@ -159,7 +159,7 @@ TEST(coroutine, resume_yield_for)
   auto sch = std::make_shared<translator::AsioSchedule>();
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
-  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+  std::thread th(std::bind(&translator::Schedule::run, sch));
 
   timespec start, stop;
   clock_gettime(CLOCK_MONOTONIC, &start);
@@ -196,7 +196,7 @@ TEST(coroutine, stop_yield_for)
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
   sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
-  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+  std::thread th(std::bind(&translator::Schedule::run, sch));
 
   timespec start, stop;
   clock_gettime(CLOCK_MONOTONIC, &start);
