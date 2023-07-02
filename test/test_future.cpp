@@ -7,7 +7,7 @@
 #include "gtest/gtest.h"
 
 static void
-foo(std::shared_ptr<translator::Coroutine> co,
+foo(translator::Coroutine* co,
     std::function<int()> func1,
     std::function<void(int)> func2)
 {
@@ -17,7 +17,7 @@ foo(std::shared_ptr<translator::Coroutine> co,
 }
 
 static void
-foo2(std::shared_ptr<translator::Coroutine> co,
+foo2(translator::Coroutine* co,
      std::function<int()> func1,
      std::function<void(int)> func2)
 {
@@ -29,11 +29,11 @@ foo2(std::shared_ptr<translator::Coroutine> co,
 }
 
 static void
-foo3(std::shared_ptr<translator::Coroutine> sch,
+foo3(translator::Coroutine* co,
      std::function<int()> func1,
      std::function<void(int)> func2)
 {
-  translator::Promise<int> pms(sch);
+  translator::Promise<int> pms(co);
   func2(pms.future().get_for(1, 0));
 }
 

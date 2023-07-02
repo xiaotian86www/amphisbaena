@@ -19,7 +19,7 @@ public:
   virtual void resume() = 0;
 };
 
-typedef std::function<void(std::shared_ptr<Coroutine>)> task;
+typedef std::function<void(Coroutine*)> task;
 
 class Schedule : public std::enable_shared_from_this<Schedule>
 {
@@ -46,7 +46,6 @@ public:
   virtual void stop() = 0;
 
   virtual void post(task&& func) = 0;
-
 };
 
 } // namespace translator

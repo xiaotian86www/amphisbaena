@@ -13,7 +13,7 @@ public:
   virtual ~Socket() = default;
 
 public:
-  virtual void send(std::shared_ptr<Coroutine> co, std::string_view data) = 0;
+  virtual void send(Coroutine* co, std::string_view data) = 0;
 };
 
 class Protocol
@@ -23,7 +23,7 @@ public:
 
 public:
   virtual void on_data(std::shared_ptr<Socket> sock,
-                       std::shared_ptr<Coroutine> co,
+                       Coroutine* co,
                        std::string_view data) = 0;
 };
 

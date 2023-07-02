@@ -19,7 +19,7 @@ public:
   UDSSocket(std::shared_ptr<AsioSchedule> sch);
 
 public:
-  void send(std::shared_ptr<Coroutine> co, std::string_view data);
+  void send(Coroutine* co, std::string_view data) override;
 
 public:
   stream_protocol::socket& native() { return sock_; }
@@ -40,9 +40,9 @@ public:
   void listen();
 
 private:
-  void do_accept(std::shared_ptr<Coroutine> sch);
+  void do_accept(Coroutine* co);
 
-  void do_read(std::shared_ptr<UDSSocket> sock, std::shared_ptr<Coroutine> sch);
+  void do_read(std::shared_ptr<UDSSocket> sock, Coroutine* co);
 
 private:
   std::shared_ptr<AsioSchedule> sch_;

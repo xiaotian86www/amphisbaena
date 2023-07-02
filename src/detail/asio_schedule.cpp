@@ -17,18 +17,16 @@ AsioCoroutine::AsioCoroutine(std::shared_ptr<AsioSchedule> sch)
 {
 }
 
-AsioCoroutine::~AsioCoroutine()
-{
-}
+AsioCoroutine::~AsioCoroutine() {}
 
 void
 AsioCoroutine::spawn(task&& fn)
 {
   pl_ = coroutine<void>::pull_type(
-    [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this()),
-     fn = std::move(fn)](coroutine<void>::push_type& ps) mutable {
-      co->ps_ = &ps;
-      fn(co);
+    [this, fn = std::move(fn)](coroutine<void>::push_type& ps) mutable {
+      // auto co = std::static_pointer_cast<AsioCoroutine>(shared_from_this());
+      ps_ = &ps;
+      fn(this);
     });
 }
 
@@ -44,10 +42,12 @@ AsioCoroutine::yield_for(int milli)
 {
   if (ps_ && *ps_) {
     timer_.expires_from_now(std::chrono::milliseconds(milli));
-    timer_.async_wait([this](boost::system::error_code ec) mutable {
-      if (!ec)
-        resume();
-    });
+    timer_.async_wait(
+      [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())](
+        boost::system::error_code ec) mutable {
+        if (!ec)
+          co->resume();
+      });
     (*ps_)();
   }
 }

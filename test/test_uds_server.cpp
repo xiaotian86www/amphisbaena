@@ -30,7 +30,7 @@ TEST(uds_server, on_data)
                 on_data(testing::_, testing::_, testing::StrEq(data)))
       .WillOnce(
         testing::Invoke([](std::shared_ptr<translator::Socket> sock,
-                           std::shared_ptr<translator::Coroutine> co,
+                           translator::Coroutine* co,
                            std::string_view data) { sock->send(co, data); }));
     return protocol;
   }));
