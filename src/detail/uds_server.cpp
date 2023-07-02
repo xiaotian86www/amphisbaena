@@ -21,7 +21,8 @@ UDSSocket::send(Coroutine* co, std::string_view data)
     sock_.async_write_some(
       boost::asio::const_buffer(data.data() + send_size,
                                 data.size() - send_size),
-      [&size, &ec, co = co->shared_from_this()](boost::system::error_code in_ec, std::size_t in_size) {
+      [&size, &ec, co = co->shared_from_this()](boost::system::error_code in_ec,
+                                                std::size_t in_size) {
         ec = in_ec;
         size = in_size;
         co->resume();
@@ -75,12 +76,12 @@ UDSServer::do_accept(Coroutine* co)
   for (;;) {
     auto sock = std::make_shared<UDSSocket>(sch_);
     boost::system::error_code ec;
-    acceptor_.async_accept(sock->native(),
-                           [&ec, co = co->shared_from_this()](
-                             boost::system::error_code in_ec) {
-                             ec = in_ec;
-                             co->resume();
-                           });
+    acceptor_.async_accept(
+      sock->native(),
+      [&ec, co = co->shared_from_this()](boost::system::error_code in_ec) {
+        ec = in_ec;
+        co->resume();
+      });
 
     co->yield();
 
@@ -102,8 +103,8 @@ UDSServer::do_read(std::shared_ptr<UDSSocket> sock, Coroutine* co)
     std::size_t size;
     sock->native().async_read_some(
       boost::asio::buffer(data, data.size()),
-      [&ec, &size, co = co->shared_from_this()](
-        boost::system::error_code in_ec, std::size_t in_size) mutable {
+      [&ec, &size, co = co->shared_from_this()](boost::system::error_code in_ec,
+                                                std::size_t in_size) mutable {
         size = in_size;
         ec = in_ec;
         co->resume();
