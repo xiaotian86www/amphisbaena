@@ -35,34 +35,31 @@ public:
   {
     if (!has_get_) {
       pms_.co_.yield();
-      value_ = std::move(pms_.value());
       has_get_ = true;
     }
-    return value_.value();
+    return pms_.value().value();
   }
 
   Tp_&& get_for(int milli,
                 Tp_&& default_value) &&
   {
     pms_.co_->yield_for(milli);
-    return std::move(pms_.value().value_or(std::forward<Tp_>(default_value)));
+    return std::move(pms_.value().value_or(std::move(default_value)));
   }
 
   const Tp_& get_for(int milli,
-                     Tp_&& default_value) &
+                     const Tp_& default_value) &
   {
     if (!has_get_) {
       pms_.co_.yield_for(milli);
-      value_ = std::move(pms_.value());
       has_get_ = true;
     }
 
-    return pms_.value().value_or(std::forward<Tp_>(default_value));
+    return pms_.value().value_or(default_value);
   }
 
 private:
   Promise<Tp_>& pms_;
-  std::optional<Tp_> value_;
   bool has_get_ = false;
 };
 
