@@ -38,8 +38,8 @@ TEST(coroutine, resume)
     .WillRepeatedly(testing::Invoke(invoke_foo));
 
   auto sch = std::make_shared<translator::AsioSchedule>();
-  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
-  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+  sch->spawn(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+  sch->spawn(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch));
 
@@ -67,8 +67,8 @@ TEST(coroutine, multi_resume)
     .WillRepeatedly(testing::Invoke(invoke_foo));
 
   auto sch = std::make_shared<translator::AsioSchedule>();
-  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
-  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+  sch->spawn(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+  sch->spawn(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch));
 
@@ -95,7 +95,7 @@ TEST(coroutine, stop)
   EXPECT_CALL(foo_mock, Call(testing::_, 0))
     .WillOnce(testing::Invoke(invoke_foo));
 
-  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+  sch->spawn(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch));
 
@@ -122,7 +122,7 @@ TEST(coroutine, yield_for_timeout)
     .WillOnce(testing::Invoke(invoke_foo));
 
   auto sch = std::make_shared<translator::AsioSchedule>();
-  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+  sch->spawn(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch));
 
@@ -157,7 +157,7 @@ TEST(coroutine, resume_yield_for)
     .WillOnce(testing::Invoke(invoke_foo));
 
   auto sch = std::make_shared<translator::AsioSchedule>();
-  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+  sch->spawn(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch));
 
@@ -193,8 +193,8 @@ TEST(coroutine, stop_yield_for)
         co->yield();
       }));
 
-  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
-  sch->post(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+  sch->spawn(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
+  sch->spawn(std::bind(foo, std::placeholders::_1, foo_mock.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch));
 

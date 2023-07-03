@@ -30,12 +30,9 @@ class AsioSchedule;
 class AsioCoroutine : public Coroutine
 {
 public:
-  AsioCoroutine(std::shared_ptr<AsioSchedule> sch);
+  AsioCoroutine(std::shared_ptr<AsioSchedule> sch, task&& fn);
 
   ~AsioCoroutine() override;
-
-public:
-  void spawn(task&& fn);
 
 public:
   void yield() override;
@@ -45,10 +42,13 @@ public:
   void resume() override;
 
 private:
+  void do_resume();
+
+private:
   std::weak_ptr<AsioSchedule> sch_;
   boost::asio::steady_timer timer_;
-  coroutine<void>::pull_type pl_;
-  coroutine<void>::push_type* ps_ = nullptr;
+  coroutine<void>::push_type ps_;
+  coroutine<void>::pull_type* pl_ = nullptr;
   CoroutineState state_ = CoroutineState::COROUTINE_READY;
 };
 
@@ -63,7 +63,7 @@ public:
 
   void stop() override;
 
-  void post(task&& fn) override;
+  void spawn(task&& fn) override;
 
 public:
   boost::asio::io_service& io_service() { return ios_; }

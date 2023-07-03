@@ -9,46 +9,35 @@
 
 namespace translator {
 
-AsioCoroutine::AsioCoroutine(std::shared_ptr<AsioSchedule> sch)
+AsioCoroutine::AsioCoroutine(std::shared_ptr<AsioSchedule> sch, task&& fn)
   : sch_(sch)
   , timer_(sch->io_service())
-  , pl_([](coroutine<void>::push_type&) {})
-  , ps_(nullptr)
+  , ps_([this, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
+    pl_ = &pl;
+    fn(this);
+    state_ = CoroutineState::COROUTINE_DEAD;
+  })
+  , pl_(nullptr)
 {
 }
 
 AsioCoroutine::~AsioCoroutine() {}
 
 void
-AsioCoroutine::spawn(task&& fn)
-{
-  assert(state_ == CoroutineState::COROUTINE_READY);
-  state_ = CoroutineState::COROUTINE_RUNNING;
-  pl_ = coroutine<void>::pull_type(
-    [this, fn = std::move(fn)](coroutine<void>::push_type& ps) mutable {
-      // auto co = std::static_pointer_cast<AsioCoroutine>(shared_from_this());
-      ps_ = &ps;
-      fn(this);
-      state_ = CoroutineState::COROUTINE_DEAD;
-    });
-  state_ = CoroutineState::COROUTINE_SUSPEND;
-}
-
-void
 AsioCoroutine::yield()
 {
-  assert(ps_);
-  assert(*ps_);
+  assert(pl_);
+  assert(*pl_);
   assert(state_ == CoroutineState::COROUTINE_RUNNING);
-  (*ps_)();
+  (*pl_)();
   assert(state_ == CoroutineState::COROUTINE_RUNNING);
 }
 
 void
 AsioCoroutine::yield_for(int milli)
 {
-  assert(ps_);
-  assert(*ps_);
+  assert(pl_);
+  assert(*pl_);
 
   timer_.expires_from_now(std::chrono::milliseconds(milli));
   timer_.async_wait(
@@ -57,16 +46,11 @@ AsioCoroutine::yield_for(int milli)
       if (ec)
         return;
 
-      if (co->pl_) {
-        assert(co->state_ == CoroutineState::COROUTINE_SUSPEND);
-        co->state_ = CoroutineState::COROUTINE_RUNNING;
-        co->pl_();
-        co->state_ = CoroutineState::COROUTINE_SUSPEND;
-      }
+      co->do_resume();
     });
 
   assert(state_ == CoroutineState::COROUTINE_RUNNING);
-  (*ps_)();
+  (*pl_)();
   assert(state_ == CoroutineState::COROUTINE_RUNNING);
 }
 
@@ -81,13 +65,20 @@ AsioCoroutine::resume()
     [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())] {
       boost::system::error_code ec;
       co->timer_.cancel(ec);
-      if (co->pl_) {
-        assert(co->state_ == CoroutineState::COROUTINE_SUSPEND);
-        co->state_ = CoroutineState::COROUTINE_RUNNING;
-        co->pl_();
-        co->state_ = CoroutineState::COROUTINE_SUSPEND;
-      }
+
+      co->do_resume();
     });
+}
+
+void
+AsioCoroutine::do_resume()
+{
+  if (ps_) {
+    assert(state_ == CoroutineState::COROUTINE_READY);
+    state_ = CoroutineState::COROUTINE_RUNNING;
+    ps_();
+    state_ = CoroutineState::COROUTINE_READY;
+  }
 }
 
 void
@@ -107,13 +98,12 @@ AsioSchedule::stop()
 }
 
 void
-AsioSchedule::post(task&& fn)
+AsioSchedule::spawn(task&& fn)
 {
-  ios_.post([this, fn = std::move(fn)]() mutable {
-    auto co = std::make_shared<AsioCoroutine>(
-      std::static_pointer_cast<AsioSchedule>(shared_from_this()));
-    co->spawn(std::move(fn));
-  });
+  auto co = std::make_shared<AsioCoroutine>(
+    std::static_pointer_cast<AsioSchedule>(shared_from_this()), std::move(fn));
+
+  co->resume();
 }
 
 }

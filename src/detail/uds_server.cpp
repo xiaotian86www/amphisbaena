@@ -67,7 +67,7 @@ UDSServer::listen()
 
   acceptor_.listen();
 
-  sch_->post(std::bind(&UDSServer::do_accept, this, std::placeholders::_1));
+  sch_->spawn(std::bind(&UDSServer::do_accept, this, std::placeholders::_1));
 }
 
 void
@@ -88,7 +88,7 @@ UDSServer::do_accept(Coroutine* co)
     if (ec)
       continue;
 
-    sch_->post(
+    sch_->spawn(
       std::bind(&UDSServer::do_read, this, sock, std::placeholders::_1));
   }
 }
