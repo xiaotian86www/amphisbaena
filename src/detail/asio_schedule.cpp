@@ -22,34 +22,52 @@ AsioCoroutine::~AsioCoroutine() {}
 void
 AsioCoroutine::spawn(task&& fn)
 {
+  assert(state_ == CoroutineState::COROUTINE_READY);
+  state_ = CoroutineState::COROUTINE_RUNNING;
   pl_ = coroutine<void>::pull_type(
     [this, fn = std::move(fn)](coroutine<void>::push_type& ps) mutable {
       // auto co = std::static_pointer_cast<AsioCoroutine>(shared_from_this());
       ps_ = &ps;
       fn(this);
+      state_ = CoroutineState::COROUTINE_DEAD;
     });
+  state_ = CoroutineState::COROUTINE_SUSPEND;
 }
 
 void
 AsioCoroutine::yield()
 {
-  if (ps_ && *ps_)
-    (*ps_)();
+  assert(ps_);
+  assert(*ps_);
+  assert(state_ == CoroutineState::COROUTINE_RUNNING);
+  (*ps_)();
+  assert(state_ == CoroutineState::COROUTINE_RUNNING);
 }
 
 void
 AsioCoroutine::yield_for(int milli)
 {
-  if (ps_ && *ps_) {
-    timer_.expires_from_now(std::chrono::milliseconds(milli));
-    timer_.async_wait(
-      [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())](
-        boost::system::error_code ec) mutable {
-        if (!ec)
-          co->resume();
-      });
-    (*ps_)();
-  }
+  assert(ps_);
+  assert(*ps_);
+
+  timer_.expires_from_now(std::chrono::milliseconds(milli));
+  timer_.async_wait(
+    [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())](
+      boost::system::error_code ec) mutable {
+      if (ec)
+        return;
+
+      if (co->pl_) {
+        assert(co->state_ == CoroutineState::COROUTINE_SUSPEND);
+        co->state_ = CoroutineState::COROUTINE_RUNNING;
+        co->pl_();
+        co->state_ = CoroutineState::COROUTINE_SUSPEND;
+      }
+    });
+
+  assert(state_ == CoroutineState::COROUTINE_RUNNING);
+  (*ps_)();
+  assert(state_ == CoroutineState::COROUTINE_RUNNING);
 }
 
 void
@@ -63,8 +81,12 @@ AsioCoroutine::resume()
     [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())] {
       boost::system::error_code ec;
       co->timer_.cancel(ec);
-      if (co->pl_)
+      if (co->pl_) {
+        assert(co->state_ == CoroutineState::COROUTINE_SUSPEND);
+        co->state_ = CoroutineState::COROUTINE_RUNNING;
         co->pl_();
+        co->state_ = CoroutineState::COROUTINE_SUSPEND;
+      }
     });
 }
 

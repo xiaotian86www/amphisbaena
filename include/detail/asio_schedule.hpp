@@ -17,6 +17,14 @@ using namespace boost::coroutines2;
 
 namespace translator {
 
+enum class CoroutineState : int
+{
+  COROUTINE_DEAD = 0,
+  COROUTINE_READY = 1,
+  COROUTINE_SUSPEND = 2,
+  COROUTINE_RUNNING = 3
+};
+
 class AsioSchedule;
 
 class AsioCoroutine : public Coroutine
@@ -40,7 +48,8 @@ private:
   std::weak_ptr<AsioSchedule> sch_;
   boost::asio::steady_timer timer_;
   coroutine<void>::pull_type pl_;
-  coroutine<void>::push_type* ps_;
+  coroutine<void>::push_type* ps_ = nullptr;
+  CoroutineState state_ = CoroutineState::COROUTINE_READY;
 };
 
 class AsioSchedule : public Schedule
@@ -61,6 +70,7 @@ public:
 
 private:
   boost::asio::io_service ios_;
+  std::unordered_set<std::shared_ptr<Coroutine>> cos_;
 };
 
 }
