@@ -5,6 +5,12 @@
 #include <memory>
 
 namespace translator {
+
+class Coroutine;
+class Schedule;
+
+typedef std::function<void(std::weak_ptr<Schedule>, Coroutine*)> task;
+
 class Coroutine : public std::enable_shared_from_this<Coroutine>
 {
 public:
@@ -19,9 +25,39 @@ public:
   virtual void resume() = 0;
 };
 
-class Schedule;
+class CoroutineRef
+{
+public:
+  CoroutineRef(std::weak_ptr<Coroutine> co)
+    : co_(co)
+  {
+  }
 
-typedef std::function<void(std::weak_ptr<Schedule>, Coroutine*)> task;
+public:
+  void yield()
+  {
+    if (auto co = co_.lock()) {
+      co->yield();
+    }
+  }
+
+  void yield_for(int milli)
+  {
+    if (auto co = co_.lock()) {
+      co->yield_for(milli);
+    }
+  }
+
+  void resume()
+  {
+    if (auto co = co_.lock()) {
+      co->resume();
+    }
+  }
+
+private:
+  std::weak_ptr<Coroutine> co_;
+};
 
 class Schedule : public std::enable_shared_from_this<Schedule>
 {
