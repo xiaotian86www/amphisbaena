@@ -16,7 +16,7 @@ TEST(uds_server, on_data)
   auto sch = std::make_shared<translator::AsioSchedule>();
   auto proto_factory = std::make_shared<MockProtocolFactory>();
   auto server = std::make_shared<translator::UDSServer>(
-    sch, proto_factory, "server.socket");
+    sch->io_service(), sch, proto_factory, "server.socket");
 
   boost::asio::io_service io_service;
   boost::asio::local::stream_protocol::socket sock(io_service);

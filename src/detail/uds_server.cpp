@@ -1,13 +1,14 @@
 #include "detail/uds_server.hpp"
 
 #include <boost/asio/buffer.hpp>
+#include <boost/asio/io_service.hpp>
 #include <boost/asio/local/stream_protocol.hpp>
 #include <memory>
 #include <unistd.h>
 
 namespace translator {
-UDSSocket::UDSSocket(std::shared_ptr<AsioSchedule> sch)
-  : sock_(sch->io_service())
+UDSSocket::UDSSocket(boost::asio::io_service& ios)
+  : sock_(ios)
 {
 }
 
@@ -40,13 +41,15 @@ UDSSocket::send(Coroutine* co, std::string_view data)
   }
 }
 
-UDSServer::UDSServer(std::shared_ptr<AsioSchedule> sch,
+UDSServer::UDSServer(boost::asio::io_service& ios,
+                     std::shared_ptr<Schedule> sch,
                      std::shared_ptr<ProtocolFactory> proto_factory,
                      std::string_view file)
-  : sch_(sch)
+  : ios_(ios)
+  , sch_(sch)
   , proto_factory_(proto_factory)
   , endpoint_(file)
-  , acceptor_(sch_->io_service())
+  , acceptor_(ios)
 {
 }
 
@@ -74,7 +77,7 @@ void
 UDSServer::do_accept(Coroutine* co)
 {
   for (;;) {
-    auto sock = std::make_shared<UDSSocket>(sch_);
+    auto sock = std::make_shared<UDSSocket>(ios_);
     boost::system::error_code ec;
     acceptor_.async_accept(
       sock->native(),

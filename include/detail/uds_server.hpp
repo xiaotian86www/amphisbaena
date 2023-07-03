@@ -16,7 +16,7 @@ namespace translator {
 class UDSSocket : public Socket
 {
 public:
-  UDSSocket(std::shared_ptr<AsioSchedule> sch);
+  UDSSocket(boost::asio::io_service& ios);
 
 public:
   void send(Coroutine* co, std::string_view data) override;
@@ -31,7 +31,8 @@ private:
 class UDSServer : public std::enable_shared_from_this<UDSServer>
 {
 public:
-  UDSServer(std::shared_ptr<AsioSchedule> sch,
+  UDSServer(boost::asio::io_service& ios,
+            std::shared_ptr<Schedule> sch,
             std::shared_ptr<ProtocolFactory> proto_factory,
             std::string_view file);
   virtual ~UDSServer();
@@ -45,7 +46,8 @@ private:
   void do_read(std::shared_ptr<UDSSocket> sock, Coroutine* co);
 
 private:
-  std::shared_ptr<AsioSchedule> sch_;
+  boost::asio::io_service& ios_;
+  std::shared_ptr<Schedule> sch_;
   std::shared_ptr<ProtocolFactory> proto_factory_;
   stream_protocol::endpoint endpoint_;
   stream_protocol::acceptor acceptor_;

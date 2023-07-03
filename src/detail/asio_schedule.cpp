@@ -9,9 +9,11 @@
 
 namespace translator {
 
-AsioCoroutine::AsioCoroutine(std::shared_ptr<AsioSchedule> sch, task&& fn)
+AsioCoroutine::AsioCoroutine(boost::asio::io_service& ios,
+                             std::weak_ptr<Schedule> sch,
+                             task&& fn)
   : sch_(sch)
-  , timer_(sch->io_service())
+  , timer_(ios)
   , ps_([this, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
     pl_ = &pl;
     fn(this);
@@ -48,17 +50,16 @@ AsioCoroutine::yield_for(int milli)
 void
 AsioCoroutine::resume()
 {
-  auto sch = sch_.lock();
+  auto sch = std::static_pointer_cast<AsioSchedule>(sch_.lock());
   if (!sch)
     return;
 
-  sch->post(
-    [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())] {
-      boost::system::error_code ec;
-      co->timer_.cancel(ec);
+  sch->post([co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())] {
+    boost::system::error_code ec;
+    co->timer_.cancel(ec);
 
-      co->do_resume();
-    });
+    co->do_resume();
+  });
 }
 
 void
@@ -104,8 +105,8 @@ AsioSchedule::stop()
 void
 AsioSchedule::spawn(task&& fn)
 {
-  auto co = std::make_shared<AsioCoroutine>(
-    std::static_pointer_cast<AsioSchedule>(shared_from_this()), std::move(fn));
+  auto co =
+    std::make_shared<AsioCoroutine>(ios_, shared_from_this(), std::move(fn));
 
   cos_.insert(co);
 
@@ -121,7 +122,6 @@ AsioSchedule::post(std::function<void()>&& fn)
 void
 AsioSchedule::resume(std::shared_ptr<Coroutine> co)
 {
-
 }
 
 }
