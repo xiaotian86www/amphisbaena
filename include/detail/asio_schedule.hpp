@@ -5,6 +5,7 @@
 #include <boost/coroutine2/coroutine.hpp>
 #include <boost/system/error_code.hpp>
 #include <chrono>
+#include <functional>
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
@@ -42,6 +43,8 @@ public:
   void resume() override;
 
 private:
+  void do_yield();
+  
   void do_resume();
 
 private:
@@ -64,6 +67,10 @@ public:
   void stop() override;
 
   void spawn(task&& fn) override;
+
+  void resume(std::shared_ptr<Coroutine> co);
+
+  void post(std::function<void()>&& fn);
 
 public:
   boost::asio::io_service& io_service() { return ios_; }

@@ -26,19 +26,12 @@ AsioCoroutine::~AsioCoroutine() {}
 void
 AsioCoroutine::yield()
 {
-  assert(pl_);
-  assert(*pl_);
-  assert(state_ == CoroutineState::COROUTINE_RUNNING);
-  (*pl_)();
-  assert(state_ == CoroutineState::COROUTINE_RUNNING);
+  do_yield();
 }
 
 void
 AsioCoroutine::yield_for(int milli)
 {
-  assert(pl_);
-  assert(*pl_);
-
   timer_.expires_from_now(std::chrono::milliseconds(milli));
   timer_.async_wait(
     [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())](
@@ -49,9 +42,7 @@ AsioCoroutine::yield_for(int milli)
       co->do_resume();
     });
 
-  assert(state_ == CoroutineState::COROUTINE_RUNNING);
-  (*pl_)();
-  assert(state_ == CoroutineState::COROUTINE_RUNNING);
+  do_yield();
 }
 
 void
@@ -61,7 +52,7 @@ AsioCoroutine::resume()
   if (!sch)
     return;
 
-  sch->io_service().post(
+  sch->post(
     [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())] {
       boost::system::error_code ec;
       co->timer_.cancel(ec);
@@ -71,12 +62,25 @@ AsioCoroutine::resume()
 }
 
 void
+AsioCoroutine::do_yield()
+{
+  assert(pl_);
+  assert(*pl_);
+  assert(state_ == CoroutineState::COROUTINE_RUNNING);
+  (*pl_)();
+  assert(state_ == CoroutineState::COROUTINE_RUNNING);
+}
+
+void
 AsioCoroutine::do_resume()
 {
   if (ps_) {
     assert(state_ == CoroutineState::COROUTINE_READY);
     state_ = CoroutineState::COROUTINE_RUNNING;
     ps_();
+    if (state_ == CoroutineState::COROUTINE_DEAD)
+      return;
+    assert(state_ == CoroutineState::COROUTINE_RUNNING);
     state_ = CoroutineState::COROUTINE_READY;
   }
 }
@@ -103,7 +107,21 @@ AsioSchedule::spawn(task&& fn)
   auto co = std::make_shared<AsioCoroutine>(
     std::static_pointer_cast<AsioSchedule>(shared_from_this()), std::move(fn));
 
+  cos_.insert(co);
+
   co->resume();
+}
+
+void
+AsioSchedule::post(std::function<void()>&& fn)
+{
+  ios_.post(std::move(fn));
+}
+
+void
+AsioSchedule::resume(std::shared_ptr<Coroutine> co)
+{
+
 }
 
 }
