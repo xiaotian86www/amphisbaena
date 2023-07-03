@@ -1,13 +1,16 @@
 #include <chrono>
+#include <memory>
 #include <thread>
 
 #include "detail/asio_schedule.hpp"
 #include "future.hpp"
+#include "schedule.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 static void
-foo(translator::Coroutine* co,
+foo(std::weak_ptr<translator::Schedule> sch,
+    translator::Coroutine* co,
     std::function<int()> func1,
     std::function<void(int)> func2)
 {
@@ -17,7 +20,8 @@ foo(translator::Coroutine* co,
 }
 
 static void
-foo2(translator::Coroutine* co,
+foo2(std::weak_ptr<translator::Schedule> sch,
+     translator::Coroutine* co,
      std::function<int()> func1,
      std::function<void(int)> func2)
 {
@@ -29,7 +33,8 @@ foo2(translator::Coroutine* co,
 }
 
 static void
-foo3(translator::Coroutine* co,
+foo3(std::weak_ptr<translator::Schedule> sch,
+     translator::Coroutine* co,
      std::function<int()> func1,
      std::function<void(int)> func2)
 {
@@ -47,13 +52,15 @@ TEST(future, get)
 
   auto sch = std::make_shared<translator::AsioSchedule>();
   sch->spawn(std::bind(foo,
-                      std::placeholders::_1,
-                      foo_mock1.AsStdFunction(),
-                      foo_mock2.AsStdFunction()));
+                       std::placeholders::_1,
+                       std::placeholders::_2,
+                       foo_mock1.AsStdFunction(),
+                       foo_mock2.AsStdFunction()));
   sch->spawn(std::bind(foo,
-                      std::placeholders::_1,
-                      foo_mock1.AsStdFunction(),
-                      foo_mock2.AsStdFunction()));
+                       std::placeholders::_1,
+                       std::placeholders::_2,
+                       foo_mock1.AsStdFunction(),
+                       foo_mock2.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch.get()));
 
@@ -71,13 +78,15 @@ TEST(future, get_for)
 
   auto sch = std::make_shared<translator::AsioSchedule>();
   sch->spawn(std::bind(foo2,
-                      std::placeholders::_1,
-                      foo_mock1.AsStdFunction(),
-                      foo_mock2.AsStdFunction()));
+                       std::placeholders::_1,
+                       std::placeholders::_2,
+                       foo_mock1.AsStdFunction(),
+                       foo_mock2.AsStdFunction()));
   sch->spawn(std::bind(foo2,
-                      std::placeholders::_1,
-                      foo_mock1.AsStdFunction(),
-                      foo_mock2.AsStdFunction()));
+                       std::placeholders::_1,
+                       std::placeholders::_2,
+                       foo_mock1.AsStdFunction(),
+                       foo_mock2.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch.get()));
 
@@ -94,13 +103,15 @@ TEST(future, get_for_timeout)
 
   auto sch = std::make_shared<translator::AsioSchedule>();
   sch->spawn(std::bind(foo3,
-                      std::placeholders::_1,
-                      foo_mock1.AsStdFunction(),
-                      foo_mock2.AsStdFunction()));
+                       std::placeholders::_1,
+                       std::placeholders::_2,
+                       foo_mock1.AsStdFunction(),
+                       foo_mock2.AsStdFunction()));
   sch->spawn(std::bind(foo3,
-                      std::placeholders::_1,
-                      foo_mock1.AsStdFunction(),
-                      foo_mock2.AsStdFunction()));
+                       std::placeholders::_1,
+                       std::placeholders::_2,
+                       foo_mock1.AsStdFunction(),
+                       foo_mock2.AsStdFunction()));
 
   std::thread th(std::bind(&translator::Schedule::run, sch));
 

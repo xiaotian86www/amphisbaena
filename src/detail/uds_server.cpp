@@ -70,11 +70,12 @@ UDSServer::listen()
 
   acceptor_.listen();
 
-  sch_->spawn(std::bind(&UDSServer::do_accept, this, std::placeholders::_1));
+  sch_->spawn(std::bind(
+    &UDSServer::do_accept, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 void
-UDSServer::do_accept(Coroutine* co)
+UDSServer::do_accept(std::weak_ptr<Schedule> sch, Coroutine* co)
 {
   for (;;) {
     auto sock = std::make_shared<UDSSocket>(ios_);
@@ -91,13 +92,18 @@ UDSServer::do_accept(Coroutine* co)
     if (ec)
       continue;
 
-    sch_->spawn(
-      std::bind(&UDSServer::do_read, this, sock, std::placeholders::_1));
+    sch_->spawn(std::bind(&UDSServer::do_read,
+                          this,
+                          std::placeholders::_1,
+                          std::placeholders::_2,
+                          sock));
   }
 }
 
 void
-UDSServer::do_read(std::shared_ptr<UDSSocket> sock, Coroutine* co)
+UDSServer::do_read(std::weak_ptr<Schedule> sch,
+                   Coroutine* co,
+                   std::shared_ptr<UDSSocket> sock)
 {
   auto proto = proto_factory_->create();
   std::array<char, 8192> data;

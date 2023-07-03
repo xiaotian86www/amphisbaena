@@ -16,7 +16,7 @@ AsioCoroutine::AsioCoroutine(boost::asio::io_service& ios,
   , timer_(ios)
   , ps_([this, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
     pl_ = &pl;
-    fn(this);
+    fn(sch_, this);
     state_ = CoroutineState::COROUTINE_DEAD;
   })
   , pl_(nullptr)

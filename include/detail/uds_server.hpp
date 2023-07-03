@@ -41,9 +41,9 @@ public:
   void listen();
 
 private:
-  void do_accept(Coroutine* co);
+  void do_accept(std::weak_ptr<Schedule> sch, Coroutine* co);
 
-  void do_read(std::shared_ptr<UDSSocket> sock, Coroutine* co);
+  void do_read(std::weak_ptr<Schedule> sch, Coroutine* co, std::shared_ptr<UDSSocket> sock);
 
 private:
   boost::asio::io_service& ios_;

@@ -21,7 +21,7 @@ public:
 
 class Schedule;
 
-typedef std::function<void(Coroutine*)> task;
+typedef std::function<void(std::weak_ptr<Schedule>, Coroutine*)> task;
 
 class Schedule : public std::enable_shared_from_this<Schedule>
 {
