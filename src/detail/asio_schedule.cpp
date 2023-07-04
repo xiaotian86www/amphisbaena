@@ -16,7 +16,7 @@ AsioCoroutine::AsioCoroutine(boost::asio::io_service& ios,
   , timer_(ios)
   , ps_([this, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
     pl_ = &pl;
-    fn(sch_, this);
+    fn(sch_, weak_from_this());
     state_ = CoroutineState::COROUTINE_DEAD;
   })
   , pl_(nullptr)
@@ -106,7 +106,7 @@ void
 AsioSchedule::spawn(task&& fn)
 {
   auto co =
-    std::make_shared<AsioCoroutine>(ios_, shared_from_this(), std::move(fn));
+    std::make_shared<AsioCoroutine>(ios_, weak_from_this(), std::move(fn));
 
   cos_.insert(co);
 

@@ -10,7 +10,7 @@
 
 static void
 foo(std::weak_ptr<translator::Schedule> sch,
-    translator::Coroutine* co,
+    translator::CoroutineRef co,
     std::function<int()> func1,
     std::function<void(int)> func2)
 {
@@ -21,20 +21,20 @@ foo(std::weak_ptr<translator::Schedule> sch,
 
 static void
 foo2(std::weak_ptr<translator::Schedule> sch,
-     translator::Coroutine* co,
+     translator::CoroutineRef co,
      std::function<int()> func1,
      std::function<void(int)> func2)
 {
   // translator::Promise<int> pms(sch);
   // pms.set(func1());
   // func2(pms.future().get_for(0, 1));
-  co->yield_for(0);
+  co.yield_for(0);
   func2(func1());
 }
 
 static void
 foo3(std::weak_ptr<translator::Schedule> sch,
-     translator::Coroutine* co,
+     translator::CoroutineRef co,
      std::function<int()> func1,
      std::function<void(int)> func2)
 {

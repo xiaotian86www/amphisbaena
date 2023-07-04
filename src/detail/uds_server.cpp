@@ -13,7 +13,7 @@ UDSSocket::UDSSocket(boost::asio::io_service& ios)
 }
 
 void
-UDSSocket::send(Coroutine* co, std::string_view data)
+UDSSocket::send(CoroutineRef co, std::string_view data)
 {
   std::size_t send_size = 0;
   for (;;) {
@@ -22,14 +22,14 @@ UDSSocket::send(Coroutine* co, std::string_view data)
     sock_.async_write_some(
       boost::asio::const_buffer(data.data() + send_size,
                                 data.size() - send_size),
-      [&size, &ec, co = co->shared_from_this()](boost::system::error_code in_ec,
-                                                std::size_t in_size) {
+      [&size, &ec, co](boost::system::error_code in_ec,
+                                                std::size_t in_size) mutable {
         ec = in_ec;
         size = in_size;
-        co->resume();
+        co.resume();
       });
 
-    co->yield();
+    co.yield();
 
     if (ec)
       throw ec;
@@ -75,19 +75,19 @@ UDSServer::listen()
 }
 
 void
-UDSServer::do_accept(std::weak_ptr<Schedule> sch, Coroutine* co)
+UDSServer::do_accept(std::weak_ptr<Schedule> sch, CoroutineRef co)
 {
   for (;;) {
     auto sock = std::make_shared<UDSSocket>(ios_);
     boost::system::error_code ec;
     acceptor_.async_accept(
       sock->native(),
-      [&ec, co = co->shared_from_this()](boost::system::error_code in_ec) {
+      [&ec, co](boost::system::error_code in_ec) mutable {
         ec = in_ec;
-        co->resume();
+        co.resume();
       });
 
-    co->yield();
+    co.yield();
 
     if (ec)
       continue;
@@ -102,7 +102,7 @@ UDSServer::do_accept(std::weak_ptr<Schedule> sch, Coroutine* co)
 
 void
 UDSServer::do_read(std::weak_ptr<Schedule> sch,
-                   Coroutine* co,
+                   CoroutineRef co,
                    std::shared_ptr<UDSSocket> sock)
 {
   auto proto = proto_factory_->create();
@@ -112,14 +112,14 @@ UDSServer::do_read(std::weak_ptr<Schedule> sch,
     std::size_t size;
     sock->native().async_read_some(
       boost::asio::buffer(data, data.size()),
-      [&ec, &size, co = co->shared_from_this()](boost::system::error_code in_ec,
+      [&ec, &size, co](boost::system::error_code in_ec,
                                                 std::size_t in_size) mutable {
         size = in_size;
         ec = in_ec;
-        co->resume();
+        co.resume();
       });
 
-    co->yield();
+    co.yield();
 
     if (ec)
       throw ec;

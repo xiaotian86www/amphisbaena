@@ -6,10 +6,10 @@
 
 namespace translator {
 
-class Coroutine;
+class CoroutineRef;
 class Schedule;
 
-typedef std::function<void(std::weak_ptr<Schedule>, Coroutine*)> task;
+typedef std::function<void(std::weak_ptr<Schedule>, CoroutineRef)> task;
 
 class Coroutine : public std::enable_shared_from_this<Coroutine>
 {
@@ -32,20 +32,23 @@ public:
     : co_(co)
   {
   }
+  
+  CoroutineRef(std::shared_ptr<Coroutine> co)
+    : co_(co)
+  {
+  }
 
 public:
   void yield()
   {
-    if (auto co = co_.lock()) {
-      co->yield();
-    }
+    auto co = co_.lock().get();
+    co->yield();
   }
 
   void yield_for(int milli)
   {
-    if (auto co = co_.lock()) {
-      co->yield_for(milli);
-    }
+    auto co = co_.lock().get();
+    co->yield_for(milli);
   }
 
   void resume()

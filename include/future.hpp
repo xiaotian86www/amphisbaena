@@ -27,7 +27,7 @@ private:
 public:
   Tp_&& get() &&
   {
-    pms_.co_->yield();
+    pms_.co_.yield();
     return std::move(pms_.value().value());
   }
 
@@ -43,7 +43,7 @@ public:
   Tp_&& get_for(int milli,
                 Tp_&& default_value) &&
   {
-    pms_.co_->yield_for(milli);
+    pms_.co_.yield_for(milli);
     return std::move(pms_.value().value_or(std::move(default_value)));
   }
 
@@ -69,7 +69,7 @@ class Promise
   friend class Future<Tp_>;
 
 public:
-  Promise(Coroutine* co)
+  Promise(CoroutineRef co)
     : co_(co)
   {
   }
@@ -84,7 +84,7 @@ public:
     std::lock_guard<std::mutex> lg(mtx_);
     value_ = std::forward<ValueTp_>(value);
 
-    co_->resume();
+    co_.resume();
   }
 
   Future<Tp_> future() { return Future<Tp_>(*this); }
@@ -98,7 +98,7 @@ private:
 
 private:
   // std::weak_ptr<Schedule> sch_;
-  Coroutine* co_;
+  CoroutineRef co_;
   std::mutex mtx_;
   std::optional<Tp_> value_;
 };

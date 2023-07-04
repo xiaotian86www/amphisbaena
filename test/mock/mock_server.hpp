@@ -11,7 +11,7 @@ public:
   MOCK_METHOD(void,
               on_data,
               (std::shared_ptr<translator::Socket>,
-               translator::Coroutine*,
+               translator::CoroutineRef,
                std::string_view),
               (override));
 };
