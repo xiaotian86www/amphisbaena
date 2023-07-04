@@ -33,11 +33,6 @@ public:
   {
   }
   
-  CoroutineRef(std::shared_ptr<Coroutine> co)
-    : co_(co)
-  {
-  }
-
 public:
   void yield()
   {
