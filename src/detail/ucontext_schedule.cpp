@@ -264,7 +264,7 @@
 // }
 
 // void
-// Schedule::Impl::resume(std::weak_ptr<Coroutine> co)
+// Schedule::Impl::resume(std::weak_ptr<CoroutineImpl> co)
 // {
 //   std::unique_lock<std::mutex> ul(mtx_);
 

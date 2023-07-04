@@ -43,7 +43,7 @@
 //   bool operator()(const CoTimerPtr& left, const CoTimerPtr& right) const;
 // };
 
-// struct UContextCoroutine : Schedule::Coroutine
+// struct UContextCoroutine : Schedule::CoroutineImpl
 // {
 //   task func;
 //   CoContext context;
@@ -71,12 +71,12 @@
 
 //   void yield_for(int milli);
 
-//   void resume(std::weak_ptr<Coroutine> co);
+//   void resume(std::weak_ptr<CoroutineImpl> co);
 
 //   static void co_func_wrapper(uint32_t low32, uint32_t high32);
 
 // public:
-//   std::weak_ptr<Coroutine> this_co()
+//   std::weak_ptr<CoroutineImpl> this_co()
 //   {
 //     assert(running_);
 //     return running_;
@@ -111,7 +111,7 @@
 //   CoContext context_;
 //   std::unordered_set<std::shared_ptr<UContextCoroutine>> cos_;
 //   std::shared_ptr<UContextCoroutine> running_;
-//   std::queue<std::weak_ptr<Coroutine>> running_cos_;
+//   std::queue<std::weak_ptr<CoroutineImpl>> running_cos_;
 //   std::atomic<int32_t> co_count_;
 //   std::priority_queue<CoTimerPtr, std::vector<CoTimerPtr>, CoTimerPtrGreater>
 //     timers_que_;

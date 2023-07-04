@@ -10,6 +10,28 @@
 
 namespace translator {
 
+void
+Coroutine::yield()
+{
+  auto co = co_.lock().get();
+  co->yield();
+}
+
+void
+Coroutine::yield_for(int milli)
+{
+  auto co = co_.lock().get();
+  co->yield_for(milli);
+}
+
+void
+Coroutine::resume()
+{
+  if (auto co = co_.lock()) {
+    co->resume();
+  }
+}
+
 AsioCoroutine::AsioCoroutine(boost::asio::io_service& ios,
                              ScheduleRef sch,
                              task&& fn)
@@ -117,7 +139,7 @@ AsioSchedule::post(std::function<void()>&& fn)
 }
 
 void
-AsioSchedule::resume(CoroutineRef co)
+AsioSchedule::resume(Coroutine co)
 {
   ios_.post([co]() mutable { co.resume(); });
 }

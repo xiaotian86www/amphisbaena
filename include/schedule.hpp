@@ -6,55 +6,30 @@
 
 namespace translator {
 
-class CoroutineRef;
+class Coroutine;
 class ScheduleRef;
 
-typedef std::function<void(ScheduleRef, CoroutineRef)> task;
+typedef std::function<void(ScheduleRef, Coroutine)> task;
 
-class Coroutine : public std::enable_shared_from_this<Coroutine>
+class CoroutineImpl;
+
+class Coroutine
 {
 public:
-  Coroutine() = default;
-  virtual ~Coroutine() = default;
-
-public:
-  virtual void yield() = 0;
-
-  virtual void yield_for(int milli) = 0;
-
-  virtual void resume() = 0;
-};
-
-class CoroutineRef
-{
-public:
-  CoroutineRef(std::weak_ptr<Coroutine> co)
+  Coroutine(std::weak_ptr<CoroutineImpl> co)
     : co_(co)
   {
   }
 
 public:
-  void yield()
-  {
-    auto co = co_.lock().get();
-    co->yield();
-  }
+  void yield();
 
-  void yield_for(int milli)
-  {
-    auto co = co_.lock().get();
-    co->yield_for(milli);
-  }
+  void yield_for(int milli);
 
-  void resume()
-  {
-    if (auto co = co_.lock()) {
-      co->resume();
-    }
-  }
+  void resume();
 
 private:
-  std::weak_ptr<Coroutine> co_;
+  std::weak_ptr<CoroutineImpl> co_;
 };
 
 class Schedule : public std::enable_shared_from_this<Schedule>
@@ -72,7 +47,7 @@ public:
 
   virtual void spawn(task&& func) = 0;
 
-  virtual void resume(CoroutineRef co) = 0;
+  virtual void resume(Coroutine co) = 0;
 
   virtual void post(std::function<void()>&& func) = 0;
 };

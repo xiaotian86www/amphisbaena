@@ -69,7 +69,7 @@ class Promise
   friend class Future<Tp_>;
 
 public:
-  Promise(CoroutineRef co)
+  Promise(Coroutine co)
     : co_(co)
   {
   }
@@ -98,7 +98,7 @@ private:
 
 private:
   // std::weak_ptr<Schedule> sch_;
-  CoroutineRef co_;
+  Coroutine co_;
   std::mutex mtx_;
   std::optional<Tp_> value_;
 };

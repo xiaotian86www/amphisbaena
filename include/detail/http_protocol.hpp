@@ -1,4 +1,5 @@
 #include "server.hpp"
+
 #include <llhttp.h>
 #include <string_view>
 
@@ -20,7 +21,7 @@ public:
 
 public:
   void on_data(std::shared_ptr<Socket> sock,
-               CoroutineRef co,
+               Coroutine co,
                std::string_view data) override;
 
 private:
