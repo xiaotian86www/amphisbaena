@@ -9,7 +9,7 @@
 #include "gtest/gtest.h"
 
 static void
-foo(std::weak_ptr<translator::Schedule> sch,
+foo(translator::ScheduleRef sch,
     translator::CoroutineRef co,
     std::function<int()> func1,
     std::function<void(int)> func2)
@@ -20,7 +20,7 @@ foo(std::weak_ptr<translator::Schedule> sch,
 }
 
 static void
-foo2(std::weak_ptr<translator::Schedule> sch,
+foo2(translator::ScheduleRef sch,
      translator::CoroutineRef co,
      std::function<int()> func1,
      std::function<void(int)> func2)
@@ -33,7 +33,7 @@ foo2(std::weak_ptr<translator::Schedule> sch,
 }
 
 static void
-foo3(std::weak_ptr<translator::Schedule> sch,
+foo3(translator::ScheduleRef sch,
      translator::CoroutineRef co,
      std::function<int()> func1,
      std::function<void(int)> func2)

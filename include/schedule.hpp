@@ -7,9 +7,9 @@
 namespace translator {
 
 class CoroutineRef;
-class Schedule;
+class ScheduleRef;
 
-typedef std::function<void(std::weak_ptr<Schedule>, CoroutineRef)> task;
+typedef std::function<void(ScheduleRef, CoroutineRef)> task;
 
 class Coroutine : public std::enable_shared_from_this<Coroutine>
 {
@@ -32,7 +32,7 @@ public:
     : co_(co)
   {
   }
-  
+
 public:
   void yield()
   {
@@ -71,6 +71,29 @@ public:
   virtual void stop() = 0;
 
   virtual void spawn(task&& func) = 0;
+
+  virtual void resume(CoroutineRef co) = 0;
+
+  virtual void post(std::function<void()>&& func) = 0;
+};
+
+class ScheduleRef
+{
+public:
+  ScheduleRef(std::weak_ptr<Schedule> sch)
+    : sch_(sch)
+  {
+  }
+
+public:
+  void post(std::function<void()>&& func)
+  {
+    if (auto sch = sch_.lock()) {
+      sch->post(std::move(func));
+    }
+  }
+private:
+  std::weak_ptr<Schedule> sch_;
 };
 
 } // namespace translator

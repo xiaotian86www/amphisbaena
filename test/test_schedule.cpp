@@ -12,7 +12,7 @@ struct args
 };
 
 static void
-foo(std::weak_ptr<translator::Schedule> sch,
+foo(translator::ScheduleRef sch,
     translator::CoroutineRef co,
     std::function<void(translator::CoroutineRef, int)> func)
 {

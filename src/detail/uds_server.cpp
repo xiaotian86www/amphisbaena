@@ -75,7 +75,7 @@ UDSServer::listen()
 }
 
 void
-UDSServer::do_accept(std::weak_ptr<Schedule> sch, CoroutineRef co)
+UDSServer::do_accept(ScheduleRef sch, CoroutineRef co)
 {
   for (;;) {
     auto sock = std::make_shared<UDSSocket>(ios_);
@@ -101,7 +101,7 @@ UDSServer::do_accept(std::weak_ptr<Schedule> sch, CoroutineRef co)
 }
 
 void
-UDSServer::do_read(std::weak_ptr<Schedule> sch,
+UDSServer::do_read(ScheduleRef sch,
                    CoroutineRef co,
                    std::shared_ptr<UDSSocket> sock)
 {

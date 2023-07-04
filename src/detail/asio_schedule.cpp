@@ -1,4 +1,5 @@
 #include "detail/asio_schedule.hpp"
+#include "schedule.hpp"
 
 #include <boost/asio/local/stream_protocol.hpp>
 #include <boost/coroutine/exceptions.hpp>
@@ -10,7 +11,7 @@
 namespace translator {
 
 AsioCoroutine::AsioCoroutine(boost::asio::io_service& ios,
-                             std::weak_ptr<Schedule> sch,
+                             ScheduleRef sch,
                              task&& fn)
   : sch_(sch)
   , timer_(ios)
@@ -50,14 +51,7 @@ AsioCoroutine::yield_for(int milli)
 void
 AsioCoroutine::resume()
 {
-  auto sch = std::static_pointer_cast<AsioSchedule>(sch_.lock());
-  if (!sch)
-    return;
-
-  sch->post([co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())] {
-    boost::system::error_code ec;
-    co->timer_.cancel(ec);
-
+  sch_.post([co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())] {
     co->do_resume();
   });
 }
@@ -75,6 +69,9 @@ AsioCoroutine::do_yield()
 void
 AsioCoroutine::do_resume()
 {
+  boost::system::error_code ec;
+  timer_.cancel(ec);
+
   if (ps_) {
     assert(state_ == CoroutineState::COROUTINE_READY);
     state_ = CoroutineState::COROUTINE_RUNNING;
@@ -120,8 +117,9 @@ AsioSchedule::post(std::function<void()>&& fn)
 }
 
 void
-AsioSchedule::resume(std::shared_ptr<Coroutine> co)
+AsioSchedule::resume(CoroutineRef co)
 {
+  ios_.post([co]() mutable { co.resume(); });
 }
 
 }
