@@ -10,28 +10,6 @@
 
 namespace translator {
 
-void
-Coroutine::yield()
-{
-  auto co = co_.lock().get();
-  co->yield();
-}
-
-void
-Coroutine::yield_for(int milli)
-{
-  auto co = co_.lock().get();
-  co->yield_for(milli);
-}
-
-void
-Coroutine::resume()
-{
-  if (auto co = co_.lock()) {
-    co->resume();
-  }
-}
-
 CoroutineImpl::CoroutineImpl(boost::asio::io_service& ios,
                              ScheduleRef sch,
                              task&& fn)
@@ -106,7 +84,7 @@ CoroutineImpl::do_resume()
 }
 
 void
-AsioSchedule::run()
+ScheduleImpl::run()
 {
   try {
     ios_.run();
@@ -115,14 +93,14 @@ AsioSchedule::run()
 }
 
 void
-AsioSchedule::stop()
+ScheduleImpl::stop()
 {
   if (!ios_.stopped())
     ios_.stop();
 }
 
 void
-AsioSchedule::spawn(task&& fn)
+ScheduleImpl::spawn(task&& fn)
 {
   auto co =
     std::make_shared<CoroutineImpl>(ios_, weak_from_this(), std::move(fn));
@@ -133,15 +111,84 @@ AsioSchedule::spawn(task&& fn)
 }
 
 void
-AsioSchedule::post(std::function<void()>&& fn)
+ScheduleImpl::post(std::function<void()>&& fn)
 {
   ios_.post(std::move(fn));
 }
 
 void
-AsioSchedule::resume(Coroutine co)
+ScheduleImpl::resume(Coroutine co)
 {
   ios_.post([co]() mutable { co.resume(); });
 }
 
+void
+Coroutine::yield()
+{
+  auto co = impl_.lock().get();
+  co->yield();
+}
+
+void
+Coroutine::yield_for(int milli)
+{
+  auto co = impl_.lock().get();
+  co->yield_for(milli);
+}
+
+void
+Coroutine::resume()
+{
+  if (auto co = impl_.lock()) {
+    co->resume();
+  }
+}
+
+Schedule::Schedule()
+  : impl_(std::make_shared<ScheduleImpl>())
+{
+}
+
+void
+Schedule::run()
+{
+  impl_->run();
+}
+
+void
+Schedule::stop()
+{
+  impl_->stop();
+}
+
+void
+Schedule::spawn(task&& func)
+{
+  impl_->spawn(std::move(func));
+}
+
+void
+Schedule::resume(Coroutine co)
+{
+  impl_->resume(std::move(co));
+}
+
+void
+Schedule::post(std::function<void()>&& func)
+{
+  impl_->post(std::move(func));
+}
+
+ScheduleRef::ScheduleRef(std::weak_ptr<ScheduleImpl> sch)
+  : sch_(sch)
+{
+}
+
+void
+ScheduleRef::post(std::function<void()>&& func)
+{
+  if (auto sch = sch_.lock()) {
+    sch->post(std::move(func));
+  }
+}
 }

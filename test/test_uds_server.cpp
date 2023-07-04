@@ -5,18 +5,18 @@
 #include <functional>
 #include <memory>
 
-#include "detail/asio_schedule.hpp"
 #include "detail/uds_server.hpp"
 #include "mock/mock_server.hpp"
+#include "schedule.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 TEST(uds_server, on_data)
 {
-  auto sch = std::make_shared<translator::AsioSchedule>();
+  auto sch = std::make_shared<translator::Schedule>();
   auto proto_factory = std::make_shared<MockProtocolFactory>();
   auto server = std::make_shared<translator::UDSServer>(
-    sch->io_service(), sch, proto_factory, "server.socket");
+    sch, proto_factory, "server.socket");
 
   boost::asio::io_service io_service;
   boost::asio::local::stream_protocol::socket sock(io_service);
@@ -37,7 +37,7 @@ TEST(uds_server, on_data)
 
   server->listen();
 
-  std::thread th(std::bind(&translator::AsioSchedule::run, sch));
+  std::thread th(std::bind(&translator::Schedule::run, sch));
 
   sock.connect("server.socket");
   sock.write_some(boost::asio::buffer(data));

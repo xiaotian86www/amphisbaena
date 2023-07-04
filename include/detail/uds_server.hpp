@@ -1,6 +1,6 @@
 #pragma once
 
-#include "detail/asio_schedule.hpp"
+#include "asio_schedule.hpp"
 #include "schedule.hpp"
 #include "server.hpp"
 
@@ -31,8 +31,7 @@ private:
 class UDSServer : public std::enable_shared_from_this<UDSServer>
 {
 public:
-  UDSServer(boost::asio::io_service& ios,
-            std::shared_ptr<Schedule> sch,
+  UDSServer(std::shared_ptr<Schedule> sch,
             std::shared_ptr<ProtocolFactory> proto_factory,
             std::string_view file);
   virtual ~UDSServer();
@@ -46,7 +45,6 @@ private:
   void do_read(ScheduleRef sch, Coroutine co, std::shared_ptr<UDSSocket> sock);
 
 private:
-  boost::asio::io_service& ios_;
   std::shared_ptr<Schedule> sch_;
   std::shared_ptr<ProtocolFactory> proto_factory_;
   stream_protocol::endpoint endpoint_;

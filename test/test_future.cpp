@@ -2,7 +2,6 @@
 #include <memory>
 #include <thread>
 
-#include "detail/asio_schedule.hpp"
 #include "future.hpp"
 #include "schedule.hpp"
 #include "gmock/gmock.h"
@@ -50,7 +49,7 @@ TEST(future, get)
   EXPECT_CALL(foo_mock1, Call()).Times(2).WillRepeatedly(testing::Return(1));
   EXPECT_CALL(foo_mock2, Call(1)).Times(2);
 
-  auto sch = std::make_shared<translator::AsioSchedule>();
+  auto sch = std::make_shared<translator::Schedule>();
   sch->spawn(std::bind(foo,
                        std::placeholders::_1,
                        std::placeholders::_2,
@@ -76,7 +75,7 @@ TEST(future, get_for)
   EXPECT_CALL(foo_mock1, Call()).Times(2).WillRepeatedly(testing::Return(1));
   EXPECT_CALL(foo_mock2, Call(1)).Times(2);
 
-  auto sch = std::make_shared<translator::AsioSchedule>();
+  auto sch = std::make_shared<translator::Schedule>();
   sch->spawn(std::bind(foo2,
                        std::placeholders::_1,
                        std::placeholders::_2,
@@ -101,7 +100,7 @@ TEST(future, get_for_timeout)
 
   EXPECT_CALL(foo_mock2, Call(0)).Times(2);
 
-  auto sch = std::make_shared<translator::AsioSchedule>();
+  auto sch = std::make_shared<translator::Schedule>();
   sch->spawn(std::bind(foo3,
                        std::placeholders::_1,
                        std::placeholders::_2,

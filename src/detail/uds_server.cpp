@@ -41,15 +41,13 @@ UDSSocket::send(Coroutine co, std::string_view data)
   }
 }
 
-UDSServer::UDSServer(boost::asio::io_service& ios,
-                     std::shared_ptr<Schedule> sch,
+UDSServer::UDSServer(std::shared_ptr<Schedule> sch,
                      std::shared_ptr<ProtocolFactory> proto_factory,
                      std::string_view file)
-  : ios_(ios)
-  , sch_(sch)
+  : sch_(sch)
   , proto_factory_(proto_factory)
   , endpoint_(file)
-  , acceptor_(ios)
+  , acceptor_(sch->impl_->io_service())
 {
 }
 
@@ -78,7 +76,7 @@ void
 UDSServer::do_accept(ScheduleRef sch, Coroutine co)
 {
   for (;;) {
-    auto sock = std::make_shared<UDSSocket>(ios_);
+    auto sock = std::make_shared<UDSSocket>(sch_->impl_->io_service());
     boost::system::error_code ec;
     acceptor_.async_accept(
       sock->native(),

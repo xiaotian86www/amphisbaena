@@ -26,7 +26,7 @@ enum class CoroutineState : int
   COROUTINE_RUNNING = 3
 };
 
-class AsioSchedule;
+class ScheduleImpl;
 
 class CoroutineImpl : public std::enable_shared_from_this<CoroutineImpl>
 {
@@ -54,22 +54,22 @@ private:
   CoroutineState state_ = CoroutineState::COROUTINE_READY;
 };
 
-class AsioSchedule : public Schedule
+class ScheduleImpl : public std::enable_shared_from_this<ScheduleImpl>
 {
 public:
-  AsioSchedule() = default;
-  ~AsioSchedule() override = default;
+  ScheduleImpl() = default;
+  ~ScheduleImpl() = default;
 
 public:
-  void run() override;
+  void run();
 
-  void stop() override;
+  void stop();
 
-  void spawn(task&& fn) override;
+  void spawn(task&& fn);
 
-  void resume(Coroutine co) override;
+  void resume(Coroutine co);
 
-  void post(std::function<void()>&& fn) override;
+  void post(std::function<void()>&& fn);
 
 public:
   boost::asio::io_service& io_service() { return ios_; }

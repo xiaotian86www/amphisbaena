@@ -17,7 +17,7 @@ class Coroutine
 {
 public:
   Coroutine(std::weak_ptr<CoroutineImpl> co)
-    : co_(co)
+    : impl_(co)
   {
   }
 
@@ -29,46 +29,43 @@ public:
   void resume();
 
 private:
-  std::weak_ptr<CoroutineImpl> co_;
+  std::weak_ptr<CoroutineImpl> impl_;
 };
+
+class ScheduleImpl;
 
 class Schedule : public std::enable_shared_from_this<Schedule>
 {
 public:
-  Schedule() = default;
-  virtual ~Schedule() = default;
+  Schedule();
   Schedule(const Schedule&) = delete;
   Schedule& operator=(const Schedule&) = delete;
 
 public:
-  virtual void run() = 0;
+  void run();
 
-  virtual void stop() = 0;
+  void stop();
 
-  virtual void spawn(task&& func) = 0;
+  void spawn(task&& func);
 
-  virtual void resume(Coroutine co) = 0;
+  void resume(Coroutine co);
 
-  virtual void post(std::function<void()>&& func) = 0;
+  void post(std::function<void()>&& func);
+
+public:
+  std::shared_ptr<ScheduleImpl> impl_;
 };
 
 class ScheduleRef
 {
 public:
-  ScheduleRef(std::weak_ptr<Schedule> sch)
-    : sch_(sch)
-  {
-  }
+  ScheduleRef(std::weak_ptr<ScheduleImpl> sch);
 
 public:
-  void post(std::function<void()>&& func)
-  {
-    if (auto sch = sch_.lock()) {
-      sch->post(std::move(func));
-    }
-  }
+  void post(std::function<void()>&& func);
+
 private:
-  std::weak_ptr<Schedule> sch_;
+  std::weak_ptr<ScheduleImpl> sch_;
 };
 
 } // namespace translator
