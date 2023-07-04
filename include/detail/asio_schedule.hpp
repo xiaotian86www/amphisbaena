@@ -26,35 +26,21 @@ enum class CoroutineState : int
   COROUTINE_RUNNING = 3
 };
 
+class AsioSchedule;
+
 class CoroutineImpl : public std::enable_shared_from_this<CoroutineImpl>
 {
 public:
-  CoroutineImpl() = default;
-  virtual ~CoroutineImpl() = default;
+  CoroutineImpl(boost::asio::io_service& ios, ScheduleRef sch, task&& fn);
+
+  ~CoroutineImpl();
 
 public:
-  virtual void yield() = 0;
+  void yield();
 
-  virtual void yield_for(int milli) = 0;
+  void yield_for(int milli);
 
-  virtual void resume() = 0;
-};
-
-class AsioSchedule;
-
-class AsioCoroutine : public CoroutineImpl
-{
-public:
-  AsioCoroutine(boost::asio::io_service& ios, ScheduleRef sch, task&& fn);
-
-  ~AsioCoroutine() override;
-
-public:
-  void yield() override;
-
-  void yield_for(int milli) override;
-
-  void resume() override;
+  void resume();
 
   void do_yield();
 

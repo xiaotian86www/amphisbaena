@@ -32,7 +32,7 @@ Coroutine::resume()
   }
 }
 
-AsioCoroutine::AsioCoroutine(boost::asio::io_service& ios,
+CoroutineImpl::CoroutineImpl(boost::asio::io_service& ios,
                              ScheduleRef sch,
                              task&& fn)
   : sch_(sch)
@@ -46,20 +46,20 @@ AsioCoroutine::AsioCoroutine(boost::asio::io_service& ios,
 {
 }
 
-AsioCoroutine::~AsioCoroutine() {}
+CoroutineImpl::~CoroutineImpl() {}
 
 void
-AsioCoroutine::yield()
+CoroutineImpl::yield()
 {
   do_yield();
 }
 
 void
-AsioCoroutine::yield_for(int milli)
+CoroutineImpl::yield_for(int milli)
 {
   timer_.expires_from_now(std::chrono::milliseconds(milli));
   timer_.async_wait(
-    [co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())](
+    [co = std::static_pointer_cast<CoroutineImpl>(shared_from_this())](
       boost::system::error_code ec) mutable {
       if (ec)
         return;
@@ -71,15 +71,15 @@ AsioCoroutine::yield_for(int milli)
 }
 
 void
-AsioCoroutine::resume()
+CoroutineImpl::resume()
 {
-  sch_.post([co = std::static_pointer_cast<AsioCoroutine>(shared_from_this())] {
+  sch_.post([co = std::static_pointer_cast<CoroutineImpl>(shared_from_this())] {
     co->do_resume();
   });
 }
 
 void
-AsioCoroutine::do_yield()
+CoroutineImpl::do_yield()
 {
   assert(pl_);
   assert(*pl_);
@@ -89,7 +89,7 @@ AsioCoroutine::do_yield()
 }
 
 void
-AsioCoroutine::do_resume()
+CoroutineImpl::do_resume()
 {
   boost::system::error_code ec;
   timer_.cancel(ec);
@@ -125,7 +125,7 @@ void
 AsioSchedule::spawn(task&& fn)
 {
   auto co =
-    std::make_shared<AsioCoroutine>(ios_, weak_from_this(), std::move(fn));
+    std::make_shared<CoroutineImpl>(ios_, weak_from_this(), std::move(fn));
 
   cos_.insert(co);
 
