@@ -11,8 +11,9 @@ HttpProtocol::HttpProtocol()
 }
 
 void
-HttpProtocol::on_data(std::shared_ptr<Socket> sock,
+HttpProtocol::on_data(ScheduleRef sch,
                       CoroutineRef co,
+                      std::shared_ptr<Socket> sock,
                       std::string_view data)
 {
 }

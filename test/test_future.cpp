@@ -13,7 +13,7 @@ foo(translator::ScheduleRef sch,
     std::function<int()> func1,
     std::function<void(int)> func2)
 {
-  translator::Promise<int> pms(co);
+  translator::Promise<int> pms(sch, co);
   pms.set(func1());
   func2(pms.future().get());
 }
@@ -37,7 +37,7 @@ foo3(translator::ScheduleRef sch,
      std::function<int()> func1,
      std::function<void(int)> func2)
 {
-  translator::Promise<int> pms(co);
+  translator::Promise<int> pms(sch, co);
   func2(pms.future().get_for(1, 0));
 }
 

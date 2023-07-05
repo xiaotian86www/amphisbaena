@@ -10,8 +10,9 @@ class MockProtocol : public translator::Protocol
 public:
   MOCK_METHOD(void,
               on_data,
-              (std::shared_ptr<translator::Socket>,
+              (translator::ScheduleRef,
                translator::CoroutineRef,
+               std::shared_ptr<translator::Socket>,
                std::string_view),
               (override));
 };
@@ -19,8 +20,5 @@ public:
 class MockProtocolFactory : public translator::ProtocolFactory
 {
 public:
-  MOCK_METHOD(std::unique_ptr<translator::Protocol>,
-              create,
-              (),
-              (override));
+  MOCK_METHOD(std::unique_ptr<translator::Protocol>, create, (), (override));
 };

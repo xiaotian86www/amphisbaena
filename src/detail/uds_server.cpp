@@ -13,21 +13,20 @@ UDSSocket::UDSSocket(boost::asio::io_service& ios)
 }
 
 void
-UDSSocket::send(CoroutineRef co, std::string_view data)
+UDSSocket::send(ScheduleRef sch, CoroutineRef co, std::string_view data)
 {
   std::size_t send_size = 0;
   for (;;) {
     std::size_t size = 0;
     boost::system::error_code ec;
-    sock_.async_write_some(
-      boost::asio::const_buffer(data.data() + send_size,
-                                data.size() - send_size),
-      [&size, &ec, co](boost::system::error_code in_ec,
-                                                std::size_t in_size) mutable {
-        ec = in_ec;
-        size = in_size;
-        co.resume();
-      });
+    sock_.async_write_some(boost::asio::const_buffer(data.data() + send_size,
+                                                     data.size() - send_size),
+                           [&size, &ec, sch, co](boost::system::error_code in_ec,
+                                            std::size_t in_size) mutable {
+                             ec = in_ec;
+                             size = in_size;
+                             sch.resume(co);
+                           });
 
     co.yield();
 
@@ -79,10 +78,9 @@ UDSServer::do_accept(ScheduleRef sch, CoroutineRef co)
     auto sock = std::make_shared<UDSSocket>(sch_->io_service());
     boost::system::error_code ec;
     acceptor_.async_accept(
-      sock->native(),
-      [&ec, co](boost::system::error_code in_ec) mutable {
+      sock->native(), [&ec, sch, co](boost::system::error_code in_ec) mutable {
         ec = in_ec;
-        co.resume();
+        sch.resume(co);
       });
 
     co.yield();
@@ -110,11 +108,11 @@ UDSServer::do_read(ScheduleRef sch,
     std::size_t size;
     sock->native().async_read_some(
       boost::asio::buffer(data, data.size()),
-      [&ec, &size, co](boost::system::error_code in_ec,
-                                                std::size_t in_size) mutable {
+      [&ec, &size, sch, co](boost::system::error_code in_ec,
+                            std::size_t in_size) mutable {
         size = in_size;
         ec = in_ec;
-        co.resume();
+        sch.resume(co);
       });
 
     co.yield();
@@ -122,7 +120,7 @@ UDSServer::do_read(ScheduleRef sch,
     if (ec)
       throw ec;
 
-    proto->on_data(sock, co, { data.data(), size });
+    proto->on_data(sch, co, sock, { data.data(), size });
   }
 }
 

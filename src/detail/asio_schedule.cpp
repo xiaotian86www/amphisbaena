@@ -10,9 +10,7 @@
 
 namespace translator {
 
-Coroutine::Coroutine(boost::asio::io_service& ios,
-                             ScheduleRef sch,
-                             task&& fn)
+Coroutine::Coroutine(boost::asio::io_service& ios, ScheduleRef sch, task&& fn)
   : sch_(sch)
   , timer_(ios)
   , ps_([this, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
@@ -42,7 +40,7 @@ Coroutine::yield_for(int milli)
       if (ec)
         return;
 
-      co->do_resume();
+      co->resume();
     });
 
   do_yield();
@@ -50,24 +48,6 @@ Coroutine::yield_for(int milli)
 
 void
 Coroutine::resume()
-{
-  sch_.post([co = std::static_pointer_cast<Coroutine>(shared_from_this())] {
-    co->do_resume();
-  });
-}
-
-void
-Coroutine::do_yield()
-{
-  assert(pl_);
-  assert(*pl_);
-  assert(state_ == CoroutineState::COROUTINE_RUNNING);
-  (*pl_)();
-  assert(state_ == CoroutineState::COROUTINE_RUNNING);
-}
-
-void
-Coroutine::do_resume()
 {
   boost::system::error_code ec;
   timer_.cancel(ec);
@@ -81,6 +61,16 @@ Coroutine::do_resume()
     assert(state_ == CoroutineState::COROUTINE_RUNNING);
     state_ = CoroutineState::COROUTINE_READY;
   }
+}
+
+void
+Coroutine::do_yield()
+{
+  assert(pl_);
+  assert(*pl_);
+  assert(state_ == CoroutineState::COROUTINE_RUNNING);
+  (*pl_)();
+  assert(state_ == CoroutineState::COROUTINE_RUNNING);
 }
 
 void
@@ -102,18 +92,11 @@ Schedule::stop()
 void
 Schedule::spawn(task&& fn)
 {
-  auto co =
-    std::make_shared<Coroutine>(ios_, weak_from_this(), std::move(fn));
+  auto co = std::make_shared<Coroutine>(ios_, weak_from_this(), std::move(fn));
 
   cos_.insert(co);
 
   co->resume();
-}
-
-void
-Schedule::post(std::function<void()>&& fn)
-{
-  ios_.post(std::move(fn));
 }
 
 void
@@ -126,6 +109,7 @@ void
 CoroutineRef::yield()
 {
   auto co = co_.lock().get();
+  assert(co);
   co->yield();
 }
 
@@ -133,6 +117,7 @@ void
 CoroutineRef::yield_for(int milli)
 {
   auto co = co_.lock().get();
+  assert(co);
   co->yield_for(milli);
 }
 
@@ -150,10 +135,10 @@ ScheduleRef::ScheduleRef(std::weak_ptr<Schedule> sch)
 }
 
 void
-ScheduleRef::post(std::function<void()>&& func)
+ScheduleRef::resume(CoroutineRef co)
 {
   if (auto sch = sch_.lock()) {
-    sch->post(std::move(func));
+    sch->resume(co);
   }
 }
 }

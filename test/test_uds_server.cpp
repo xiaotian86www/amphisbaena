@@ -26,12 +26,14 @@ TEST(uds_server, on_data)
   EXPECT_CALL(*proto_factory, create()).WillOnce(testing::Invoke([data] {
     auto protocol = std::make_unique<MockProtocol>();
 
-    EXPECT_CALL(*protocol,
-                on_data(testing::_, testing::_, testing::StrEq(data)))
-      .WillOnce(
-        testing::Invoke([](std::shared_ptr<translator::Socket> sock,
-                           translator::CoroutineRef co,
-                           std::string_view data) { sock->send(co, data); }));
+    EXPECT_CALL(
+      *protocol,
+      on_data(testing::_, testing::_, testing::_, testing::StrEq(data)))
+      .WillOnce(testing::Invoke(
+        [](translator::ScheduleRef sch,
+           translator::CoroutineRef co,
+           std::shared_ptr<translator::Socket> sock,
+           std::string_view data) { sock->send(sch, co, data); }));
     return protocol;
   }));
 

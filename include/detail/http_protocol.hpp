@@ -20,8 +20,9 @@ public:
   ~HttpProtocol() override = default;
 
 public:
-  void on_data(std::shared_ptr<Socket> sock,
+  void on_data(ScheduleRef sch,
                CoroutineRef co,
+               std::shared_ptr<Socket> sock,
                std::string_view data) override;
 
 private:
@@ -32,6 +33,6 @@ private:
 class HttpProtocolFactory : public ProtocolFactory
 {
 public:
-    std::unique_ptr<Protocol> create() override;
+  std::unique_ptr<Protocol> create() override;
 };
 }

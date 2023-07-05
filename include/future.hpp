@@ -69,8 +69,9 @@ class Promise
   friend class Future<Tp_>;
 
 public:
-  Promise(CoroutineRef co)
-    : co_(co)
+  Promise(ScheduleRef sch, CoroutineRef co)
+    : sch_(sch)
+    , co_(co)
   {
   }
 
@@ -84,7 +85,7 @@ public:
     std::lock_guard<std::mutex> lg(mtx_);
     value_ = std::forward<ValueTp_>(value);
 
-    co_.resume();
+    sch_.resume(co_);
   }
 
   Future<Tp_> future() { return Future<Tp_>(*this); }
@@ -98,6 +99,7 @@ private:
 
 private:
   // std::weak_ptr<Schedule> sch_;
+  ScheduleRef sch_;
   CoroutineRef co_;
   std::mutex mtx_;
   std::optional<Tp_> value_;

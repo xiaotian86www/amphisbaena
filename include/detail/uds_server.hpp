@@ -19,7 +19,7 @@ public:
   UDSSocket(boost::asio::io_service& ios);
 
 public:
-  void send(CoroutineRef co, std::string_view data) override;
+  void send(ScheduleRef sch, CoroutineRef co, std::string_view data) override;
 
 public:
   stream_protocol::socket& native() { return sock_; }
@@ -42,7 +42,9 @@ public:
 private:
   void do_accept(ScheduleRef sch, CoroutineRef co);
 
-  void do_read(ScheduleRef sch, CoroutineRef co, std::shared_ptr<UDSSocket> sock);
+  void do_read(ScheduleRef sch,
+               CoroutineRef co,
+               std::shared_ptr<UDSSocket> sock);
 
 private:
   std::shared_ptr<Schedule> sch_;

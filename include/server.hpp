@@ -13,7 +13,9 @@ public:
   virtual ~Socket() = default;
 
 public:
-  virtual void send(CoroutineRef co, std::string_view data) = 0;
+  virtual void send(ScheduleRef sch,
+                    CoroutineRef co,
+                    std::string_view data) = 0;
 };
 
 class Protocol
@@ -22,8 +24,9 @@ public:
   virtual ~Protocol() = default;
 
 public:
-  virtual void on_data(std::shared_ptr<Socket> sock,
+  virtual void on_data(ScheduleRef sch,
                        CoroutineRef co,
+                       std::shared_ptr<Socket> sock,
                        std::string_view data) = 0;
 };
 

@@ -44,8 +44,6 @@ public:
 
   void do_yield();
 
-  void do_resume();
-
 private:
   ScheduleRef sch_;
   boost::asio::steady_timer timer_;

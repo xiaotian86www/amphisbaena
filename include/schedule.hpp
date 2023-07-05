@@ -17,6 +17,8 @@ class Coroutine;
 
 class CoroutineRef
 {
+  friend class Schedule;
+
 public:
   CoroutineRef(std::weak_ptr<Coroutine> co)
     : co_(co)
@@ -28,9 +30,10 @@ public:
 
   void yield_for(int milli);
 
+private:
   void resume();
 
-private:
+public:
   std::weak_ptr<Coroutine> co_;
 };
 
@@ -51,8 +54,6 @@ public:
 
   void resume(CoroutineRef co);
 
-  void post(std::function<void()>&& func);
-
 public:
   boost::asio::io_service& io_service() { return ios_; }
 
@@ -67,7 +68,7 @@ public:
   ScheduleRef(std::weak_ptr<Schedule> sch);
 
 public:
-  void post(std::function<void()>&& func);
+  void resume(CoroutineRef co);
 
 private:
   std::weak_ptr<Schedule> sch_;
