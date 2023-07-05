@@ -54,29 +54,29 @@ private:
   CoroutineState state_ = CoroutineState::COROUTINE_READY;
 };
 
-class ScheduleImpl : public std::enable_shared_from_this<ScheduleImpl>
-{
-public:
-  ScheduleImpl() = default;
-  ~ScheduleImpl() = default;
+// class ScheduleImpl : public std::enable_shared_from_this<ScheduleImpl>
+// {
+// public:
+//   ScheduleImpl() = default;
+//   ~ScheduleImpl() = default;
 
-public:
-  void run();
+// public:
+//   void run();
 
-  void stop();
+//   void stop();
 
-  void spawn(task&& fn);
+//   void spawn(task&& fn);
 
-  void resume(CoroutineRef co);
+//   void resume(CoroutineRef co);
 
-  void post(std::function<void()>&& fn);
+//   void post(std::function<void()>&& fn);
 
-public:
-  boost::asio::io_service& io_service() { return ios_; }
+// public:
+//   boost::asio::io_service& io_service() { return ios_; }
 
-private:
-  boost::asio::io_service ios_;
-  std::unordered_set<std::shared_ptr<Coroutine>> cos_;
-};
+// private:
+//   boost::asio::io_service ios_;
+//   std::unordered_set<std::shared_ptr<Coroutine>> cos_;
+// };
 
 }

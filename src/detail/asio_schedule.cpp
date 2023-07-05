@@ -84,7 +84,7 @@ Coroutine::do_resume()
 }
 
 void
-ScheduleImpl::run()
+Schedule::run()
 {
   try {
     ios_.run();
@@ -93,14 +93,14 @@ ScheduleImpl::run()
 }
 
 void
-ScheduleImpl::stop()
+Schedule::stop()
 {
   if (!ios_.stopped())
     ios_.stop();
 }
 
 void
-ScheduleImpl::spawn(task&& fn)
+Schedule::spawn(task&& fn)
 {
   auto co =
     std::make_shared<Coroutine>(ios_, weak_from_this(), std::move(fn));
@@ -111,13 +111,13 @@ ScheduleImpl::spawn(task&& fn)
 }
 
 void
-ScheduleImpl::post(std::function<void()>&& fn)
+Schedule::post(std::function<void()>&& fn)
 {
   ios_.post(std::move(fn));
 }
 
 void
-ScheduleImpl::resume(CoroutineRef co)
+Schedule::resume(CoroutineRef co)
 {
   ios_.post([co]() mutable { co.resume(); });
 }
@@ -125,61 +125,26 @@ ScheduleImpl::resume(CoroutineRef co)
 void
 CoroutineRef::yield()
 {
-  auto co = impl_.lock().get();
+  auto co = co_.lock().get();
   co->yield();
 }
 
 void
 CoroutineRef::yield_for(int milli)
 {
-  auto co = impl_.lock().get();
+  auto co = co_.lock().get();
   co->yield_for(milli);
 }
 
 void
 CoroutineRef::resume()
 {
-  if (auto co = impl_.lock()) {
+  if (auto co = co_.lock()) {
     co->resume();
   }
 }
 
-Schedule::Schedule()
-  : impl_(std::make_shared<ScheduleImpl>())
-{
-}
-
-void
-Schedule::run()
-{
-  impl_->run();
-}
-
-void
-Schedule::stop()
-{
-  impl_->stop();
-}
-
-void
-Schedule::spawn(task&& func)
-{
-  impl_->spawn(std::move(func));
-}
-
-void
-Schedule::resume(CoroutineRef co)
-{
-  impl_->resume(std::move(co));
-}
-
-void
-Schedule::post(std::function<void()>&& func)
-{
-  impl_->post(std::move(func));
-}
-
-ScheduleRef::ScheduleRef(std::weak_ptr<ScheduleImpl> sch)
+ScheduleRef::ScheduleRef(std::weak_ptr<Schedule> sch)
   : sch_(sch)
 {
 }

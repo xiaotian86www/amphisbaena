@@ -47,7 +47,7 @@ UDSServer::UDSServer(std::shared_ptr<Schedule> sch,
   : sch_(sch)
   , proto_factory_(proto_factory)
   , endpoint_(file)
-  , acceptor_(sch->impl_->io_service())
+  , acceptor_(sch->io_service())
 {
 }
 
@@ -76,7 +76,7 @@ void
 UDSServer::do_accept(ScheduleRef sch, CoroutineRef co)
 {
   for (;;) {
-    auto sock = std::make_shared<UDSSocket>(sch_->impl_->io_service());
+    auto sock = std::make_shared<UDSSocket>(sch_->io_service());
     boost::system::error_code ec;
     acceptor_.async_accept(
       sock->native(),

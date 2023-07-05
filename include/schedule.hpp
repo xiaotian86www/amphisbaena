@@ -1,8 +1,10 @@
 #pragma once
 
+#include <boost/asio/io_service.hpp>
 #include <chrono>
 #include <functional>
 #include <memory>
+#include <unordered_set>
 
 namespace translator {
 
@@ -17,7 +19,7 @@ class CoroutineRef
 {
 public:
   CoroutineRef(std::weak_ptr<Coroutine> co)
-    : impl_(co)
+    : co_(co)
   {
   }
 
@@ -29,15 +31,14 @@ public:
   void resume();
 
 private:
-  std::weak_ptr<Coroutine> impl_;
+  std::weak_ptr<Coroutine> co_;
 };
-
-class ScheduleImpl;
 
 class Schedule : public std::enable_shared_from_this<Schedule>
 {
 public:
-  Schedule();
+  Schedule() = default;
+  ~Schedule() = default;
   Schedule(const Schedule&) = delete;
   Schedule& operator=(const Schedule&) = delete;
 
@@ -53,19 +54,23 @@ public:
   void post(std::function<void()>&& func);
 
 public:
-  std::shared_ptr<ScheduleImpl> impl_;
+  boost::asio::io_service& io_service() { return ios_; }
+
+private:
+  boost::asio::io_service ios_;
+  std::unordered_set<std::shared_ptr<Coroutine>> cos_;
 };
 
 class ScheduleRef
 {
 public:
-  ScheduleRef(std::weak_ptr<ScheduleImpl> sch);
+  ScheduleRef(std::weak_ptr<Schedule> sch);
 
 public:
   void post(std::function<void()>&& func);
 
 private:
-  std::weak_ptr<ScheduleImpl> sch_;
+  std::weak_ptr<Schedule> sch_;
 };
 
 } // namespace translator
