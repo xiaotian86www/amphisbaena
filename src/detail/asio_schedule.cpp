@@ -10,7 +10,7 @@
 
 namespace translator {
 
-CoroutineImpl::CoroutineImpl(boost::asio::io_service& ios,
+Coroutine::Coroutine(boost::asio::io_service& ios,
                              ScheduleRef sch,
                              task&& fn)
   : sch_(sch)
@@ -24,20 +24,20 @@ CoroutineImpl::CoroutineImpl(boost::asio::io_service& ios,
 {
 }
 
-CoroutineImpl::~CoroutineImpl() {}
+Coroutine::~Coroutine() {}
 
 void
-CoroutineImpl::yield()
+Coroutine::yield()
 {
   do_yield();
 }
 
 void
-CoroutineImpl::yield_for(int milli)
+Coroutine::yield_for(int milli)
 {
   timer_.expires_from_now(std::chrono::milliseconds(milli));
   timer_.async_wait(
-    [co = std::static_pointer_cast<CoroutineImpl>(shared_from_this())](
+    [co = std::static_pointer_cast<Coroutine>(shared_from_this())](
       boost::system::error_code ec) mutable {
       if (ec)
         return;
@@ -49,15 +49,15 @@ CoroutineImpl::yield_for(int milli)
 }
 
 void
-CoroutineImpl::resume()
+Coroutine::resume()
 {
-  sch_.post([co = std::static_pointer_cast<CoroutineImpl>(shared_from_this())] {
+  sch_.post([co = std::static_pointer_cast<Coroutine>(shared_from_this())] {
     co->do_resume();
   });
 }
 
 void
-CoroutineImpl::do_yield()
+Coroutine::do_yield()
 {
   assert(pl_);
   assert(*pl_);
@@ -67,7 +67,7 @@ CoroutineImpl::do_yield()
 }
 
 void
-CoroutineImpl::do_resume()
+Coroutine::do_resume()
 {
   boost::system::error_code ec;
   timer_.cancel(ec);
@@ -103,7 +103,7 @@ void
 ScheduleImpl::spawn(task&& fn)
 {
   auto co =
-    std::make_shared<CoroutineImpl>(ios_, weak_from_this(), std::move(fn));
+    std::make_shared<Coroutine>(ios_, weak_from_this(), std::move(fn));
 
   cos_.insert(co);
 
@@ -117,27 +117,27 @@ ScheduleImpl::post(std::function<void()>&& fn)
 }
 
 void
-ScheduleImpl::resume(Coroutine co)
+ScheduleImpl::resume(CoroutineRef co)
 {
   ios_.post([co]() mutable { co.resume(); });
 }
 
 void
-Coroutine::yield()
+CoroutineRef::yield()
 {
   auto co = impl_.lock().get();
   co->yield();
 }
 
 void
-Coroutine::yield_for(int milli)
+CoroutineRef::yield_for(int milli)
 {
   auto co = impl_.lock().get();
   co->yield_for(milli);
 }
 
 void
-Coroutine::resume()
+CoroutineRef::resume()
 {
   if (auto co = impl_.lock()) {
     co->resume();
@@ -168,7 +168,7 @@ Schedule::spawn(task&& func)
 }
 
 void
-Schedule::resume(Coroutine co)
+Schedule::resume(CoroutineRef co)
 {
   impl_->resume(std::move(co));
 }

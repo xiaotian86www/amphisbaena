@@ -28,12 +28,12 @@ enum class CoroutineState : int
 
 class ScheduleImpl;
 
-class CoroutineImpl : public std::enable_shared_from_this<CoroutineImpl>
+class Coroutine : public std::enable_shared_from_this<Coroutine>
 {
 public:
-  CoroutineImpl(boost::asio::io_service& ios, ScheduleRef sch, task&& fn);
+  Coroutine(boost::asio::io_service& ios, ScheduleRef sch, task&& fn);
 
-  ~CoroutineImpl();
+  ~Coroutine();
 
 public:
   void yield();
@@ -67,7 +67,7 @@ public:
 
   void spawn(task&& fn);
 
-  void resume(Coroutine co);
+  void resume(CoroutineRef co);
 
   void post(std::function<void()>&& fn);
 
@@ -76,7 +76,7 @@ public:
 
 private:
   boost::asio::io_service ios_;
-  std::unordered_set<std::shared_ptr<CoroutineImpl>> cos_;
+  std::unordered_set<std::shared_ptr<Coroutine>> cos_;
 };
 
 }

@@ -12,7 +12,7 @@ HttpProtocol::HttpProtocol()
 
 void
 HttpProtocol::on_data(std::shared_ptr<Socket> sock,
-                      Coroutine co,
+                      CoroutineRef co,
                       std::string_view data)
 {
 }

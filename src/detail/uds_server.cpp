@@ -13,7 +13,7 @@ UDSSocket::UDSSocket(boost::asio::io_service& ios)
 }
 
 void
-UDSSocket::send(Coroutine co, std::string_view data)
+UDSSocket::send(CoroutineRef co, std::string_view data)
 {
   std::size_t send_size = 0;
   for (;;) {
@@ -73,7 +73,7 @@ UDSServer::listen()
 }
 
 void
-UDSServer::do_accept(ScheduleRef sch, Coroutine co)
+UDSServer::do_accept(ScheduleRef sch, CoroutineRef co)
 {
   for (;;) {
     auto sock = std::make_shared<UDSSocket>(sch_->impl_->io_service());
@@ -100,7 +100,7 @@ UDSServer::do_accept(ScheduleRef sch, Coroutine co)
 
 void
 UDSServer::do_read(ScheduleRef sch,
-                   Coroutine co,
+                   CoroutineRef co,
                    std::shared_ptr<UDSSocket> sock)
 {
   auto proto = proto_factory_->create();

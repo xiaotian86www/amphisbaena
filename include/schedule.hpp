@@ -6,17 +6,17 @@
 
 namespace translator {
 
-class Coroutine;
+class CoroutineRef;
 class ScheduleRef;
 
-typedef std::function<void(ScheduleRef, Coroutine)> task;
+typedef std::function<void(ScheduleRef, CoroutineRef)> task;
 
-class CoroutineImpl;
+class Coroutine;
 
-class Coroutine
+class CoroutineRef
 {
 public:
-  Coroutine(std::weak_ptr<CoroutineImpl> co)
+  CoroutineRef(std::weak_ptr<Coroutine> co)
     : impl_(co)
   {
   }
@@ -29,7 +29,7 @@ public:
   void resume();
 
 private:
-  std::weak_ptr<CoroutineImpl> impl_;
+  std::weak_ptr<Coroutine> impl_;
 };
 
 class ScheduleImpl;
@@ -48,7 +48,7 @@ public:
 
   void spawn(task&& func);
 
-  void resume(Coroutine co);
+  void resume(CoroutineRef co);
 
   void post(std::function<void()>&& func);
 

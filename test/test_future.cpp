@@ -9,7 +9,7 @@
 
 static void
 foo(translator::ScheduleRef sch,
-    translator::Coroutine co,
+    translator::CoroutineRef co,
     std::function<int()> func1,
     std::function<void(int)> func2)
 {
@@ -20,7 +20,7 @@ foo(translator::ScheduleRef sch,
 
 static void
 foo2(translator::ScheduleRef sch,
-     translator::Coroutine co,
+     translator::CoroutineRef co,
      std::function<int()> func1,
      std::function<void(int)> func2)
 {
@@ -33,7 +33,7 @@ foo2(translator::ScheduleRef sch,
 
 static void
 foo3(translator::ScheduleRef sch,
-     translator::Coroutine co,
+     translator::CoroutineRef co,
      std::function<int()> func1,
      std::function<void(int)> func2)
 {
