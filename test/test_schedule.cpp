@@ -33,9 +33,7 @@ public:
   virtual void TearDown() {}
 
 public:
-  void foo(
-    translator::ScheduleRef sch,
-    translator::CoroutineRef co)
+  void foo(translator::ScheduleRef sch, translator::CoroutineRef co)
   {
     for (int i = 0; i < 2; i++) {
       foo_mock.AsStdFunction()(sch, co, i);
@@ -68,14 +66,12 @@ TEST_F(Coroutine, resume)
     .Times(2)
     .WillRepeatedly(testing::Invoke(invoke_foo));
 
-  sch->spawn(std::bind(&Coroutine::foo, this,
-                       std::placeholders::_1,
-                       std::placeholders::_2));
-  sch->spawn(std::bind(&Coroutine::foo, this,
-                       std::placeholders::_1,
-                       std::placeholders::_2));
+  sch->spawn(std::bind(
+    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
+  sch->spawn(std::bind(
+    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
 
-  th = std::thread(std::bind(&translator::Schedule::run, sch));
+  th = std::thread([this] { ios.run(); });
 }
 
 TEST_F(Coroutine, multi_resume)
@@ -96,14 +92,12 @@ TEST_F(Coroutine, multi_resume)
     .Times(2)
     .WillRepeatedly(testing::Invoke(invoke_foo));
 
-  sch->spawn(std::bind(&Coroutine::foo, this,
-                       std::placeholders::_1,
-                       std::placeholders::_2));
-  sch->spawn(std::bind(&Coroutine::foo, this,
-                       std::placeholders::_1,
-                       std::placeholders::_2));
+  sch->spawn(std::bind(
+    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
+  sch->spawn(std::bind(
+    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
 
-  th = std::thread(std::bind(&translator::Schedule::run, sch));
+  th = std::thread([this] { ios.run(); });
 }
 
 /**
@@ -114,7 +108,7 @@ TEST_F(Coroutine, stop)
 {
   auto invoke_foo =
     [this](translator::ScheduleRef, translator::CoroutineRef co, int) {
-      sch->stop();
+      ios.stop();
       sch->resume(co);
       co.yield();
     };
@@ -122,11 +116,10 @@ TEST_F(Coroutine, stop)
   EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 0))
     .WillOnce(testing::Invoke(invoke_foo));
 
-  sch->spawn(std::bind(&Coroutine::foo, this,
-                       std::placeholders::_1,
-                       std::placeholders::_2));
+  sch->spawn(std::bind(
+    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
 
-  th = std::thread(std::bind(&translator::Schedule::run, sch));
+  th = std::thread([this] { ios.run(); });
 }
 
 /**
@@ -153,11 +146,10 @@ TEST_F(Coroutine, yield_for_timeout)
   EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 1))
     .WillOnce(testing::Invoke(invoke_foo));
 
-  sch->spawn(std::bind(&Coroutine::foo, this,
-                       std::placeholders::_1,
-                       std::placeholders::_2));
+  sch->spawn(std::bind(
+    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
 
-  th = std::thread(std::bind(&translator::Schedule::run, sch));
+  th = std::thread([this] { ios.run(); });
 }
 
 /**
@@ -185,11 +177,10 @@ TEST_F(Coroutine, resume_yield_for)
   EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 1))
     .WillOnce(testing::Invoke(invoke_foo));
 
-  sch->spawn(std::bind(&Coroutine::foo, this,
-                       std::placeholders::_1,
-                       std::placeholders::_2));
+  sch->spawn(std::bind(
+    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
 
-  th = std::thread(std::bind(&translator::Schedule::run, sch));
+  th = std::thread([this] { ios.run(); });
 }
 
 /**
@@ -205,16 +196,14 @@ TEST_F(Coroutine, stop_yield_for)
                                  int) { co.yield_for(10); }))
     .WillOnce(testing::Invoke(
       [this](translator::ScheduleRef, translator::CoroutineRef co, int) {
-        sch->stop();
+        ios.stop();
         co.yield();
       }));
 
-  sch->spawn(std::bind(&Coroutine::foo, this,
-                       std::placeholders::_1,
-                       std::placeholders::_2));
-  sch->spawn(std::bind(&Coroutine::foo, this,
-                       std::placeholders::_1,
-                       std::placeholders::_2));
+  sch->spawn(std::bind(
+    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
+  sch->spawn(std::bind(
+    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
 
-  th = std::thread(std::bind(&translator::Schedule::run, sch));
+  th = std::thread([this] { ios.run(); });
 }

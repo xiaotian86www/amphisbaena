@@ -96,22 +96,6 @@ Schedule::Schedule(boost::asio::io_service& ios)
 }
 
 void
-Schedule::run()
-{
-  try {
-    ios_.run();
-  } catch (...) {
-  }
-}
-
-void
-Schedule::stop()
-{
-  if (!ios_.stopped())
-    ios_.stop();
-}
-
-void
 Schedule::spawn(task&& fn)
 {
   auto co = std::make_shared<Coroutine>(ios_, weak_from_this(), std::move(fn));

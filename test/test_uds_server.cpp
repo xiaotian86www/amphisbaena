@@ -26,6 +26,7 @@ public:
 
 protected:
   boost::asio::io_service ios;
+  std::thread th;
   std::shared_ptr<translator::Schedule> sch;
   std::shared_ptr<MockProtocolFactory> proto_factory;
   std::shared_ptr<translator::UDSServer> server;
@@ -54,7 +55,7 @@ TEST_F(UDSServer, on_data)
 
   server->listen();
 
-  std::thread th(std::bind(&translator::Schedule::run, sch));
+  th = std::thread([this] { ios.run(); });
 
   sock.connect("server.socket");
   sock.write_some(boost::asio::buffer(data));
@@ -64,7 +65,8 @@ TEST_F(UDSServer, on_data)
   EXPECT_PRED2([&](auto left, auto right) { return left == right; },
                std::string_view(buffer, size),
                data);
-  sch->stop();
+               
+  ios.stop();
 
   th.join();
 }

@@ -50,6 +50,7 @@ public:
 
 protected:
   boost::asio::io_service ios;
+  std::thread th;
   std::shared_ptr<translator::Schedule> sch;
 };
 
@@ -71,8 +72,8 @@ TEST_F(Future, get)
                        std::placeholders::_2,
                        foo_mock1.AsStdFunction(),
                        foo_mock2.AsStdFunction()));
-
-  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+  
+  th = std::thread([this] { ios.run(); });
 
   if (th.joinable())
     th.join();
@@ -97,7 +98,7 @@ TEST_F(Future, get_for)
                        foo_mock1.AsStdFunction(),
                        foo_mock2.AsStdFunction()));
 
-  std::thread th(std::bind(&translator::Schedule::run, sch.get()));
+  th = std::thread([this] { ios.run(); });
 
   if (th.joinable())
     th.join();
@@ -121,7 +122,7 @@ TEST_F(Future, get_for_timeout)
                        foo_mock1.AsStdFunction(),
                        foo_mock2.AsStdFunction()));
 
-  std::thread th(std::bind(&translator::Schedule::run, sch));
+  th = std::thread([this] { ios.run(); });
 
   if (th.joinable())
     th.join();

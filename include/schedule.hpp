@@ -43,9 +43,9 @@ public:
   Schedule& operator=(const Schedule&) = delete;
 
 public:
-  void run();
+  // void run();
 
-  void stop();
+  // void stop();
 
   void spawn(task&& func);
 
