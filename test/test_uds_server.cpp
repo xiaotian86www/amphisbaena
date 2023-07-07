@@ -6,18 +6,33 @@
 #include <memory>
 
 #include "detail/uds_server.hpp"
-#include "mock/mock_server.hpp"
+#include "mock/mock_protocol.hpp"
 #include "schedule.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-TEST(uds_server, on_data)
+class UDSServer : public testing::Test
 {
-  auto sch = std::make_shared<translator::Schedule>();
-  auto proto_factory = std::make_shared<MockProtocolFactory>();
-  auto server = std::make_shared<translator::UDSServer>(
-    sch, proto_factory, "server.socket");
+public:
+  virtual void SetUp()
+  {
+    sch = std::make_shared<translator::Schedule>(ios);
+    proto_factory = std::make_shared<MockProtocolFactory>();
+    server = std::make_shared<translator::UDSServer>(
+      ios, sch, proto_factory, "server.socket");
+  }
 
+  virtual void TearDown() {}
+
+protected:
+  boost::asio::io_service ios;
+  std::shared_ptr<translator::Schedule> sch;
+  std::shared_ptr<MockProtocolFactory> proto_factory;
+  std::shared_ptr<translator::UDSServer> server;
+};
+
+TEST_F(UDSServer, on_data)
+{
   boost::asio::io_service io_service;
   boost::asio::local::stream_protocol::socket sock(io_service);
 

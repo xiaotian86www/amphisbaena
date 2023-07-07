@@ -1,5 +1,6 @@
 #include "schedule.hpp"
 
+#include <boost/asio/io_service.hpp>
 #include <boost/asio/local/stream_protocol.hpp>
 #include <boost/asio/steady_timer.hpp>
 #include <boost/coroutine2/coroutine.hpp>
@@ -87,6 +88,11 @@ Coroutine::do_yield()
   assert(pl_);
   assert(*pl_);
   (*pl_)();
+}
+
+Schedule::Schedule(boost::asio::io_service& ios)
+  : ios_(ios)
+{
 }
 
 void

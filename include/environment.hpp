@@ -4,7 +4,7 @@
 #include <unordered_map>
 
 #include "object.hpp"
-#include "server.hpp"
+#include "protocol.hpp"
 
 namespace translator {
 class Environment

@@ -37,7 +37,7 @@ public:
 class Schedule : public std::enable_shared_from_this<Schedule>
 {
 public:
-  Schedule() = default;
+  Schedule(boost::asio::io_service& ios);
   ~Schedule() = default;
   Schedule(const Schedule&) = delete;
   Schedule& operator=(const Schedule&) = delete;
@@ -51,11 +51,11 @@ public:
 
   void resume(CoroutineRef co);
 
-public:
-  boost::asio::io_service& io_service() { return ios_; }
+  // public:
+  //   boost::asio::io_service& io_service() { return ios_; }
 
 private:
-  boost::asio::io_service ios_;
+  boost::asio::io_service& ios_;
   std::unordered_set<std::shared_ptr<Coroutine>> cos_;
 };
 

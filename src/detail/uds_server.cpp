@@ -19,14 +19,15 @@ UDSSocket::send(ScheduleRef sch, CoroutineRef co, std::string_view data)
   for (;;) {
     std::size_t size = 0;
     boost::system::error_code ec;
-    sock_.async_write_some(boost::asio::const_buffer(data.data() + send_size,
-                                                     data.size() - send_size),
-                           [&size, &ec, sch, co](boost::system::error_code in_ec,
-                                            std::size_t in_size) mutable {
-                             ec = in_ec;
-                             size = in_size;
-                             sch.resume(co);
-                           });
+    sock_.async_write_some(
+      boost::asio::const_buffer(data.data() + send_size,
+                                data.size() - send_size),
+      [&size, &ec, sch, co](boost::system::error_code in_ec,
+                            std::size_t in_size) mutable {
+        ec = in_ec;
+        size = in_size;
+        sch.resume(co);
+      });
 
     co.yield();
 
@@ -40,13 +41,15 @@ UDSSocket::send(ScheduleRef sch, CoroutineRef co, std::string_view data)
   }
 }
 
-UDSServer::UDSServer(std::shared_ptr<Schedule> sch,
+UDSServer::UDSServer(boost::asio::io_service& ios,
+                     std::shared_ptr<Schedule> sch,
                      std::shared_ptr<ProtocolFactory> proto_factory,
                      std::string_view file)
-  : sch_(sch)
+  : ios_(ios)
+  , sch_(sch)
   , proto_factory_(proto_factory)
   , endpoint_(file)
-  , acceptor_(sch->io_service())
+  , acceptor_(ios)
 {
 }
 
@@ -75,7 +78,7 @@ void
 UDSServer::do_accept(ScheduleRef sch, CoroutineRef co)
 {
   for (;;) {
-    auto sock = std::make_shared<UDSSocket>(sch_->io_service());
+    auto sock = std::make_shared<UDSSocket>(ios_);
     boost::system::error_code ec;
     acceptor_.async_accept(
       sock->native(), [&ec, sch, co](boost::system::error_code in_ec) mutable {

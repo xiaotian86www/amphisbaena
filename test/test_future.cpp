@@ -41,7 +41,19 @@ foo3(translator::ScheduleRef sch,
   func2(pms.future().get_for(1, 0));
 }
 
-TEST(future, get)
+class Future : public testing::Test
+{
+public:
+  virtual void SetUp() { sch = std::make_shared<translator::Schedule>(ios); }
+
+  virtual void TearDown() {}
+
+protected:
+  boost::asio::io_service ios;
+  std::shared_ptr<translator::Schedule> sch;
+};
+
+TEST_F(Future, get)
 {
   testing::MockFunction<int()> foo_mock1;
   testing::MockFunction<void(int)> foo_mock2;
@@ -49,7 +61,6 @@ TEST(future, get)
   EXPECT_CALL(foo_mock1, Call()).Times(2).WillRepeatedly(testing::Return(1));
   EXPECT_CALL(foo_mock2, Call(1)).Times(2);
 
-  auto sch = std::make_shared<translator::Schedule>();
   sch->spawn(std::bind(foo,
                        std::placeholders::_1,
                        std::placeholders::_2,
@@ -67,7 +78,7 @@ TEST(future, get)
     th.join();
 }
 
-TEST(future, get_for)
+TEST_F(Future, get_for)
 {
   testing::MockFunction<int()> foo_mock1;
   testing::MockFunction<void(int)> foo_mock2;
@@ -75,7 +86,6 @@ TEST(future, get_for)
   EXPECT_CALL(foo_mock1, Call()).Times(2).WillRepeatedly(testing::Return(1));
   EXPECT_CALL(foo_mock2, Call(1)).Times(2);
 
-  auto sch = std::make_shared<translator::Schedule>();
   sch->spawn(std::bind(foo2,
                        std::placeholders::_1,
                        std::placeholders::_2,
@@ -93,14 +103,13 @@ TEST(future, get_for)
     th.join();
 }
 
-TEST(future, get_for_timeout)
+TEST_F(Future, get_for_timeout)
 {
   testing::MockFunction<int()> foo_mock1;
   testing::MockFunction<void(int)> foo_mock2;
 
   EXPECT_CALL(foo_mock2, Call(0)).Times(2);
 
-  auto sch = std::make_shared<translator::Schedule>();
   sch->spawn(std::bind(foo3,
                        std::placeholders::_1,
                        std::placeholders::_2,

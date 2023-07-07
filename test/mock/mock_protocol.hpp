@@ -3,7 +3,7 @@
 #include "gmock/gmock.h"
 
 #include "schedule.hpp"
-#include "server.hpp"
+#include "protocol.hpp"
 
 class MockProtocol : public translator::Protocol
 {

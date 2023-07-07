@@ -1,5 +1,7 @@
+#include <boost/asio/io_service.hpp>
 #include <chrono>
 #include <ctime>
+#include <memory>
 #include <thread>
 
 #include "schedule.hpp"
@@ -22,7 +24,19 @@ foo(translator::ScheduleRef sch,
   }
 }
 
-TEST(coroutine, resume)
+class Coroutine : public testing::Test
+{
+public:
+  virtual void SetUp() { sch = std::make_shared<translator::Schedule>(ios); }
+
+  virtual void TearDown() {}
+
+protected:
+  boost::asio::io_service ios;
+  std::shared_ptr<translator::Schedule> sch;
+};
+
+TEST_F(Coroutine, resume)
 {
   testing::MockFunction<void(
     translator::ScheduleRef, translator::CoroutineRef, int)>
@@ -41,7 +55,6 @@ TEST(coroutine, resume)
     .Times(2)
     .WillRepeatedly(testing::Invoke(invoke_foo));
 
-  auto sch = std::make_shared<translator::Schedule>();
   sch->spawn(std::bind(foo,
                        std::placeholders::_1,
                        std::placeholders::_2,
@@ -57,7 +70,7 @@ TEST(coroutine, resume)
     th.join();
 }
 
-TEST(coroutine, multi_resume)
+TEST_F(Coroutine, multi_resume)
 {
   testing::MockFunction<void(
     translator::ScheduleRef, translator::CoroutineRef, int)>
@@ -78,7 +91,6 @@ TEST(coroutine, multi_resume)
     .Times(2)
     .WillRepeatedly(testing::Invoke(invoke_foo));
 
-  auto sch = std::make_shared<translator::Schedule>();
   sch->spawn(std::bind(foo,
                        std::placeholders::_1,
                        std::placeholders::_2,
@@ -98,15 +110,13 @@ TEST(coroutine, multi_resume)
  * @brief 中途停止
  *
  */
-TEST(coroutine, stop)
+TEST_F(Coroutine, stop)
 {
-  auto sch = std::make_shared<translator::Schedule>();
-
   testing::MockFunction<void(
     translator::ScheduleRef, translator::CoroutineRef, int)>
     foo_mock;
   auto invoke_foo =
-    [sch](translator::ScheduleRef, translator::CoroutineRef co, int) {
+    [this](translator::ScheduleRef, translator::CoroutineRef co, int) {
       sch->stop();
       sch->resume(co);
       co.yield();
@@ -130,7 +140,7 @@ TEST(coroutine, stop)
  * @brief yield_for
  *
  */
-TEST(coroutine, yield_for_timeout)
+TEST_F(Coroutine, yield_for_timeout)
 {
   testing::MockFunction<void(
     translator::ScheduleRef, translator::CoroutineRef, int)>
@@ -145,7 +155,6 @@ TEST(coroutine, yield_for_timeout)
   EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 1))
     .WillOnce(testing::Invoke(invoke_foo));
 
-  auto sch = std::make_shared<translator::Schedule>();
   sch->spawn(std::bind(foo,
                        std::placeholders::_1,
                        std::placeholders::_2,
@@ -168,7 +177,7 @@ TEST(coroutine, yield_for_timeout)
  * @brief yield_for
  *
  */
-TEST(coroutine, resume_yield_for)
+TEST_F(Coroutine, resume_yield_for)
 {
   testing::MockFunction<void(
     translator::ScheduleRef, translator::CoroutineRef, int)>
@@ -185,7 +194,6 @@ TEST(coroutine, resume_yield_for)
   EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 1))
     .WillOnce(testing::Invoke(invoke_foo));
 
-  auto sch = std::make_shared<translator::Schedule>();
   sch->spawn(std::bind(foo,
                        std::placeholders::_1,
                        std::placeholders::_2,
@@ -208,10 +216,8 @@ TEST(coroutine, resume_yield_for)
  * @brief yield_for 不等到超时时间
  *
  */
-TEST(coroutine, stop_yield_for)
+TEST_F(Coroutine, stop_yield_for)
 {
-  auto sch = std::make_shared<translator::Schedule>();
-
   testing::MockFunction<void(
     translator::ScheduleRef, translator::CoroutineRef, int)>
     foo_mock;
@@ -222,7 +228,7 @@ TEST(coroutine, stop_yield_for)
                                  translator::CoroutineRef co,
                                  int) { co.yield_for(10); }))
     .WillOnce(testing::Invoke(
-      [sch](translator::ScheduleRef, translator::CoroutineRef co, int) {
+      [this](translator::ScheduleRef, translator::CoroutineRef co, int) {
         sch->stop();
         co.yield();
       }));

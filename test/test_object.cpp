@@ -4,7 +4,7 @@
 #include "environment.hpp"
 #include "mock/mock_object.hpp"
 #include "object.hpp"
-#include "server.hpp"
+#include "protocol.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
