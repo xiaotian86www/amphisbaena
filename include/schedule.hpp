@@ -30,9 +30,6 @@ public:
 
   void yield_for(int milli);
 
-private:
-  void resume();
-
 public:
   std::weak_ptr<Coroutine> co_;
 };
