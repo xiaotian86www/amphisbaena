@@ -51,9 +51,6 @@ public:
 
   void resume(CoroutineRef co);
 
-  // public:
-  //   boost::asio::io_service& io_service() { return ios_; }
-
 private:
   boost::asio::io_service& ios_;
   std::unordered_set<std::shared_ptr<Coroutine>> cos_;

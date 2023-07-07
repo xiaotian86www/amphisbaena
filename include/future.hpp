@@ -98,7 +98,6 @@ private:
   }
 
 private:
-  // std::weak_ptr<Schedule> sch_;
   ScheduleRef sch_;
   CoroutineRef co_;
   std::mutex mtx_;
