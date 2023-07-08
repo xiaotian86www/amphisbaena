@@ -11,9 +11,12 @@ namespace translator {
 class Environment
 {
 public:
-  Environment(ObjectFactoryPtr object_factory/*, ServerPoolPtr server_pool*/)
+  Environment(ObjectFactoryPtr object_factory,
+              std::shared_ptr<ParserFactory> parser_factory,
+              std::shared_ptr<ProcessorFactory> processor_factory)
     : object_pool_(object_factory)
-    // , server_pool_(server_pool)
+    , parser_factory_(parser_factory)
+    , processor_factory_(processor_factory)
   {
   }
 
@@ -24,10 +27,16 @@ public:
 
   Parser* get_server(std::string_view name);
 
+  std::unique_ptr<Parser> create_parser() { return parser_factory_->create(); }
+
+  std::unique_ptr<Processor> create_processor(std::string_view key)
+  {
+    return processor_factory_->create(key);
+  }
+
 private:
   ObjectPool object_pool_;
   std::shared_ptr<ParserFactory> parser_factory_;
   std::shared_ptr<ProcessorFactory> processor_factory_;
-  // ServerPoolPtr server_pool_;
 };
 } // namespace translator
