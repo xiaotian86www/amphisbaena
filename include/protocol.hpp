@@ -5,11 +5,10 @@
 #include <string_view>
 
 #include "schedule.hpp"
-#include "processor.hpp"
 
 namespace translator {
 
-class Connection : public std::enable_shared_from_this<Connection>
+class Connection
 {
 public:
   virtual ~Connection() = default;

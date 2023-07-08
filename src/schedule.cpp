@@ -16,18 +16,53 @@ namespace translator {
 class Coroutine : public std::enable_shared_from_this<Coroutine>
 {
 public:
-  Coroutine(boost::asio::io_service& ios, ScheduleRef sch, task&& fn);
+  Coroutine(boost::asio::io_service& ios, ScheduleRef sch, task&& fn)
+    : sch_(sch)
+    , timer_(ios)
+    , ps_([this, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
+      pl_ = &pl;
+      fn(sch_, weak_from_this());
+    })
+    , pl_(nullptr)
+  {
+  }
 
-  ~Coroutine();
+  virtual ~Coroutine() = default;
 
 public:
-  void yield();
+  void yield() { do_yield(); }
 
-  void yield_for(int milli);
+  void yield_for(int milli)
+  {
+    timer_.expires_from_now(std::chrono::milliseconds(milli));
+    timer_.async_wait(
+      [this, co = weak_from_this()](boost::system::error_code ec) mutable {
+        if (ec)
+          return;
 
-  bool resume();
+        sch_.resume(co);
+      });
 
-  void do_yield();
+    do_yield();
+  }
+
+  bool resume()
+  {
+    boost::system::error_code ec;
+    timer_.cancel(ec);
+
+    assert(ps_);
+    ps_();
+
+    return !ps_;
+  }
+
+  void do_yield()
+  {
+    assert(pl_);
+    assert(*pl_);
+    (*pl_)();
+  }
 
 private:
   ScheduleRef sch_;
@@ -35,60 +70,6 @@ private:
   coroutine<void>::push_type ps_;
   coroutine<void>::pull_type* pl_ = nullptr;
 };
-
-Coroutine::Coroutine(boost::asio::io_service& ios, ScheduleRef sch, task&& fn)
-  : sch_(sch)
-  , timer_(ios)
-  , ps_([this, fn = std::move(fn)](coroutine<void>::pull_type& pl) mutable {
-    pl_ = &pl;
-    fn(sch_, weak_from_this());
-  })
-  , pl_(nullptr)
-{
-}
-
-Coroutine::~Coroutine() {}
-
-void
-Coroutine::yield()
-{
-  do_yield();
-}
-
-void
-Coroutine::yield_for(int milli)
-{
-  timer_.expires_from_now(std::chrono::milliseconds(milli));
-  timer_.async_wait(
-    [this, co = weak_from_this()](boost::system::error_code ec) mutable {
-      if (ec)
-        return;
-
-      sch_.resume(co);
-    });
-
-  do_yield();
-}
-
-bool
-Coroutine::resume()
-{
-  boost::system::error_code ec;
-  timer_.cancel(ec);
-
-  assert(ps_);
-  ps_();
-
-  return !ps_;
-}
-
-void
-Coroutine::do_yield()
-{
-  assert(pl_);
-  assert(*pl_);
-  (*pl_)();
-}
 
 Schedule::Schedule(boost::asio::io_service& ios)
   : ios_(ios)
