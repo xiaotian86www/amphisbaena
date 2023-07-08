@@ -48,7 +48,7 @@ TEST_F(UDSServer, on_data)
       .WillOnce(testing::Invoke(
         [](translator::ScheduleRef sch,
            translator::CoroutineRef co,
-           std::shared_ptr<translator::Socket> sock,
+           std::shared_ptr<translator::Connection> sock,
            std::string_view data) { sock->send(sch, co, data); }));
     return protocol;
   }));

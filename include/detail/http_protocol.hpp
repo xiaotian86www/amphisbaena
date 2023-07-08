@@ -6,14 +6,16 @@
 namespace translator {
 struct HttpRequest
 {
-  std::string_view method;
-  std::string_view url;
+  std::string method;
+  std::string url;
 };
 
 struct HttpResponse
 {};
 
-class HttpProtocol : public Protocol
+class HttpProtocol
+  : public Protocol
+  , public llhttp_t
 {
 public:
   HttpProtocol();
@@ -22,12 +24,11 @@ public:
 public:
   void on_data(ScheduleRef sch,
                CoroutineRef co,
-               std::shared_ptr<Socket> sock,
+               std::shared_ptr<Connection> conn,
                std::string_view data) override;
 
-private:
-  llhttp_t parser_;
-  llhttp_settings_t settings_;
+public:
+  HttpRequest request;
 };
 
 class HttpProtocolFactory : public ProtocolFactory

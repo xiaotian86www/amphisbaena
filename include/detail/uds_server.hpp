@@ -12,7 +12,7 @@
 using namespace boost::asio::local;
 
 namespace translator {
-class UDSSocket : public Socket
+class UDSSocket : public Connection
 {
 public:
   UDSSocket(boost::asio::io_service& ios);

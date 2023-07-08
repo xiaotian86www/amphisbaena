@@ -43,10 +43,6 @@ public:
   Schedule& operator=(const Schedule&) = delete;
 
 public:
-  // void run();
-
-  // void stop();
-
   void spawn(task&& func);
 
   void resume(CoroutineRef co);

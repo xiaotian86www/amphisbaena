@@ -2,8 +2,19 @@
 
 #include "gmock/gmock.h"
 
-#include "schedule.hpp"
 #include "protocol.hpp"
+#include "schedule.hpp"
+
+class MockConnection : public translator::Connection
+{
+public:
+  MOCK_METHOD(void,
+              send,
+              (translator::ScheduleRef,
+               translator::CoroutineRef,
+               std::string_view),
+              (override));
+};
 
 class MockProtocol : public translator::Protocol
 {
@@ -12,7 +23,7 @@ public:
               on_data,
               (translator::ScheduleRef,
                translator::CoroutineRef,
-               std::shared_ptr<translator::Socket>,
+               std::shared_ptr<translator::Connection>,
                std::string_view),
               (override));
 };

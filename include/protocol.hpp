@@ -5,9 +5,25 @@
 #include <string_view>
 
 #include "schedule.hpp"
-#include "server.hpp"
 
 namespace translator {
+
+struct RequestData
+{
+  std::string method;
+};
+
+class Connection : public std::enable_shared_from_this<Connection>
+{
+public:
+  virtual ~Connection() = default;
+
+public:
+  virtual void send(ScheduleRef sch,
+                    CoroutineRef co,
+                    std::string_view data) = 0;
+};
+
 class Protocol
 {
 public:
@@ -16,7 +32,7 @@ public:
 public:
   virtual void on_data(ScheduleRef sch,
                        CoroutineRef co,
-                       std::shared_ptr<Socket> sock,
+                       std::shared_ptr<Connection> conn,
                        std::string_view data) = 0;
 };
 
