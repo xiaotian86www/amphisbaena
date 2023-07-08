@@ -5,13 +5,9 @@
 #include <string_view>
 
 #include "schedule.hpp"
+#include "processor.hpp"
 
 namespace translator {
-
-struct RequestData
-{
-  std::string method;
-};
 
 class Connection : public std::enable_shared_from_this<Connection>
 {

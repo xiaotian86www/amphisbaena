@@ -4,5 +4,3 @@
 
 class HTTPProtocol : testing::Test
 {};
-
-TEST_F(HTTPProtocol, on_data) {}
