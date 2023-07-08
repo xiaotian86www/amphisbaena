@@ -43,7 +43,7 @@ UDSSocket::send(ScheduleRef sch, CoroutineRef co, std::string_view data)
 
 UDSServer::UDSServer(boost::asio::io_service& ios,
                      std::shared_ptr<Schedule> sch,
-                     std::shared_ptr<ProtocolFactory> proto_factory,
+                     std::shared_ptr<ParserFactory> proto_factory,
                      std::string_view file)
   : ios_(ios)
   , sch_(sch)

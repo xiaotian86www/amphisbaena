@@ -1,5 +1,5 @@
-#include "detail/http_protocol.hpp"
-#include "protocol.hpp"
+#include "detail/http_parser.hpp"
+#include "parser.hpp"
 
 #include <iostream>
 #include <llhttp.h>
@@ -13,16 +13,16 @@ static llhttp_settings_t g_settings;
 static int
 handle_on_method(llhttp_t* http, const char* at, size_t length)
 {
-  auto* protocol = static_cast<HttpProtocol*>(http);
-  protocol->request.method = std::string(at, length);
+  auto* parser = static_cast<HttpParser*>(http);
+  parser->request.method = std::string(at, length);
   return 0;
 }
 
 static int
 handle_on_url(llhttp_t* http, const char* at, size_t length)
 {
-  auto* protocol = static_cast<HttpProtocol*>(http);
-  protocol->request.url = std::string(at, length);
+  auto* parser = static_cast<HttpParser*>(http);
+  parser->request.url = std::string(at, length);
   return 0;
 }
 
@@ -43,14 +43,14 @@ init()
 
 static std::once_flag init_once_flag;
 
-HttpProtocol::HttpProtocol()
+HttpParser::HttpParser()
 {
   std::call_once(init_once_flag, init);
   llhttp_init(this, HTTP_REQUEST, &g_settings);
 }
 
 void
-HttpProtocol::on_data(ScheduleRef sch,
+HttpParser::on_data(ScheduleRef sch,
                       CoroutineRef co,
                       std::shared_ptr<Connection> conn,
                       std::string_view data)
@@ -62,9 +62,9 @@ HttpProtocol::on_data(ScheduleRef sch,
   }
 }
 
-std::unique_ptr<Protocol>
-HttpProtocolFactory::create()
+std::unique_ptr<Parser>
+HttpParserFactory::create()
 {
-  return std::unique_ptr<HttpProtocol>();
+  return std::unique_ptr<HttpParser>();
 }
 }

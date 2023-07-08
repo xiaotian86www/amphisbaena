@@ -1,6 +1,6 @@
 #pragma once
 
-#include "protocol.hpp"
+#include "parser.hpp"
 #include "schedule.hpp"
 
 #include <array>
@@ -34,7 +34,7 @@ class UDSServer : public std::enable_shared_from_this<UDSServer>
 public:
   UDSServer(boost::asio::io_service& ios,
             std::shared_ptr<Schedule> sch,
-            std::shared_ptr<ProtocolFactory> proto_factory,
+            std::shared_ptr<ParserFactory> proto_factory,
             std::string_view file);
   virtual ~UDSServer();
 
@@ -51,7 +51,7 @@ private:
 private:
   boost::asio::io_service& ios_;
   std::shared_ptr<Schedule> sch_;
-  std::shared_ptr<ProtocolFactory> proto_factory_;
+  std::shared_ptr<ParserFactory> proto_factory_;
   stream_protocol::endpoint endpoint_;
   stream_protocol::acceptor acceptor_;
 };

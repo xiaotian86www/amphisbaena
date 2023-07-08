@@ -4,7 +4,8 @@
 #include <unordered_map>
 
 #include "object.hpp"
-#include "protocol.hpp"
+#include "parser.hpp"
+#include "processor.hpp"
 
 namespace translator {
 class Environment
@@ -21,10 +22,12 @@ public:
 
   void set_object(std::string_view name, ObjectPtr&& object);
 
-  Protocol* get_server(std::string_view name);
+  Parser* get_server(std::string_view name);
 
 private:
   ObjectPool object_pool_;
+  std::shared_ptr<ParserFactory> parser_factory_;
+  std::shared_ptr<ProcessorFactory> processor_factory_;
   // ServerPoolPtr server_pool_;
 };
 } // namespace translator

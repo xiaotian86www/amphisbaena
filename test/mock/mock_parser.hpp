@@ -2,7 +2,7 @@
 
 #include "gmock/gmock.h"
 
-#include "protocol.hpp"
+#include "parser.hpp"
 #include "schedule.hpp"
 
 class MockConnection : public translator::Connection
@@ -16,7 +16,7 @@ public:
               (override));
 };
 
-class MockProtocol : public translator::Protocol
+class MockParser : public translator::Parser
 {
 public:
   MOCK_METHOD(void,
@@ -28,8 +28,8 @@ public:
               (override));
 };
 
-class MockProtocolFactory : public translator::ProtocolFactory
+class MockParserFactory : public translator::ParserFactory
 {
 public:
-  MOCK_METHOD(std::unique_ptr<translator::Protocol>, create, (), (override));
+  MOCK_METHOD(std::unique_ptr<translator::Parser>, create, (), (override));
 };

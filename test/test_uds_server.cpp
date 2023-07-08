@@ -6,7 +6,7 @@
 #include <memory>
 
 #include "detail/uds_server.hpp"
-#include "mock/mock_protocol.hpp"
+#include "mock/mock_parser.hpp"
 #include "schedule.hpp"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -17,9 +17,9 @@ public:
   virtual void SetUp()
   {
     sch = std::make_shared<translator::Schedule>(ios);
-    proto_factory = std::make_shared<MockProtocolFactory>();
+    parser_factory = std::make_shared<MockParserFactory>();
     server = std::make_shared<translator::UDSServer>(
-      ios, sch, proto_factory, "server.socket");
+      ios, sch, parser_factory, "server.socket");
   }
 
   virtual void TearDown() {}
@@ -28,7 +28,7 @@ protected:
   boost::asio::io_service ios;
   std::thread th;
   std::shared_ptr<translator::Schedule> sch;
-  std::shared_ptr<MockProtocolFactory> proto_factory;
+  std::shared_ptr<MockParserFactory> parser_factory;
   std::shared_ptr<translator::UDSServer> server;
 };
 
@@ -39,18 +39,18 @@ TEST_F(UDSServer, on_data)
 
   std::string_view data("1234567890");
 
-  EXPECT_CALL(*proto_factory, create()).WillOnce(testing::Invoke([data] {
-    auto protocol = std::make_unique<MockProtocol>();
+  EXPECT_CALL(*parser_factory, create()).WillOnce(testing::Invoke([data] {
+    auto parser = std::make_unique<MockParser>();
 
     EXPECT_CALL(
-      *protocol,
+      *parser,
       on_data(testing::_, testing::_, testing::_, testing::StrEq(data)))
       .WillOnce(testing::Invoke(
         [](translator::ScheduleRef sch,
            translator::CoroutineRef co,
            std::shared_ptr<translator::Connection> sock,
            std::string_view data) { sock->send(sch, co, data); }));
-    return protocol;
+    return parser;
   }));
 
   server->listen();

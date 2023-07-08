@@ -19,10 +19,10 @@ public:
                     std::string_view data) = 0;
 };
 
-class Protocol
+class Parser
 {
 public:
-  virtual ~Protocol() = default;
+  virtual ~Parser() = default;
 
 public:
   virtual void on_data(ScheduleRef sch,
@@ -31,13 +31,13 @@ public:
                        std::string_view data) = 0;
 };
 
-class ProtocolFactory
+class ParserFactory
 {
 public:
-  virtual ~ProtocolFactory() = default;
+  virtual ~ParserFactory() = default;
 
 public:
-  virtual std::unique_ptr<Protocol> create() = 0;
+  virtual std::unique_ptr<Parser> create() = 0;
 };
 
 // class ServerPool
