@@ -1,5 +1,6 @@
 #include "processor.hpp"
 #include "parser.hpp"
+#include "schedule.hpp"
 
 #include <llhttp.h>
 #include <memory>
@@ -12,9 +13,15 @@ class HttpSession
   , public Session
 {
 public:
+  HttpSession(std::shared_ptr<Connection> conn);
+
+public:
   void reply(ScheduleRef sch,
              CoroutineRef co,
              const ResponseData& data) override;
+
+private:
+  std::shared_ptr<Connection> conn_;
 };
 
 class HttpParser
@@ -33,9 +40,9 @@ public:
 
 public:
   RequestData request;
-
-private:
-  std::shared_ptr<HttpSession> session_;
+  ScheduleRef sch;
+  CoroutineRef co;
+  std::shared_ptr<HttpSession> session;
 };
 
 class HttpParserFactory : public ParserFactory

@@ -20,6 +20,8 @@ class CoroutineRef
   friend class Schedule;
 
 public:
+  CoroutineRef() {}
+
   CoroutineRef(std::weak_ptr<Coroutine> co)
     : co_(co)
   {
@@ -55,7 +57,12 @@ private:
 class ScheduleRef
 {
 public:
-  ScheduleRef(std::weak_ptr<Schedule> sch);
+  ScheduleRef() {}
+
+  ScheduleRef(std::weak_ptr<Schedule> sch)
+    : sch_(sch)
+  {
+  }
 
 public:
   void resume(CoroutineRef co);

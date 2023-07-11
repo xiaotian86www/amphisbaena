@@ -112,11 +112,6 @@ CoroutineRef::yield_for(int milli)
   co->yield_for(milli);
 }
 
-ScheduleRef::ScheduleRef(std::weak_ptr<Schedule> sch)
-  : sch_(sch)
-{
-}
-
 void
 ScheduleRef::resume(CoroutineRef co)
 {

@@ -3,23 +3,26 @@
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/local/stream_protocol.hpp>
 #include <functional>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <memory>
 
+#include "context.hpp"
 #include "detail/uds_server.hpp"
 #include "mock/mock_parser.hpp"
 #include "schedule.hpp"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 class UDSServer : public testing::Test
 {
 public:
   virtual void SetUp()
   {
-    sch = std::make_shared<translator::Schedule>(ios);
     parser_factory = std::make_shared<MockParserFactory>();
-    server = std::make_shared<translator::UDSServer>(
-      ios, sch, parser_factory, "server.socket");
+
+    translator::Context::get_instance().parser_factory = parser_factory;
+
+    sch = std::make_shared<translator::Schedule>(ios);
+    server = std::make_shared<translator::UDSServer>(ios, sch, "server.socket");
   }
 
   virtual void TearDown() {}
@@ -65,7 +68,7 @@ TEST_F(UDSServer, on_data)
   EXPECT_PRED2([&](auto left, auto right) { return left == right; },
                std::string_view(buffer, size),
                data);
-               
+
   ios.stop();
 
   th.join();

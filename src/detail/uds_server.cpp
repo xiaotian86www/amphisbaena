@@ -6,6 +6,8 @@
 #include <memory>
 #include <unistd.h>
 
+#include "context.hpp"
+
 namespace translator {
 UDSSocket::UDSSocket(boost::asio::io_service& ios)
   : sock_(ios)
@@ -43,11 +45,9 @@ UDSSocket::send(ScheduleRef sch, CoroutineRef co, std::string_view data)
 
 UDSServer::UDSServer(boost::asio::io_service& ios,
                      std::shared_ptr<Schedule> sch,
-                     std::shared_ptr<ParserFactory> proto_factory,
                      std::string_view file)
   : ios_(ios)
   , sch_(sch)
-  , proto_factory_(proto_factory)
   , endpoint_(file)
   , acceptor_(ios)
 {
@@ -104,7 +104,7 @@ UDSServer::do_read(ScheduleRef sch,
                    CoroutineRef co,
                    std::shared_ptr<UDSSocket> sock)
 {
-  auto proto = proto_factory_->create();
+  auto proto = Context::get_instance().parser_factory->create();
   std::array<char, 8192> data;
   for (;;) {
     boost::system::error_code ec;

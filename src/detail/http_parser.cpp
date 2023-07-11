@@ -1,4 +1,5 @@
 #include "detail/http_parser.hpp"
+#include "context.hpp"
 #include "parser.hpp"
 
 #include <iostream>
@@ -15,7 +16,7 @@ handle_on_method(llhttp_t* http, const char* at, size_t length)
 {
   auto* parser = static_cast<HttpParser*>(http);
   parser->request.method = std::string(at, length);
-  return 0;
+  return HPE_OK;
 }
 
 static int
@@ -23,13 +24,23 @@ handle_on_url(llhttp_t* http, const char* at, size_t length)
 {
   auto* parser = static_cast<HttpParser*>(http);
   parser->request.url = std::string(at, length);
-  return 0;
+  return HPE_OK;
 }
 
 static int
 handle_on_body(llhttp_t* http, const char* at, size_t length)
 {
-  return 0;
+  return HPE_OK;
+}
+
+static int
+handle_on_message_complete(llhttp_t* http)
+{
+  auto parser = static_cast<HttpParser*>(http);
+  auto processor =
+    Context::get_instance().processor_factory->create(parser->request.url);
+  processor->handle(parser->sch, parser->co, parser->session, parser->request);
+  return HPE_OK;
 }
 
 static void
@@ -39,6 +50,7 @@ init()
   g_settings.on_method = handle_on_method;
   g_settings.on_body = handle_on_body;
   g_settings.on_url = handle_on_url;
+  g_settings.on_message_complete = handle_on_message_complete;
 }
 
 static std::once_flag init_once_flag;
@@ -51,9 +63,9 @@ HttpParser::HttpParser()
 
 void
 HttpParser::on_data(ScheduleRef sch,
-                      CoroutineRef co,
-                      std::shared_ptr<Connection> conn,
-                      std::string_view data)
+                    CoroutineRef co,
+                    std::shared_ptr<Connection> conn,
+                    std::string_view data)
 {
   enum llhttp_errno err = llhttp_execute(this, data.data(), data.length());
   if (err == HPE_OK) {
