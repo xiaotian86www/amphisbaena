@@ -57,7 +57,10 @@ TEST_F(Parser, on_data)
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     auto parser = parser_factory->create();
 
-    parser->on_data(sch, co, conn, "GET / HTTP/1.1\r\n\r\n");
+    parser->on_data(sch,
+                    co,
+                    std::static_pointer_cast<translator::Connection>(conn),
+                    "GET / HTTP/1.1\r\n\r\n");
   });
 
   th = std::thread([this] { ios.run(); });

@@ -22,7 +22,7 @@ public:
               handle,
               (translator::ScheduleRef sch,
                translator::CoroutineRef co,
-               std::shared_ptr<translator::Session> session,
+               translator::SessionRef session,
                const translator::RequestData& data),
               (override));
 };

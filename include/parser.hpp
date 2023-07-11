@@ -19,6 +19,35 @@ public:
                     std::string_view data) = 0;
 };
 
+typedef std::shared_ptr<Connection> ConnectionPtr;
+
+class ConnectionRef
+{
+public:
+  ConnectionRef() {}
+
+  ConnectionRef(std::shared_ptr<Connection> connection)
+    : connection_(connection)
+  {
+  }
+
+  ConnectionRef(std::weak_ptr<Connection> connection)
+    : connection_(connection)
+  {
+  }
+
+public:
+  void send(ScheduleRef sch, CoroutineRef co, std::string_view data)
+  {
+    if (auto connection = connection_.lock()) {
+      connection->send(sch, co, data);
+    }
+  }
+
+private:
+  std::weak_ptr<Connection> connection_;
+};
+
 class Parser
 {
 public:
@@ -27,7 +56,7 @@ public:
 public:
   virtual void on_data(ScheduleRef sch,
                        CoroutineRef co,
-                       std::shared_ptr<Connection> conn,
+                       ConnectionRef conn,
                        std::string_view data) = 0;
 };
 

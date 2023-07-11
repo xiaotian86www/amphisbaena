@@ -23,7 +23,7 @@ public:
               on_data,
               (translator::ScheduleRef,
                translator::CoroutineRef,
-               std::shared_ptr<translator::Connection>,
+               translator::ConnectionRef,
                std::string_view),
               (override));
 };

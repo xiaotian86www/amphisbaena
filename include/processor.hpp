@@ -28,6 +28,35 @@ public:
                      const ResponseData& data) = 0;
 };
 
+typedef std::shared_ptr<Session> SessionPtr;
+
+class SessionRef
+{
+public:
+  SessionRef() {}
+  
+  SessionRef(std::shared_ptr<Session> session)
+    : session_(session)
+  {
+  }
+
+  SessionRef(std::weak_ptr<Session> session)
+    : session_(session)
+  {
+  }
+
+public:
+  void reply(ScheduleRef sch, CoroutineRef co, const ResponseData& data)
+  {
+    if (auto session = session_.lock()) {
+      session->reply(sch, co, data);
+    }
+  }
+
+private:
+  std::weak_ptr<Session> session_;
+};
+
 class Processor
 {
 public:
@@ -36,12 +65,11 @@ public:
 public:
   virtual void handle(ScheduleRef sch,
                       CoroutineRef co,
-                      std::shared_ptr<Session> session,
+                      SessionRef session,
                       const RequestData& data) = 0;
 };
 
-class ProcessorFactory
-  : public std::enable_shared_from_this<ProcessorFactory>
+class ProcessorFactory : public std::enable_shared_from_this<ProcessorFactory>
 {
 public:
   using ctor_prototype = std::shared_ptr<Processor>();
@@ -53,13 +81,11 @@ public:
 public:
   std::shared_ptr<Processor> create(std::string_view key);
 
-  void registe(std::string_view key,
-               ctor_function ctor);
+  void registe(std::string_view key, ctor_function ctor);
 
   void unregiste(std::string_view key);
 
 private:
-  std::unordered_map<std::string_view, ctor_function>
-    ctors_;
+  std::unordered_map<std::string_view, ctor_function> ctors_;
 };
 }

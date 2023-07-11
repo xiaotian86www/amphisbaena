@@ -123,7 +123,7 @@ UDSServer::do_read(ScheduleRef sch,
     if (ec)
       throw ec;
 
-    proto->on_data(sch, co, sock, { data.data(), size });
+    proto->on_data(sch, co, std::static_pointer_cast<Connection>(sock), { data.data(), size });
   }
 }
 

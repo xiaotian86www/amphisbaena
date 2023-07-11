@@ -13,7 +13,7 @@ class HttpSession
   , public Session
 {
 public:
-  HttpSession(std::shared_ptr<Connection> conn);
+  HttpSession(ConnectionRef conn);
 
 public:
   void reply(ScheduleRef sch,
@@ -21,7 +21,7 @@ public:
              const ResponseData& data) override;
 
 private:
-  std::shared_ptr<Connection> conn_;
+  ConnectionRef conn_;
 };
 
 class HttpParser
@@ -35,14 +35,14 @@ public:
 public:
   void on_data(ScheduleRef sch,
                CoroutineRef co,
-               std::shared_ptr<Connection> conn,
+               ConnectionRef conn,
                std::string_view data) override;
 
 public:
   RequestData request;
   ScheduleRef sch;
   CoroutineRef co;
-  std::shared_ptr<HttpSession> session;
+  SessionPtr session;
 };
 
 class HttpParserFactory : public ParserFactory

@@ -12,11 +12,4 @@ Environment::set_object(std::string_view name, ObjectPtr&& object)
 {
   object_pool_.add(name, std::move(object));
 }
-
-Parser*
-Environment::get_server(std::string_view name)
-{
-  return nullptr;
-  // return server_pool_->get(name);
-}
 } // namespace translator

@@ -6,6 +6,7 @@
 #include "object.hpp"
 #include "parser.hpp"
 #include "processor.hpp"
+#include "schedule.hpp"
 
 namespace translator {
 class Environment
@@ -21,9 +22,10 @@ public:
 
   void set_object(std::string_view name, ObjectPtr&& object);
 
-  Parser* get_server(std::string_view name);
-
 private:
+  ScheduleRef sch_;
+  CoroutineRef co_;
+  SessionRef session_;
   ObjectPool object_pool_;
 };
 } // namespace translator

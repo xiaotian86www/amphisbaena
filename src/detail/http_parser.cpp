@@ -54,11 +54,14 @@ init()
   g_settings.on_url = handle_on_url;
   g_settings.on_message_complete = handle_on_message_complete;
 }
-
-static std::once_flag init_once_flag;
+void
+HttpSession::reply(ScheduleRef sch, CoroutineRef co, const ResponseData& data)
+{
+}
 
 HttpParser::HttpParser()
 {
+  static std::once_flag init_once_flag;
   std::call_once(init_once_flag, init);
   llhttp_init(this, HTTP_REQUEST, &g_settings);
 }
@@ -66,7 +69,7 @@ HttpParser::HttpParser()
 void
 HttpParser::on_data(ScheduleRef sch,
                     CoroutineRef co,
-                    std::shared_ptr<Connection> conn,
+                    ConnectionRef conn,
                     std::string_view data)
 {
   enum llhttp_errno err = llhttp_execute(this, data.data(), data.length());
