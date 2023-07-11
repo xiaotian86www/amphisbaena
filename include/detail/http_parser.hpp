@@ -48,6 +48,6 @@ public:
 class HttpParserFactory : public ParserFactory
 {
 public:
-  std::unique_ptr<Parser> create() override;
+  std::shared_ptr<Parser> create() override;
 };
 }

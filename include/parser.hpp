@@ -37,7 +37,7 @@ public:
   virtual ~ParserFactory() = default;
 
 public:
-  virtual std::unique_ptr<Parser> create() = 0;
+  virtual std::shared_ptr<Parser> create() = 0;
 };
 
 // class ServerPool

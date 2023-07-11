@@ -1,5 +1,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include <memory>
 
 #include "mock/mock_processor.hpp"
 #include "processor.hpp"
@@ -10,7 +11,7 @@ public:
   virtual void SetUp()
   {
     EXPECT_CALL(ctor, Call())
-      .WillOnce(testing::Return(std::make_unique<MockProcessor>()));
+      .WillOnce(testing::Return(std::make_shared<MockProcessor>()));
 
     factory.registe("method1", ctor.AsStdFunction());
   }

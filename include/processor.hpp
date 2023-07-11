@@ -44,14 +44,14 @@ class ProcessorFactory
   : public std::enable_shared_from_this<ProcessorFactory>
 {
 public:
-  using ctor_prototype = std::unique_ptr<Processor>();
+  using ctor_prototype = std::shared_ptr<Processor>();
   using ctor_function = std::function<ctor_prototype>;
 
 public:
   virtual ~ProcessorFactory() = default;
 
 public:
-  std::unique_ptr<Processor> create(std::string_view key);
+  std::shared_ptr<Processor> create(std::string_view key);
 
   void registe(std::string_view key,
                ctor_function ctor);

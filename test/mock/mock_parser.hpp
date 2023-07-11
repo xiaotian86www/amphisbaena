@@ -31,5 +31,5 @@ public:
 class MockParserFactory : public translator::ParserFactory
 {
 public:
-  MOCK_METHOD(std::unique_ptr<translator::Parser>, create, (), (override));
+  MOCK_METHOD(std::shared_ptr<translator::Parser>, create, (), (override));
 };

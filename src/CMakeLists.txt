@@ -8,4 +8,4 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/detail SRC_LIST)
 
 add_library(${PROJECT_NAME} ${SRC_LIST})
 
-target_link_libraries(${PROJECT_NAME} boost_context boost_coroutine)
+target_link_libraries(${PROJECT_NAME} boost_context boost_coroutine llhttp)

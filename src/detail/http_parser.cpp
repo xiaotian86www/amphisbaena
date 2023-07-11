@@ -39,7 +39,9 @@ handle_on_message_complete(llhttp_t* http)
   auto parser = static_cast<HttpParser*>(http);
   auto processor =
     Context::get_instance().processor_factory->create(parser->request.url);
-  processor->handle(parser->sch, parser->co, parser->session, parser->request);
+  if (processor)
+    processor->handle(
+      parser->sch, parser->co, parser->session, parser->request);
   return HPE_OK;
 }
 
@@ -74,9 +76,9 @@ HttpParser::on_data(ScheduleRef sch,
   }
 }
 
-std::unique_ptr<Parser>
+std::shared_ptr<Parser>
 HttpParserFactory::create()
 {
-  return std::unique_ptr<HttpParser>();
+  return std::make_shared<HttpParser>();
 }
 }

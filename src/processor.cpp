@@ -2,7 +2,7 @@
 #include <memory>
 
 namespace translator {
-std::unique_ptr<Processor>
+std::shared_ptr<Processor>
 ProcessorFactory::create(std::string_view key)
 {
   if (auto iter = ctors_.find(key); iter != ctors_.end()) {

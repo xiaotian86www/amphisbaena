@@ -8,11 +8,6 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-struct args
-{
-  int n;
-};
-
 class Coroutine : public testing::Test
 {
 public:

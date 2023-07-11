@@ -43,7 +43,7 @@ TEST_F(UDSServer, on_data)
   std::string_view data("1234567890");
 
   EXPECT_CALL(*parser_factory, create()).WillOnce(testing::Invoke([data] {
-    auto parser = std::make_unique<MockParser>();
+    auto parser = std::make_shared<MockParser>();
 
     EXPECT_CALL(
       *parser,
