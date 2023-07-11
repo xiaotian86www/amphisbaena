@@ -64,12 +64,12 @@ class Environment;
 class ObjectFactory
 {
 public:
-  typedef std::function<std::unique_ptr<Object>(Environment*)> ctor_func_type;
+  typedef std::function<std::unique_ptr<Object>(Environment&)> ctor_func_type;
 
 public:
   void registe(std::string_view name, ctor_func_type&& func);
 
-  ObjectPtr produce(std::string_view name, Environment* env) const;
+  ObjectPtr create(std::string_view name, Environment& env) const;
 
 private:
   std::unordered_map<std::string_view, ctor_func_type> ctors_;
@@ -80,18 +80,11 @@ typedef std::shared_ptr<ObjectFactory> ObjectFactoryPtr;
 class ObjectPool
 {
 public:
-  ObjectPool(ObjectFactoryPtr factory)
-    : factory_(factory)
-  {
-  }
-
-public:
   void add(std::string_view name, ObjectPtr&& object);
 
-  Object* get(std::string_view name, Environment* env) const;
+  Object* get(std::string_view name, Environment& env) const;
 
 private:
-  mutable ObjectFactoryPtr factory_;
   mutable std::unordered_map<std::string_view, ObjectPtr> objects_;
 };
 

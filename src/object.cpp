@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#include "environment.hpp"
+
 namespace translator {
 void
 ObjectFactory::registe(std::string_view name, ctor_func_type&& func)
@@ -10,7 +12,7 @@ ObjectFactory::registe(std::string_view name, ctor_func_type&& func)
 }
 
 ObjectPtr
-ObjectFactory::produce(std::string_view name, Environment* env) const
+ObjectFactory::create(std::string_view name, Environment& env) const
 {
   auto it = ctors_.find(name);
   if (it != ctors_.end()) {
@@ -30,13 +32,13 @@ ObjectPool::add(std::string_view name, ObjectPtr&& object)
 }
 
 Object*
-ObjectPool::get(std::string_view name, Environment* env) const
+ObjectPool::get(std::string_view name, Environment& env) const
 {
   auto it = objects_.find(name);
   if (it != objects_.end())
     return it->second.get();
 
-  auto object = factory_->produce(name, env);
+  auto object = env.object_factory->create(name, env);
 
   return objects_.insert(std::make_pair(name, std::move(object)))
     .first->second.get();
