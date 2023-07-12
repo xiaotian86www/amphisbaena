@@ -11,7 +11,7 @@ public:
               reply,
               (translator::ScheduleRef sch,
                translator::CoroutineRef co,
-               const translator::ResponseData& data),
+               const translator::Object& data),
               (override));
 };
 
@@ -23,6 +23,6 @@ public:
               (translator::ScheduleRef sch,
                translator::CoroutineRef co,
                translator::SessionRef session,
-               const translator::RequestData& data),
+               const translator::Object& data),
               (override));
 };

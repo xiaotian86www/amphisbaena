@@ -1,5 +1,6 @@
-#include "processor.hpp"
+#include "object.hpp"
 #include "parser.hpp"
+#include "processor.hpp"
 #include "schedule.hpp"
 
 #include <llhttp.h>
@@ -16,9 +17,7 @@ public:
   HttpSession(ConnectionRef conn);
 
 public:
-  void reply(ScheduleRef sch,
-             CoroutineRef co,
-             const ResponseData& data) override;
+  void reply(ScheduleRef sch, CoroutineRef co, const Object& data) override;
 
 private:
   ConnectionRef conn_;
@@ -39,7 +38,7 @@ public:
                std::string_view data) override;
 
 public:
-  RequestData request;
+  ObjectPtr request;
   ScheduleRef sch;
   CoroutineRef co;
   SessionPtr session;

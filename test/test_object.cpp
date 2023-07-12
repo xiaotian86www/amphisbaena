@@ -1,6 +1,7 @@
 
 #include <memory>
 
+#include "context.hpp"
 #include "environment.hpp"
 #include "mock/mock_object.hpp"
 #include "object.hpp"
@@ -23,8 +24,8 @@ protected:
 TEST(object, create)
 {
   auto obj_factory = std::make_shared<translator::ObjectFactory>();
+  translator::Context::get_instance().object_factory = obj_factory;
   translator::Environment env;
-  env.object_factory = obj_factory;
 
   testing::MockFunction<std::unique_ptr<translator::Object>(
     translator::Environment&)>
@@ -40,12 +41,12 @@ TEST(object, create)
 TEST(object, get)
 {
   auto obj_factory = std::make_shared<translator::ObjectFactory>();
+  translator::Context::get_instance().object_factory = obj_factory;
   translator::Environment env;
-  env.object_factory = obj_factory;
 
   auto obj = std::make_unique<MockObject>();
   auto obj_ptr = obj.get();
 
   env.object_pool.add("a", std::move(obj));
-  EXPECT_EQ(env.object_pool.get("a", env), obj_ptr);
+  EXPECT_EQ(&env.object_pool.get("a", env), obj_ptr);
 }

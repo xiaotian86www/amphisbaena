@@ -2,11 +2,12 @@
 
 #include <sstream>
 
+#include "context.hpp"
 #include "environment.hpp"
 
 namespace translator {
 void
-ObjectFactory::registe(std::string_view name, ctor_func_type&& func)
+ObjectFactory::registe(std::string_view name, ctor_function&& func)
 {
   ctors_[name] = std::move(func);
 }
@@ -31,17 +32,17 @@ ObjectPool::add(std::string_view name, ObjectPtr&& object)
   objects_[name] = std::move(object);
 }
 
-Object*
+Object&
 ObjectPool::get(std::string_view name, Environment& env) const
 {
   auto it = objects_.find(name);
   if (it != objects_.end())
-    return it->second.get();
+    return *it->second;
 
-  auto object = env.object_factory->create(name, env);
+  auto object = Context::get_instance().object_factory->create(name, env);
 
-  return objects_.insert(std::make_pair(name, std::move(object)))
-    .first->second.get();
+  return *objects_.insert(std::make_pair(name, std::move(object)))
+            .first->second;
 }
 
 } // namespace translator

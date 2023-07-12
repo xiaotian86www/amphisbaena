@@ -1,5 +1,7 @@
 #include "detail/http_parser.hpp"
 #include "context.hpp"
+#include "environment.hpp"
+#include "object.hpp"
 #include "parser.hpp"
 
 #include <iostream>
@@ -15,7 +17,7 @@ static int
 handle_on_method(llhttp_t* http, const char* at, size_t length)
 {
   auto* parser = static_cast<HttpParser*>(http);
-  parser->request.method = std::string(at, length);
+  parser->request->set_value("method", std::string_view(at, length));
   return HPE_OK;
 }
 
@@ -23,7 +25,7 @@ static int
 handle_on_url(llhttp_t* http, const char* at, size_t length)
 {
   auto* parser = static_cast<HttpParser*>(http);
-  parser->request.url = std::string(at, length);
+  parser->request->set_value("url", std::string_view(at, length));
   return HPE_OK;
 }
 
@@ -37,11 +39,12 @@ static int
 handle_on_message_complete(llhttp_t* http)
 {
   auto parser = static_cast<HttpParser*>(http);
-  auto processor =
-    Context::get_instance().processor_factory->create(parser->request.url);
-  if (processor)
-    processor->handle(
-      parser->sch, parser->co, parser->session, parser->request);
+  Environment env;
+  env.sch = parser->sch;
+  env.co = parser->co;
+  env.session = parser->session;
+  env.object_pool.get(parser->request->get_value("method", ""), env);
+
   return HPE_OK;
 }
 
@@ -55,7 +58,7 @@ init()
   g_settings.on_message_complete = handle_on_message_complete;
 }
 void
-HttpSession::reply(ScheduleRef sch, CoroutineRef co, const ResponseData& data)
+HttpSession::reply(ScheduleRef sch, CoroutineRef co, const Object& data)
 {
 }
 
@@ -74,8 +77,8 @@ HttpParser::on_data(ScheduleRef sch,
 {
   enum llhttp_errno err = llhttp_execute(this, data.data(), data.length());
   if (err == HPE_OK) {
-    std::cout << "url: " << request.url << ", method: " << request.method
-              << std::endl;
+    std::cout << "url: " << request->get_value("url", "") << ", "
+              << "method: " << request->get_value("method", "") << std::endl;
   }
 }
 

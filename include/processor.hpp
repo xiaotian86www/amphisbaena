@@ -1,21 +1,11 @@
 #pragma once
 
 #include <memory>
-#include <rapidjson/document.h>
 
 #include "schedule.hpp"
+#include "object.hpp"
 
 namespace translator {
-
-struct RequestData
-{
-  std::string method;
-  std::string url;
-  rapidjson::Document data;
-};
-
-struct ResponseData
-{};
 
 class Session
 {
@@ -25,7 +15,7 @@ public:
 public:
   virtual void reply(ScheduleRef sch,
                      CoroutineRef co,
-                     const ResponseData& data) = 0;
+                     const Object& data) = 0;
 };
 
 typedef std::shared_ptr<Session> SessionPtr;
@@ -46,7 +36,7 @@ public:
   }
 
 public:
-  void reply(ScheduleRef sch, CoroutineRef co, const ResponseData& data)
+  void reply(ScheduleRef sch, CoroutineRef co, const Object& data)
   {
     if (auto session = session_.lock()) {
       session->reply(sch, co, data);
@@ -66,7 +56,7 @@ public:
   virtual void handle(ScheduleRef sch,
                       CoroutineRef co,
                       SessionRef session,
-                      const RequestData& data) = 0;
+                      const Object& data) = 0;
 };
 
 class ProcessorFactory : public std::enable_shared_from_this<ProcessorFactory>

@@ -15,7 +15,6 @@ public:
   ScheduleRef sch;
   CoroutineRef co;
   SessionRef session;
-  ObjectFactoryPtr object_factory;
   ObjectPool object_pool;
 };
 } // namespace translator
