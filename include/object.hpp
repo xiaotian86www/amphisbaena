@@ -3,10 +3,9 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <string>
 #include <string_view>
 #include <unordered_map>
-
-#include <boost/lexical_cast.hpp>
 
 namespace translator {
 class Group;
@@ -96,23 +95,6 @@ public:
 typedef std::unique_ptr<Object> ObjectPtr;
 
 class Environment;
-
-class ObjectFactory
-{
-public:
-  using ctor_prototype = ObjectPtr(Environment&);
-  using ctor_function = std::function<ctor_prototype>;
-
-public:
-  void registe(std::string_view name, ctor_function&& func);
-
-  ObjectPtr create(std::string_view name, Environment& env) const;
-
-private:
-  std::unordered_map<std::string_view, ctor_function> ctors_;
-};
-
-typedef std::shared_ptr<ObjectFactory> ObjectFactoryPtr;
 
 class ObjectPool
 {

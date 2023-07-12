@@ -1,4 +1,6 @@
 
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <memory>
 
 #include "context.hpp"
@@ -6,15 +8,11 @@
 #include "mock/mock_object.hpp"
 #include "object.hpp"
 #include "parser.hpp"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
 class Object : public testing::Test
 {
 public:
-  virtual void SetUp()
-  {
-  }
+  virtual void SetUp() {}
 
   virtual void TearDown() {}
 
@@ -23,8 +21,8 @@ protected:
 
 TEST(object, create)
 {
-  auto obj_factory = std::make_shared<translator::ObjectFactory>();
-  translator::Context::get_instance().object_factory = obj_factory;
+  auto obj_factory = std::make_shared<translator::ObjectBuilder>();
+  translator::Context::get_instance().object_builder = obj_factory;
   translator::Environment env;
 
   testing::MockFunction<std::unique_ptr<translator::Object>(
@@ -40,8 +38,8 @@ TEST(object, create)
 
 TEST(object, get)
 {
-  auto obj_factory = std::make_shared<translator::ObjectFactory>();
-  translator::Context::get_instance().object_factory = obj_factory;
+  auto obj_factory = std::make_shared<translator::ObjectBuilder>();
+  translator::Context::get_instance().object_builder = obj_factory;
   translator::Environment env;
 
   auto obj = std::make_unique<MockObject>();

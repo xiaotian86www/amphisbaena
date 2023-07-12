@@ -5,7 +5,7 @@
 
 #include "object.hpp"
 #include "parser.hpp"
-#include "processor.hpp"
+#include "builder.hpp"
 #include "schedule.hpp"
 
 namespace translator {

@@ -1,6 +1,6 @@
 #include "object.hpp"
 #include "parser.hpp"
-#include "processor.hpp"
+#include "builder.hpp"
 #include "schedule.hpp"
 
 #include <llhttp.h>
@@ -38,10 +38,10 @@ public:
                std::string_view data) override;
 
 public:
-  ObjectPtr request;
   ScheduleRef sch;
   CoroutineRef co;
   SessionPtr session;
+  ObjectPtr request;
 };
 
 class HttpParserFactory : public ParserFactory

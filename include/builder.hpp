@@ -47,35 +47,22 @@ private:
   std::weak_ptr<Session> session_;
 };
 
-class Processor
+class Environment;
+
+class ObjectBuilder
 {
 public:
-  virtual ~Processor() = default;
-
-public:
-  virtual void handle(ScheduleRef sch,
-                      CoroutineRef co,
-                      SessionRef session,
-                      const Object& data) = 0;
-};
-
-class ProcessorFactory : public std::enable_shared_from_this<ProcessorFactory>
-{
-public:
-  using ctor_prototype = std::shared_ptr<Processor>();
+  using ctor_prototype = ObjectPtr(Environment&);
   using ctor_function = std::function<ctor_prototype>;
 
 public:
-  virtual ~ProcessorFactory() = default;
+  void registe(std::string_view name, ctor_function&& func);
 
-public:
-  std::shared_ptr<Processor> create(std::string_view key);
-
-  void registe(std::string_view key, ctor_function ctor);
-
-  void unregiste(std::string_view key);
+  ObjectPtr create(std::string_view name, Environment& env) const;
 
 private:
   std::unordered_map<std::string_view, ctor_function> ctors_;
 };
+
+typedef std::shared_ptr<ObjectBuilder> ObjectBuilderPtr;
 }

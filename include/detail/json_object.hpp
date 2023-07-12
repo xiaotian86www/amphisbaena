@@ -2,19 +2,20 @@
 
 #include "object.hpp"
 
-#include "rapidjson/document.h"
+#include <rapidjson/document.h>
+#include <rapidjson/rapidjson.h>
 
 namespace translator {
-class HttpNode : public Node
+class JsonNode : public Node
 {
 public:
-  HttpNode(rapidjson::Document& doc, rapidjson::Value& value)
+  JsonNode(rapidjson::Document& doc, rapidjson::Value& value)
     : doc_(doc)
     , value_(value)
   {
   }
 
-  HttpNode(const rapidjson::Document& doc, const rapidjson::Value& value)
+  JsonNode(const rapidjson::Document& doc, const rapidjson::Value& value)
     : doc_(const_cast<rapidjson::Document&>(doc))
     , value_(const_cast<rapidjson::Value&>(value))
   {
@@ -83,8 +84,14 @@ private:
   rapidjson::Value& value_;
 };
 
-class HttpObject : public Object
+class JsonObject : public Object
 {
+public:
+  JsonObject()
+    : doc_(rapidjson::Type::kObjectType)
+  {
+  }
+
 public:
   int32_t get_value(std::string_view name, int32_t default_value) const override
   {
@@ -140,7 +147,7 @@ public:
     auto value =
       doc_.FindMember(rapidjson::StringRef(name.data(), name.size()));
     assert(value != doc_.MemberEnd());
-    return std::make_unique<HttpNode>(doc_, value->value);
+    return std::make_unique<JsonNode>(doc_, value->value);
   }
 
   ConstNodePtr get_node(std::string_view name) const override
@@ -148,10 +155,16 @@ public:
     auto value =
       doc_.FindMember(rapidjson::StringRef(name.data(), name.size()));
     assert(value != doc_.MemberEnd());
-    return std::make_unique<const HttpNode>(doc_, value->value);
+    return std::make_unique<const JsonNode>(doc_, value->value);
   }
 
   std::string to_string() const override { return {}; }
+
+  std::string to_binary() const override { return {}; }
+
+  void from_string(std::string_view str) override {}
+
+  void from_binary(std::string_view bin) override {}
 
 private:
   rapidjson::Document doc_;

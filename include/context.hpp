@@ -6,7 +6,7 @@ namespace translator {
 
 class ProcessorFactory;
 class ParserFactory;
-class ObjectFactory;
+class ObjectBuilder;
 
 class Context
 {
@@ -21,8 +21,8 @@ public:
   }
 
 public:
-  std::shared_ptr<ProcessorFactory> processor_factory;
-  std::shared_ptr<ObjectFactory> object_factory;
+  // std::shared_ptr<ProcessorFactory> processor_factory;
+  std::shared_ptr<ObjectBuilder> object_builder;
   std::shared_ptr<ParserFactory> parser_factory;
 };
 
