@@ -24,7 +24,6 @@ public:
     sch = std::make_shared<translator::Schedule>(ios);
     parser_factory = std::make_shared<translator::HttpParserFactory>();
     object_builder = std::make_shared<translator::ObjectBuilder>();
-    conn = std::make_shared<MockConnection>();
 
     translator::Context::get_instance().object_builder = object_builder;
 
@@ -40,7 +39,6 @@ protected:
   std::shared_ptr<translator::ParserFactory> parser_factory;
   std::shared_ptr<translator::ObjectBuilder> object_builder;
   testing::MockFunction<translator::ObjectBuilder::ctor_prototype> object_ctor;
-  std::shared_ptr<MockConnection> conn;
 };
 
 TEST_F(Parser, on_data)
@@ -55,16 +53,16 @@ TEST_F(Parser, on_data)
     .WillRepeatedly(testing::Invoke(
       [] { return std::make_unique<translator::JsonObject>(); }));
 
-  EXPECT_CALL(*conn,
-              send(testing::_,
-                   testing::_,
-                   testing::StrEq(
-                     "HTTP/1.1 200 OK\r\n"
-                     "Content-Type: application/json; charset=utf-8\r\n\r\n")))
-    .Times(2)
-    .WillRepeatedly(testing::Return());
-
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+    auto conn = std::make_shared<MockConnection>(sch, co);
+
+    EXPECT_CALL(*conn,
+                send(testing::StrEq(
+                  "HTTP/1.1 200 OK\r\n"
+                  "Content-Type: application/json; charset=utf-8\r\n\r\n")))
+      .Times(2)
+      .WillRepeatedly(testing::Return());
+
     auto parser = parser_factory->create(
       sch, co, std::static_pointer_cast<translator::Connection>(conn));
 
@@ -80,14 +78,13 @@ TEST_F(Parser, on_data)
 
 TEST_F(Parser, on_data_not_found)
 {
-  EXPECT_CALL(*conn,
-              send(testing::_,
-                   testing::_,
-                   testing::StrEq("HTTP/1.1 404 NOT_FOUND\r\n\r\n")))
-    .Times(2)
-    .WillRepeatedly(testing::Return());
 
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+    auto conn = std::make_shared<MockConnection>(sch, co);
+    EXPECT_CALL(*conn, send(testing::StrEq("HTTP/1.1 404 NOT_FOUND\r\n\r\n")))
+      .Times(2)
+      .WillRepeatedly(testing::Return());
+
     auto parser = parser_factory->create(
       sch, co, std::static_pointer_cast<translator::Connection>(conn));
 
@@ -111,15 +108,14 @@ TEST_F(Parser, on_data_fail)
               })))
     .WillOnce(testing::Return(std::make_unique<translator::JsonObject>()));
 
-  EXPECT_CALL(*conn,
-              send(testing::_,
-                   testing::_,
-                   testing::StrEq(
-                     "HTTP/1.1 200 OK\r\n"
-                     "Content-Type: application/json; charset=utf-8\r\n\r\n")))
-    .WillOnce(testing::Return());
-
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+    auto conn = std::make_shared<MockConnection>(sch, co);
+    EXPECT_CALL(*conn,
+                send(testing::StrEq(
+                  "HTTP/1.1 200 OK\r\n"
+                  "Content-Type: application/json; charset=utf-8\r\n\r\n")))
+      .WillOnce(testing::Return());
+
     auto parser = parser_factory->create(
       sch, co, std::static_pointer_cast<translator::Connection>(conn));
 

@@ -11,12 +11,24 @@ namespace translator {
 class Connection
 {
 public:
+  Connection(ScheduleRef sch, CoroutineRef co)
+    : sch_(sch)
+    , co_(co)
+  {
+  }
+
   virtual ~Connection() = default;
 
 public:
-  virtual void send(ScheduleRef sch,
-                    CoroutineRef co,
-                    std::string_view data) = 0;
+  virtual void send(std::string_view data) = 0;
+
+  virtual std::size_t recv(char* buffer, std::size_t buf_len) = 0;
+
+  virtual void close() = 0;
+
+protected:
+  ScheduleRef sch_;
+  CoroutineRef co_;
 };
 
 typedef std::shared_ptr<Connection> ConnectionPtr;
@@ -37,10 +49,10 @@ public:
   }
 
 public:
-  void send(ScheduleRef sch, CoroutineRef co, std::string_view data)
+  void send(std::string_view data)
   {
     if (auto connection = connection_.lock()) {
-      connection->send(sch, co, data);
+      connection->send(data);
     }
   }
 
@@ -75,7 +87,9 @@ public:
   virtual ~ParserFactory() = default;
 
 public:
-  virtual std::shared_ptr<Parser> create(ScheduleRef sch, CoroutineRef co, ConnectionRef conn) = 0;
+  virtual std::shared_ptr<Parser> create(ScheduleRef sch,
+                                         CoroutineRef co,
+                                         ConnectionRef conn) = 0;
 };
 
 // class ServerPool

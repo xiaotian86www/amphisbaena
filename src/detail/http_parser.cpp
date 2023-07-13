@@ -141,7 +141,7 @@ HttpParser::handle_error(llhttp_status_t status)
   response += llhttp_status_name(status);
   response += "\r\n\r\n";
 
-  conn_.send(sch_, co_, response);
+  conn_.send(response);
 }
 
 void
@@ -158,7 +158,7 @@ HttpParser::handle_success(const Object& object)
   // response += "Content-Length: " + std::to_string()
   response += "\r\n";
 
-  conn_.send(sch_, co_, response);
+  conn_.send(response);
 }
 
 }

@@ -7,15 +7,20 @@
 #include <unistd.h>
 
 #include "context.hpp"
+#include "parser.hpp"
+#include "schedule.hpp"
 
 namespace translator {
-UDSSocket::UDSSocket(boost::asio::io_service& ios)
-  : sock_(ios)
+UDSSocket::UDSSocket(ScheduleRef sch,
+                     CoroutineRef co,
+                     stream_protocol::socket sock)
+  : Connection(sch, co)
+  , sock_(std::move(sock))
 {
 }
 
 void
-UDSSocket::send(ScheduleRef sch, CoroutineRef co, std::string_view data)
+UDSSocket::send(std::string_view data)
 {
   std::size_t send_size = 0;
   for (;;) {
@@ -24,14 +29,14 @@ UDSSocket::send(ScheduleRef sch, CoroutineRef co, std::string_view data)
     sock_.async_write_some(
       boost::asio::const_buffer(data.data() + send_size,
                                 data.size() - send_size),
-      [&size, &ec, sch, co](boost::system::error_code in_ec,
-                            std::size_t in_size) mutable {
+      [&size, &ec, sch = sch_, co = co_](boost::system::error_code in_ec,
+                                         std::size_t in_size) mutable {
         ec = in_ec;
         size = in_size;
         sch.resume(co);
       });
 
-    co.yield();
+    co_.yield();
 
     if (ec)
       throw ec;
@@ -41,6 +46,38 @@ UDSSocket::send(ScheduleRef sch, CoroutineRef co, std::string_view data)
     if (send_size == data.size())
       break;
   }
+}
+
+std::size_t
+UDSSocket::recv(char* buffer, std::size_t buf_len)
+{
+  boost::system::error_code ec;
+  std::size_t size;
+
+  sock_.async_read_some(
+    boost::asio::buffer(buffer, buf_len),
+    [&ec, &size, sch = sch_, co = co_](boost::system::error_code in_ec,
+                                       std::size_t in_size) mutable {
+      size = in_size;
+      ec = in_ec;
+      sch.resume(co);
+    });
+
+  co_.yield();
+
+  if (ec) {
+    close();
+    return -1;
+  }
+
+  return size;
+}
+
+void
+UDSSocket::close()
+{
+  boost::system::error_code ec;
+  sock_.close(ec);
 }
 
 UDSServer::UDSServer(boost::asio::io_service& ios,
@@ -70,18 +107,21 @@ UDSServer::listen()
 
   acceptor_.listen();
 
-  sch_->spawn(std::bind(
-    &UDSServer::do_accept, this, std::placeholders::_1, std::placeholders::_2));
+  sch_->spawn(std::bind(&UDSServer::do_accept,
+                        this,
+                        std::placeholders::_1,
+                        std::placeholders::_2));
 }
 
 void
 UDSServer::do_accept(ScheduleRef sch, CoroutineRef co)
 {
   for (;;) {
-    auto sock = std::make_shared<UDSSocket>(ios_);
+    stream_protocol::socket sock(ios_);
+    // auto sock = std::make_shared<UDSSocket>(sch, co, ios_);
     boost::system::error_code ec;
     acceptor_.async_accept(
-      sock->native(), [&ec, sch, co](boost::system::error_code in_ec) mutable {
+      sock, [&ec, sch, co](boost::system::error_code in_ec) mutable {
         ec = in_ec;
         sch.resume(co);
       });
@@ -91,38 +131,32 @@ UDSServer::do_accept(ScheduleRef sch, CoroutineRef co)
     if (ec)
       continue;
 
-    sch_->spawn(std::bind(&UDSServer::do_read,
+    sch_->spawn(std::bind(&UDSServer::do_accept,
                           this,
                           std::placeholders::_1,
-                          std::placeholders::_2,
-                          sock));
+                          std::placeholders::_2));
+
+    do_read(sch, co, std::move(sock));
+
+    break;
   }
 }
 
 void
 UDSServer::do_read(ScheduleRef sch,
                    CoroutineRef co,
-                   std::shared_ptr<UDSSocket> sock)
+                   stream_protocol::socket sock)
 {
-  auto parser = Context::get_instance().parser_factory->create(
-    sch, co, std::static_pointer_cast<Connection>(sock));
+  std::shared_ptr<Connection> conn =
+    std::make_shared<UDSSocket>(sch, co, std::move(sock));
+  auto parser = Context::get_instance().parser_factory->create(sch, co, conn);
   std::array<char, 8192> data;
   for (;;) {
     boost::system::error_code ec;
-    std::size_t size;
-    sock->native().async_read_some(
-      boost::asio::buffer(data, data.size()),
-      [&ec, &size, sch, co](boost::system::error_code in_ec,
-                            std::size_t in_size) mutable {
-        size = in_size;
-        ec = in_ec;
-        sch.resume(co);
-      });
-
-    co.yield();
-
-    if (ec)
-      throw ec;
+    std::size_t size = conn->recv(data.data(), data.size());
+    if (size == -1) {
+      break;
+    }
 
     parser->on_data({ data.data(), size });
   }

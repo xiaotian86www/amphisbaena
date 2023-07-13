@@ -17,13 +17,14 @@ class UDSSocket
   , public Connection
 {
 public:
-  UDSSocket(boost::asio::io_service& ios);
+  UDSSocket(ScheduleRef sch, CoroutineRef co, stream_protocol::socket sock);
 
 public:
-  void send(ScheduleRef sch, CoroutineRef co, std::string_view data) override;
+  void send(std::string_view data) override;
 
-public:
-  stream_protocol::socket& native() { return sock_; }
+  std::size_t recv(char* buffer, std::size_t buf_len) override;
+
+  void close() override;
 
 private:
   stream_protocol::socket sock_;
@@ -46,7 +47,7 @@ private:
 
   void do_read(ScheduleRef sch,
                CoroutineRef co,
-               std::shared_ptr<UDSSocket> sock);
+               stream_protocol::socket sock);
 
 private:
   boost::asio::io_service& ios_;

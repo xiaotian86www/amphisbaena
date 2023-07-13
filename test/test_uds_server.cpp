@@ -52,8 +52,8 @@ TEST_F(UDSServer, on_data)
         *parser,
         on_data(testing::StrEq(data)))
         .WillOnce(
-          testing::Invoke([sch, co, conn](std::string_view data) mutable {
-            conn.send(sch, co, data);
+          testing::Invoke([conn](std::string_view data) mutable {
+            conn.send(data);
           }));
 
       return parser;
