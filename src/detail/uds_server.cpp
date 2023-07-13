@@ -104,7 +104,8 @@ UDSServer::do_read(ScheduleRef sch,
                    CoroutineRef co,
                    std::shared_ptr<UDSSocket> sock)
 {
-  auto proto = Context::get_instance().parser_factory->create();
+  auto parser = Context::get_instance().parser_factory->create(
+    sch, co, std::static_pointer_cast<Connection>(sock));
   std::array<char, 8192> data;
   for (;;) {
     boost::system::error_code ec;
@@ -123,7 +124,7 @@ UDSServer::do_read(ScheduleRef sch,
     if (ec)
       throw ec;
 
-    proto->on_data(sch, co, std::static_pointer_cast<Connection>(sock), { data.data(), size });
+    parser->on_data({ data.data(), size });
   }
 }
 

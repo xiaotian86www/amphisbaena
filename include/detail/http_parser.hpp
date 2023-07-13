@@ -1,6 +1,6 @@
+#include "builder.hpp"
 #include "object.hpp"
 #include "parser.hpp"
-#include "builder.hpp"
 #include "schedule.hpp"
 
 #include <llhttp.h>
@@ -28,25 +28,32 @@ class HttpParser
   , public llhttp_t
 {
 public:
-  HttpParser();
+  HttpParser(ScheduleRef sch, CoroutineRef co, ConnectionRef conn);
   ~HttpParser() override = default;
 
 public:
-  void on_data(ScheduleRef sch,
-               CoroutineRef co,
-               ConnectionRef conn,
-               std::string_view data) override;
+  void on_data(std::string_view data) override;
 
-public:
-  ScheduleRef sch;
-  CoroutineRef co;
-  SessionPtr session;
-  ObjectPtr request;
+  void handle();
+
+  void set_field(std::string_view name, std::string_view value);
+
+private:
+  void handle_error(llhttp_status_t status);
+
+  void handle_success(const Object& object);
+
+private:
+  SessionPtr session_;
+  ObjectPtr request_;
 };
 
 class HttpParserFactory : public ParserFactory
 {
 public:
-  std::shared_ptr<Parser> create() override;
+  std::shared_ptr<Parser> create(ScheduleRef sch, CoroutineRef co, ConnectionRef conn) override
+  {
+    return std::make_shared<HttpParser>(sch, co, conn);
+  }
 };
 }

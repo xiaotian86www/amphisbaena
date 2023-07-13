@@ -5,6 +5,7 @@
 
 #include "context.hpp"
 #include "environment.hpp"
+#include "object.hpp"
 
 namespace translator {
 void
@@ -21,9 +22,6 @@ ObjectBuilder::create(std::string_view name, Environment& env) const
     return it->second(env);
   }
 
-  std::stringstream ss;
-  ss << "cannot get object '" << name << "'";
-
-  throw new std::runtime_error(ss.str());
+  throw NotFoundException(name);
 }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <exception>
 #include <functional>
 #include <memory>
 #include <string>
@@ -67,10 +68,14 @@ public:
 
 public:
   virtual int32_t get_value(std::string_view name,
-                            int32_t default_value) const = 0;
+                            int32_t default_value) const noexcept = 0;
 
   virtual std::string_view get_value(std::string_view name,
-                                     std::string_view default_value) const = 0;
+                                     std::string_view default_value) const noexcept = 0;
+
+  virtual int32_t get_int(std::string_view name) const = 0;
+
+  virtual std::string_view get_string(std::string_view name) const = 0;
 
   virtual void set_value(std::string_view name, int32_t value) = 0;
 
@@ -88,6 +93,8 @@ public:
 
   virtual void from_binary(std::string_view bin) = 0;
 
+  virtual void clear() = 0;
+
 public:
   std::string name;
 };
@@ -101,10 +108,50 @@ class ObjectPool
 public:
   void add(std::string_view name, ObjectPtr&& object);
 
-  Object& get(std::string_view name, Environment& env) const;
+  const Object& get(std::string_view name, Environment& env) const;
 
 private:
   mutable std::unordered_map<std::string_view, ObjectPtr> objects_;
+};
+
+class NoKeyException : public std::exception
+{
+public:
+  NoKeyException(std::string_view name)
+    : name_(name)
+  {
+    what_ += name;
+    what_ += " required";
+  }
+
+public:
+  const char* what() const noexcept override { return what_.c_str(); }
+
+  std::string_view name() const noexcept { return name_; }
+
+private:
+  std::string name_;
+  std::string what_;
+};
+
+class NotFoundException : public std::exception
+{
+public:
+  NotFoundException(std::string_view name)
+    : name_(name)
+  {
+    what_ += name;
+    what_ += " not found";
+  }
+
+public:
+  const char* what() const noexcept override { return what_.c_str(); }
+
+  std::string_view name() const noexcept { return name_; }
+
+private:
+  std::string name_;
+  std::string what_;
 };
 
 } // namespace translator

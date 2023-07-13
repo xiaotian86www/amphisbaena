@@ -42,20 +42,22 @@ TEST_F(UDSServer, on_data)
 
   std::string_view data("1234567890");
 
-  EXPECT_CALL(*parser_factory, create()).WillOnce(testing::Invoke([data] {
-    auto parser = std::make_shared<MockParser>();
+  EXPECT_CALL(*parser_factory, create(testing::_, testing::_, testing::_))
+    .WillOnce(testing::Invoke([data](translator::ScheduleRef sch,
+                                     translator::CoroutineRef co,
+                                     translator::ConnectionRef conn) {
+      auto parser = std::make_shared<MockParser>(sch, co, conn);
 
-    EXPECT_CALL(
-      *parser,
-      on_data(testing::_, testing::_, testing::_, testing::StrEq(data)))
-      .WillOnce(testing::Invoke(
-        [](translator::ScheduleRef sch,
-           translator::CoroutineRef co,
-           translator::ConnectionRef sock,
-           std::string_view data) { sock.send(sch, co, data); }));
-           
-    return parser;
-  }));
+      EXPECT_CALL(
+        *parser,
+        on_data(testing::StrEq(data)))
+        .WillOnce(
+          testing::Invoke([sch, co, conn](std::string_view data) mutable {
+            conn.send(sch, co, data);
+          }));
+
+      return parser;
+    }));
 
   server->listen();
 

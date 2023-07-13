@@ -14,7 +14,7 @@ ObjectPool::add(std::string_view name, ObjectPtr&& object)
   objects_[name] = std::move(object);
 }
 
-Object&
+const Object&
 ObjectPool::get(std::string_view name, Environment& env) const
 {
   auto it = objects_.find(name);

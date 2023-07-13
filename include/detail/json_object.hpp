@@ -93,7 +93,8 @@ public:
   }
 
 public:
-  int32_t get_value(std::string_view name, int32_t default_value) const override
+  int32_t get_value(std::string_view name,
+                    int32_t default_value) const noexcept override
   {
     if (auto iter =
           doc_.FindMember(rapidjson::StringRef(name.data(), name.size()));
@@ -104,8 +105,9 @@ public:
     }
   }
 
-  std::string_view get_value(std::string_view name,
-                             std::string_view default_value) const override
+  std::string_view get_value(
+    std::string_view name,
+    std::string_view default_value) const noexcept override
   {
     if (auto iter =
           doc_.FindMember(rapidjson::StringRef(name.data(), name.size()));
@@ -113,6 +115,28 @@ public:
       return { iter->value.GetString(), iter->value.GetStringLength() };
     } else {
       return default_value;
+    }
+  }
+
+  int32_t get_int(std::string_view name) const override
+  {
+    if (auto iter =
+          doc_.FindMember(rapidjson::StringRef(name.data(), name.size()));
+        iter != doc_.MemberEnd() && iter->value.IsInt()) {
+      return iter->value.GetInt();
+    } else {
+      throw NoKeyException(name);
+    }
+  }
+
+  std::string_view get_string(std::string_view name) const override
+  {
+    if (auto iter =
+          doc_.FindMember(rapidjson::StringRef(name.data(), name.size()));
+        iter != doc_.MemberEnd() && iter->value.IsString()) {
+      return { iter->value.GetString(), iter->value.GetStringLength() };
+    } else {
+      throw NoKeyException(name);
     }
   }
 
@@ -165,6 +189,8 @@ public:
   void from_string(std::string_view str) override {}
 
   void from_binary(std::string_view bin) override {}
+
+  void clear() override { doc_.RemoveAllMembers(); }
 
 private:
   rapidjson::Document doc_;

@@ -19,17 +19,17 @@ public:
 class MockParser : public translator::Parser
 {
 public:
-  MOCK_METHOD(void,
-              on_data,
-              (translator::ScheduleRef,
-               translator::CoroutineRef,
-               translator::ConnectionRef,
-               std::string_view),
-              (override));
+  using translator::Parser::Parser;
+  MOCK_METHOD(void, on_data, (std::string_view), (override));
 };
 
 class MockParserFactory : public translator::ParserFactory
 {
 public:
-  MOCK_METHOD(std::shared_ptr<translator::Parser>, create, (), (override));
+  MOCK_METHOD(std::shared_ptr<translator::Parser>,
+              create,
+              (translator::ScheduleRef,
+               translator::CoroutineRef,
+               translator::ConnectionRef),
+              (override));
 };
