@@ -107,18 +107,15 @@ UDSServer::listen()
 
   acceptor_.listen();
 
-  sch_->spawn(std::bind(&UDSServer::do_accept,
-                        this,
-                        std::placeholders::_1,
-                        std::placeholders::_2));
+  sch_->spawn(std::bind(
+    &UDSServer::handle, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void
-UDSServer::do_accept(ScheduleRef sch, CoroutineRef co)
+stream_protocol::socket UDSServer::accept(ScheduleRef sch, CoroutineRef co)
 {
-  for (;;) {
-    stream_protocol::socket sock(ios_);
-    // auto sock = std::make_shared<UDSSocket>(sch, co, ios_);
+  stream_protocol::socket sock(ios_);
+  for (;;)
+  {
     boost::system::error_code ec;
     acceptor_.async_accept(
       sock, [&ec, sch, co](boost::system::error_code in_ec) mutable {
@@ -128,25 +125,22 @@ UDSServer::do_accept(ScheduleRef sch, CoroutineRef co)
 
     co.yield();
 
-    if (ec)
-      continue;
-
-    sch_->spawn(std::bind(&UDSServer::do_accept,
-                          this,
-                          std::placeholders::_1,
-                          std::placeholders::_2));
-
-    do_read(sch, co, std::move(sock));
-
-    break;
+    if (!ec)
+      return std::move(sock);
   }
 }
 
 void
-UDSServer::do_read(ScheduleRef sch,
-                   CoroutineRef co,
-                   stream_protocol::socket sock)
+UDSServer::handle(ScheduleRef sch, CoroutineRef co)
 {
+  // 接受连接
+  auto sock = accept(sch, co);
+
+  // 开启新协程接受连接
+  sch_->spawn(std::bind(
+    &UDSServer::handle, this, std::placeholders::_1, std::placeholders::_2));
+
+  // 接受消息
   std::shared_ptr<Connection> conn =
     std::make_shared<UDSSocket>(sch, co, std::move(sock));
   auto parser = Context::get_instance().parser_factory->create(sch, co, conn);

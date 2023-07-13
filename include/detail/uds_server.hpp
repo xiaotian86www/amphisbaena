@@ -43,11 +43,9 @@ public:
   void listen();
 
 private:
-  void do_accept(ScheduleRef sch, CoroutineRef co);
+  stream_protocol::socket accept(ScheduleRef sch, CoroutineRef co);
 
-  void do_read(ScheduleRef sch,
-               CoroutineRef co,
-               stream_protocol::socket sock);
+  void handle(ScheduleRef sch, CoroutineRef co);
 
 private:
   boost::asio::io_service& ios_;
