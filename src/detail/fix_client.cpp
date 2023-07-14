@@ -10,7 +10,6 @@
 #include <quickfix/Log.h>
 #include <quickfix/Message.h>
 #include <quickfix/MessageStore.h>
-#include <quickfix/Session.h>
 #include <quickfix/SessionSettings.h>
 #include <quickfix/SocketInitiator.h>
 #pragma GCC diagnostic pop
@@ -52,9 +51,9 @@ FixClient::stop()
 }
 
 void
-FixClient::send(FIX::Message& msg)
+FixClient::send(const Object& obj)
 {
-  FIX::Session::sendToTarget(msg);
+  FIX::Message message;
 }
 
 void

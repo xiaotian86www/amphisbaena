@@ -7,7 +7,6 @@
 #include <quickfix/Application.h>
 #include <quickfix/Initiator.h>
 #include <quickfix/Log.h>
-#include <quickfix/Message.h>
 #include <quickfix/SessionSettings.h>
 #pragma GCC diagnostic pop
 
@@ -28,7 +27,7 @@ public:
   void stop() override;
 
 public:
-  void send(FIX::Message& msg);
+  void send(const Object& obj);
 
 public:
 #pragma GCC diagnostic push
