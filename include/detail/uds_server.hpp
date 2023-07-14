@@ -1,13 +1,14 @@
 #pragma once
 
-#include "parser.hpp"
-#include "schedule.hpp"
-
 #include <array>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/local/stream_protocol.hpp>
 #include <memory>
 #include <string_view>
+
+#include "parser.hpp"
+#include "schedule.hpp"
+#include "service.hpp"
 
 using namespace boost::asio::local;
 
@@ -30,7 +31,9 @@ private:
   stream_protocol::socket sock_;
 };
 
-class UDSServer : public std::enable_shared_from_this<UDSServer>
+class UDSServer
+  : public std::enable_shared_from_this<UDSServer>
+  , public Service
 {
 public:
   UDSServer(boost::asio::io_service& ios,
@@ -40,7 +43,9 @@ public:
   virtual ~UDSServer();
 
 public:
-  void listen();
+  void start() override;
+
+  void stop() override;
 
 private:
   stream_protocol::socket accept(ScheduleRef sch, CoroutineRef co);

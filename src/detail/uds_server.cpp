@@ -3,6 +3,7 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/local/stream_protocol.hpp>
+#include <boost/system/error_code.hpp>
 #include <memory>
 #include <unistd.h>
 
@@ -93,7 +94,7 @@ UDSServer::UDSServer(boost::asio::io_service& ios,
 UDSServer::~UDSServer() {}
 
 void
-UDSServer::listen()
+UDSServer::start()
 {
   if (acceptor_.is_open())
     return;
@@ -111,11 +112,18 @@ UDSServer::listen()
     &UDSServer::handle, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-stream_protocol::socket UDSServer::accept(ScheduleRef sch, CoroutineRef co)
+void
+UDSServer::stop()
+{
+  boost::system::error_code ec;
+  acceptor_.close(ec);
+}
+
+stream_protocol::socket
+UDSServer::accept(ScheduleRef sch, CoroutineRef co)
 {
   stream_protocol::socket sock(ios_);
-  for (;;)
-  {
+  for (;;) {
     boost::system::error_code ec;
     acceptor_.async_accept(
       sock, [&ec, sch, co](boost::system::error_code in_ec) mutable {

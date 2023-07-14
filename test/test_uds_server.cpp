@@ -59,7 +59,7 @@ TEST_F(UDSServer, on_data)
       return parser;
     }));
 
-  server->listen();
+  server->start();
 
   th = std::thread([this] { ios.run(); });
 
