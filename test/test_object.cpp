@@ -1,50 +1,82 @@
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <sstream>
 
-#include "context.hpp"
-#include "environment.hpp"
-#include "mock/mock_object.hpp"
 #include "object.hpp"
-#include "parser.hpp"
 
-class Object : public testing::Test
+using ctor_prototype = translator::ObjectPtr();
+
+class Object : public testing::TestWithParam<std::function<ctor_prototype>>
 {
 public:
-  virtual void SetUp() {}
+  void SetUp() { obj = GetParam()(); }
 
-  virtual void TearDown() {}
+  void TearDown() {}
 
 protected:
+  translator::ObjectPtr obj;
 };
 
-TEST(object, create)
+TEST_P(Object, get_int)
 {
-  auto obj_factory = std::make_shared<translator::ObjectBuilder>();
-  translator::Context::get_instance().object_builder = obj_factory;
-  translator::Environment env;
+  auto& root = obj->get_root();
+  root.set_value("MsgSeqNum", 1);
 
-  testing::MockFunction<std::unique_ptr<translator::Object>(
-    translator::Environment&)>
-    func;
+  EXPECT_EQ(root.get_int("MsgSeqNum"), 1);
+  EXPECT_EQ(root.get_value("MsgSeqNum", 0), 1);
 
-  EXPECT_CALL(func, Call(testing::_))
-    .WillOnce(testing::Return(std::make_unique<MockObject>()));
+  EXPECT_THROW(root.get_int("SenderCompID"), translator::NoKeyException);
+  EXPECT_EQ(root.get_value("SenderCompID", 10), 10);
 
-  obj_factory->registe("a", func.AsStdFunction());
-  obj_factory->create("a", env);
+  root.set_value("SenderCompID", "a");
+
+  EXPECT_THROW(root.get_int("SenderCompID"), translator::TypeExecption);
+  EXPECT_EQ(root.get_value("SenderCompID", 10), 10);
 }
 
-TEST(object, get)
+TEST_P(Object, get_string)
 {
-  auto obj_factory = std::make_shared<translator::ObjectBuilder>();
-  translator::Context::get_instance().object_builder = obj_factory;
-  translator::Environment env;
+  auto& root = obj->get_root();
+  root.set_value("SenderCompID", "value1");
+  EXPECT_EQ(root.get_string("SenderCompID"), "value1");
+  EXPECT_EQ(root.get_value("SenderCompID", ""), "value1");
 
-  auto obj = std::make_unique<MockObject>();
-  auto obj_ptr = obj.get();
+  EXPECT_THROW(root.get_string("MsgSeqNum"), translator::NoKeyException);
+  EXPECT_EQ(root.get_value("MsgSeqNum", ""), "");
 
-  env.object_pool.add("a", std::move(obj));
-  EXPECT_EQ(&env.object_pool.get("a", env), obj_ptr);
+  root.set_value("MsgSeqNum", 1);
+
+  EXPECT_THROW(root.get_string("MsgSeqNum"), translator::TypeExecption);
+  EXPECT_EQ(root.get_value("MsgSeqNum", ""), "");
 }
+
+#include "detail/json_object.hpp"
+
+translator::ObjectPtr
+create_json_object()
+{
+  return std::make_unique<translator::JsonObject>();
+}
+
+#include "detail/fix_object.hpp"
+
+struct create_fix_object
+{
+  create_fix_object()
+    : dd("/usr/local/share/quickfix/FIX42.xml")
+  {
+  }
+
+  translator::ObjectPtr operator()() const
+  {
+    return std::make_unique<translator::FixObject>(dd);
+  }
+
+  FIX::DataDictionary dd;
+};
+
+INSTANTIATE_TEST_SUITE_P(JsonFix,
+                         Object,
+                         testing::Values(create_json_object,
+                                         create_fix_object()));

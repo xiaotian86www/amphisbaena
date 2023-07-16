@@ -24,6 +24,10 @@ public:
   virtual std::string_view get_value(std::string_view name,
                                      std::string_view default_value) const = 0;
 
+  virtual int32_t get_int(std::string_view name) const = 0;
+
+  virtual std::string_view get_string(std::string_view name) const = 0;
+
   virtual void set_value(std::string_view name, int32_t value) = 0;
 
   virtual void set_value(std::string_view name, std::string_view value) = 0;
@@ -67,23 +71,24 @@ public:
   virtual ~Object() = default;
 
 public:
-  virtual int32_t get_value(std::string_view name,
-                            int32_t default_value) const noexcept = 0;
+  // virtual int32_t get_value(std::string_view name,
+  //                           int32_t default_value) const noexcept = 0;
 
-  virtual std::string_view get_value(std::string_view name,
-                                     std::string_view default_value) const noexcept = 0;
+  // virtual std::string_view get_value(std::string_view name,
+  //                                    std::string_view default_value) const
+  //                                    noexcept = 0;
 
-  virtual int32_t get_int(std::string_view name) const = 0;
+  // virtual int32_t get_int(std::string_view name) const = 0;
 
-  virtual std::string_view get_string(std::string_view name) const = 0;
+  // virtual std::string_view get_string(std::string_view name) const = 0;
 
-  virtual void set_value(std::string_view name, int32_t value) = 0;
+  // virtual void set_value(std::string_view name, int32_t value) = 0;
 
-  virtual void set_value(std::string_view name, std::string_view value) = 0;
+  // virtual void set_value(std::string_view name, std::string_view value) = 0;
 
-  virtual NodePtr get_node(std::string_view name) = 0;
+  virtual Node& get_root(/* std::string_view name */) = 0;
 
-  virtual ConstNodePtr get_node(std::string_view name) const = 0;
+  virtual const Node& get_root(/* std::string_view name */) const = 0;
 
   virtual std::string to_string() const = 0;
 
@@ -131,6 +136,29 @@ public:
 
 private:
   std::string name_;
+  std::string what_;
+};
+
+class TypeExecption : public std::exception
+{
+public:
+  TypeExecption(std::string_view name, std::string_view type)
+    : name_(name)
+    , type_(type)
+  {
+    what_ += name;
+    what_ += " required ";
+    what_ += type;
+  }
+
+public:
+  const char* what() const noexcept override { return what_.c_str(); }
+
+  std::string_view name() const noexcept { return name_; }
+
+private:
+  std::string name_;
+  std::string type_;
   std::string what_;
 };
 

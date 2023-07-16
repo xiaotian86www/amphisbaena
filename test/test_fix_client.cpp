@@ -26,7 +26,7 @@ SocketReuseAddress=Y
 StartTime=00:00:00
 EndTime=00:00:00
 #FileLogPath=log
-UseDataDictionary=N
+UseDataDictionary=Y
 ServerCertificateFile=./cfg/certs/127_0_0_1_server.crt
 ServerCertificateKeyFile=./cfg/certs/127_0_0_1_server.key
 SSLProtocol = all
@@ -38,28 +38,28 @@ BeginString=FIX.4.2
 SenderCompID=EXECUTOR
 TargetCompID=CLIENT1
 #FileStorePath=store
-DataDictionary=../spec/FIX42.xml
+DataDictionary=/usr/local/share/quickfix/FIX42.xml
 
 [SESSION]
 BeginString=FIX.4.2
 SenderCompID=EXECUTOR
 TargetCompID=CLIENT2
 #FileStorePath=store
-DataDictionary=../spec/FIX42.xml
+DataDictionary=/usr/local/share/quickfix/FIX42.xml
 
 [SESSION]
 BeginString=FIX.4.3
 SenderCompID=EXECUTOR
 TargetCompID=CLIENT1
 FileStorePath=store
-DataDictionary=../spec/FIX43.xml
+DataDictionary=/usr/local/share/quickfix/FIX43.xml
 
 [SESSION]
 BeginString=FIX.4.3
 SenderCompID=EXECUTOR
 TargetCompID=CLIENT2
 #FileStorePath=store
-DataDictionary=../spec/FIX43.xml
+DataDictionary=/usr/local/share/quickfix/FIX43.xml
 )");
 
   std::stringstream client_settings(R"(
@@ -70,8 +70,8 @@ ReconnectInterval=2
 #FileLogPath=log
 StartTime=00:00:00
 EndTime=00:00:00
-UseDataDictionary=N
-#DataDictionary=../spec/FIX42.xml
+UseDataDictionary=Y
+DataDictionary=/usr/local/share/quickfix/FIX42.xml
 HttpAcceptPort=9911
 #ClientCertificateFile =
 #ClientCertificateKeyFile =

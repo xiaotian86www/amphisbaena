@@ -1,8 +1,10 @@
 #include <istream>
 #include <memory>
+#include <stdexcept>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
+#include <quickfix/DataDictionary.h>
 #include <quickfix/FileLog.h>
 #include <quickfix/FileStore.h>
 #include <quickfix/FixFieldNumbers.h>
@@ -10,6 +12,8 @@
 #include <quickfix/Log.h>
 #include <quickfix/Message.h>
 #include <quickfix/MessageStore.h>
+#include <quickfix/Session.h>
+#include <quickfix/SessionID.h>
 #include <quickfix/SessionSettings.h>
 #include <quickfix/SocketInitiator.h>
 #pragma GCC diagnostic pop
@@ -53,7 +57,20 @@ FixClient::stop()
 void
 FixClient::send(const Object& obj)
 {
-  FIX::Message message;
+  // FIX::Message message;
+  // auto begin_string = std::string(obj.get_string(FIX::BEGINSTRING));
+  // auto sender_comp_id = std::string(obj.get_string(FIX::SENDERCOMPID));
+  // auto target_comp_id = std::string(obj.get_string(FIX::TARGETCOMPID));
+
+  // auto session_id =
+  //   FIX::SessionID(begin_string, sender_comp_id, target_comp_id);
+  // auto session = FIX::Session::lookupSession(session_id);
+  // if (!session)
+  //   throw std::invalid_argument("session not found, please check begin_string, "
+  //                               "sender_comp_id and target_comp_id");
+
+  // const auto& ddp = session->getDataDictionaryProvider();
+  // const auto& dd = ddp.getSessionDataDictionary(begin_string);
 }
 
 void

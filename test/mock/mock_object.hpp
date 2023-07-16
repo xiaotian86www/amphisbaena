@@ -15,6 +15,14 @@ public:
               get_value,
               (std::string_view, std::string_view),
               (const, override));
+  MOCK_METHOD(int32_t,
+              get_int,
+              (std::string_view),
+              (const, override));
+  MOCK_METHOD(std::string_view,
+              get_string,
+              (std::string_view),
+              (const, override));
   MOCK_METHOD(void, set_value, (std::string_view, int32_t), (override));
   MOCK_METHOD(void,
               set_value,
@@ -30,32 +38,32 @@ public:
 class MockObject : public translator::Object
 {
 public:
-  MOCK_METHOD(int32_t,
-              get_value,
-              (std::string_view, int32_t),
-              (const, noexcept, override));
-  MOCK_METHOD(std::string_view,
-              get_value,
-              (std::string_view, std::string_view),
-              (const, noexcept, override));
-  MOCK_METHOD(int32_t,
-              get_int,
-              (std::string_view),
+  // MOCK_METHOD(int32_t,
+  //             get_value,
+  //             (std::string_view, int32_t),
+  //             (const, noexcept, override));
+  // MOCK_METHOD(std::string_view,
+  //             get_value,
+  //             (std::string_view, std::string_view),
+  //             (const, noexcept, override));
+  // MOCK_METHOD(int32_t,
+  //             get_int,
+  //             (std::string_view),
+  //             (const, override));
+  // MOCK_METHOD(std::string_view,
+  //             get_string,
+  //             (std::string_view),
+  //             (const, override));
+  // MOCK_METHOD(void, set_value, (std::string_view, int32_t), (override));
+  // MOCK_METHOD(void,
+  //             set_value,
+  //             (std::string_view, std::string_view),
+  //             (override));
+  MOCK_METHOD(const translator::Node&,
+              get_root,
+              (),
               (const, override));
-  MOCK_METHOD(std::string_view,
-              get_string,
-              (std::string_view),
-              (const, override));
-  MOCK_METHOD(void, set_value, (std::string_view, int32_t), (override));
-  MOCK_METHOD(void,
-              set_value,
-              (std::string_view, std::string_view),
-              (override));
-  MOCK_METHOD(translator::ConstNodePtr,
-              get_node,
-              (std::string_view),
-              (const, override));
-  MOCK_METHOD(translator::NodePtr, get_node, (std::string_view), (override));
+  MOCK_METHOD(translator::Node&, get_root, (), (override));
   MOCK_METHOD(std::string, to_string, (), (const, override));
   MOCK_METHOD(void, from_string, (std::string_view), (override));
   MOCK_METHOD(std::string, to_binary, (), (const, override));

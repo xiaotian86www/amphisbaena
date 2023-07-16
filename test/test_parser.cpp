@@ -46,8 +46,9 @@ TEST_F(Parser, on_data)
   EXPECT_CALL(object_ctor,
               Call(testing::Truly([](translator::Environment& env) {
                 const auto& obj = env.object_pool.get("/", env);
-                return obj.get_value("method", "") == "GET" &&
-                       obj.get_value("url", "") == "/";
+                const auto& root = obj.get_root();
+                return root.get_value("method", "") == "GET" &&
+                       root.get_value("url", "") == "/";
               })))
     .Times(2)
     .WillRepeatedly(testing::Invoke(
@@ -103,8 +104,9 @@ TEST_F(Parser, on_data_fail)
   EXPECT_CALL(object_ctor,
               Call(testing::Truly([](translator::Environment& env) {
                 const auto& obj = env.object_pool.get("/", env);
-                return obj.get_value("method", "") == "GET" &&
-                       obj.get_value("url", "") == "/";
+                const auto& root = obj.get_root();
+                return root.get_value("method", "") == "GET" &&
+                       root.get_value("url", "") == "/";
               })))
     .WillOnce(testing::Return(std::make_unique<translator::JsonObject>()));
 
