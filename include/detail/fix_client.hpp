@@ -12,6 +12,7 @@
 
 #include "object.hpp"
 #include "service.hpp"
+#include "fix_object.hpp"
 
 namespace translator {
 class FixClient
@@ -27,7 +28,7 @@ public:
   void stop() override;
 
 public:
-  void send(const Object& obj);
+  void send(const FixObject& obj);
 
 public:
 #pragma GCC diagnostic push

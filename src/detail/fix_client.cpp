@@ -55,7 +55,7 @@ FixClient::stop()
 }
 
 void
-FixClient::send(const Object& obj)
+FixClient::send(const FixObject& obj)
 {
   // FIX::Message message;
   // auto begin_string = std::string(obj.get_string(FIX::BEGINSTRING));

@@ -51,8 +51,9 @@ type_name(FIX::TYPE::Type type)
 class FixNode : public Node
 {
 public:
-  FixNode(const FIX::DataDictionary& dd)
+  FixNode(const FIX::DataDictionary& dd, FIX::FieldMap& fields)
     : dd_(dd)
+    , fields_(fields)
   {
   }
 
@@ -150,8 +151,8 @@ private:
   }
 
 private:
-  FIX::FieldMap fields_;
   const FIX::DataDictionary& dd_;
+  FIX::FieldMap& fields_;
 };
 
 class FixObject : public Object
@@ -159,7 +160,7 @@ class FixObject : public Object
 public:
   FixObject(const FIX::DataDictionary& dd)
     : dd_(dd)
-    , root_(dd_)
+    , root_(dd_, message_)
   {
   }
 
@@ -180,6 +181,7 @@ public:
 
 private:
   const FIX::DataDictionary& dd_;
+  FIX::Message message_;
   FixNode root_;
 };
 }

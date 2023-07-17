@@ -59,6 +59,8 @@ create_json_object()
   return std::make_unique<translator::JsonObject>();
 }
 
+INSTANTIATE_TEST_SUITE_P(Json, Object, testing::Values(create_json_object));
+
 #include "detail/fix_object.hpp"
 
 struct create_fix_object
@@ -76,7 +78,4 @@ struct create_fix_object
   FIX::DataDictionary dd;
 };
 
-INSTANTIATE_TEST_SUITE_P(JsonFix,
-                         Object,
-                         testing::Values(create_json_object,
-                                         create_fix_object()));
+INSTANTIATE_TEST_SUITE_P(Fix, Object, testing::Values(create_fix_object()));
