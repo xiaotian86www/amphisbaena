@@ -30,6 +30,11 @@ FixServer::FixServer(std::istream& is)
     *this, *store_factory_, settings_, *log_factory_);
 }
 
+FixServer::~FixServer()
+{
+  stop();
+}
+
 void
 FixServer::start()
 {

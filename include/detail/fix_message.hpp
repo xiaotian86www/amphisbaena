@@ -1,6 +1,7 @@
 #pragma once
 
 #include <quickfix/FieldTypes.h>
+#include <string_view>
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
 #include <quickfix/DataDictionary.h>

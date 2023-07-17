@@ -4,6 +4,8 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
+#include <quickfix/Message.h>
+#include <quickfix/DataDictionary.h>
 #include <quickfix/Application.h>
 #include <quickfix/Initiator.h>
 #include <quickfix/Log.h>
@@ -21,6 +23,8 @@ class FixClient
 {
 public:
   FixClient(std::istream& is);
+
+  ~FixClient();
 
 public:
   void start() override;

@@ -16,6 +16,8 @@ class FixServer
 public:
   FixServer(std::istream& is);
 
+  ~FixServer() override;
+
 public:
   void start();
 

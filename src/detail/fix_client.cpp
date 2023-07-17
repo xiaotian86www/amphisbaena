@@ -42,6 +42,11 @@ FixClient::FixClient(std::istream& is)
     *this, *store_factory_, settings_, *log_factory_);
 }
 
+FixClient::~FixClient()
+{
+  stop();
+}
+
 void
 FixClient::start()
 {
@@ -58,20 +63,6 @@ void
 FixClient::send(FixMessage& message)
 {
   FIX::Session::sendToTarget(message.message());
-  // FIX::Message message;
-  // auto begin_string = std::string(message.get_string(FIX::BEGINSTRING));
-  // auto sender_comp_id = std::string(message.get_string(FIX::SENDERCOMPID));
-  // auto target_comp_id = std::string(message.get_string(FIX::TARGETCOMPID));
-
-  // auto session_id =
-  //   FIX::SessionID(begin_string, sender_comp_id, target_comp_id);
-  // auto session = FIX::Session::lookupSession(session_id);
-  // if (!session)
-  //   throw std::invalid_argument("session not found, please check begin_string, "
-  //                               "sender_comp_id and target_comp_id");
-
-  // const auto& ddp = session->getDataDictionaryProvider();
-  // const auto& dd = ddp.getSessionDataDictionary(begin_string);
 }
 
 void
