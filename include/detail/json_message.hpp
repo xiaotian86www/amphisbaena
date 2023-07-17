@@ -8,12 +8,91 @@
 #include <rapidjson/rapidjson.h>
 
 namespace translator {
+namespace detail {
+template<typename Type_>
+constexpr bool
+check_type(const rapidjson::Value& value);
+
+template<>
+constexpr bool
+check_type<int32_t>(const rapidjson::Value& value)
+{
+  return value.IsInt();
+}
+
+template<>
+constexpr bool
+check_type<std::string_view>(const rapidjson::Value& value)
+{
+  return value.IsString();
+}
+
+constexpr std::string_view
+type_name(const rapidjson::Value& value)
+{
+  switch (value.GetType()) {
+    case rapidjson::Type::kStringType:
+      return "String";
+    case rapidjson::Type::kNumberType:
+      return "Number";
+    default:
+      return "Unknown";
+  }
+}
+
+template<typename Type_>
+constexpr Type_
+get_value(const rapidjson::Value& value)
+{
+  return value.Get<Type_>();
+}
+
+template<>
+constexpr std::string_view
+get_value<std::string_view>(const rapidjson::Value& value)
+{
+  return { value.GetString(), value.GetStringLength() };
+}
+
+template<typename Type_>
+constexpr void
+set_value(rapidjson::Document::AllocatorType& allocator,
+          rapidjson::Value& value,
+          Type_ v)
+{
+  value.Set<Type_>(v);
+}
+
+template<>
+constexpr void
+set_value<std::string_view>(rapidjson::Document::AllocatorType& allocator,
+                            rapidjson::Value& value,
+                            std::string_view v)
+{
+  value.SetString(v.data(), v.size(), allocator);
+}
+
+template<typename Type_>
+inline rapidjson::Value
+create_value(rapidjson::Document::AllocatorType& allocator, Type_ type)
+{
+  return rapidjson::Value(type);
+}
+
+template<>
+inline rapidjson::Value
+create_value<std::string_view>(rapidjson::Document::AllocatorType& allocator,
+                               std::string_view value)
+{
+  return rapidjson::Value(value.data(), value.size(), allocator);
+}
+}
 
 class JsonObject : public Object
 {
 public:
   JsonObject(rapidjson::Document::AllocatorType& allocator,
-           rapidjson::Value& value)
+             rapidjson::Value& value)
     : allocator_(allocator)
     , value_(value)
   {
@@ -22,79 +101,33 @@ public:
 public:
   int32_t get_value(std::string_view name, int32_t default_value) const override
   {
-    if (auto iter =
-          value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
-        iter != value_.MemberEnd() && iter->value.IsInt()) {
-      return iter->value.GetInt();
-    } else {
-      return default_value;
-    }
+    return get_value<>(name, default_value);
   }
 
   std::string_view get_value(std::string_view name,
                              std::string_view default_value) const override
   {
-    if (auto iter =
-          value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
-        iter != value_.MemberEnd() && iter->value.IsString()) {
-      return { iter->value.GetString(), iter->value.GetStringLength() };
-    } else {
-      return default_value;
-    }
+    return get_value<>(name, default_value);
   }
 
   int32_t get_int(std::string_view name) const override
   {
-    if (auto iter =
-          value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
-        iter != value_.MemberEnd()) {
-      if (iter->value.IsInt())
-        return iter->value.GetInt();
-      else
-        throw TypeExecption(name, "Int");
-    } else {
-      throw NoKeyException(name);
-    }
+    return get_value<int32_t>(name);
   }
 
   std::string_view get_string(std::string_view name) const override
   {
-    if (auto iter =
-          value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
-        iter != value_.MemberEnd()) {
-      if (iter->value.IsString())
-        return { iter->value.GetString(), iter->value.GetStringLength() };
-      else
-        throw TypeExecption(name, "String");
-    } else {
-      throw NoKeyException(name);
-    }
+    return get_value<std::string_view>(name);
   }
 
   void set_value(std::string_view name, int32_t value) override
   {
-    if (auto iter =
-          value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
-        iter != value_.MemberEnd()) {
-      iter->value.SetInt(value);
-    } else {
-      value_.AddMember(rapidjson::StringRef(name.data(), name.size()),
-                       rapidjson::Value(value),
-                       allocator_);
-    }
+    set_value<>(name, value);
   }
 
   void set_value(std::string_view name, std::string_view value) override
   {
-    if (auto iter =
-          value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
-        iter != value_.MemberEnd()) {
-      iter->value.SetString(value.data(), value.size(), allocator_);
-    } else {
-      value_.AddMember(rapidjson::StringRef(name.data(), name.size()),
-                       rapidjson::Value(value.data(), value.size(), allocator_),
-                       allocator_);
-    }
+    set_value<>(name, value);
   }
 
   ObjectPtr get_object(std::string_view name) override
@@ -103,7 +136,7 @@ public:
           value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
         iter != value_.MemberEnd()) {
       if (iter->value.IsObject())
-        return std::make_unique<JsonObject>(allocator_, iter->value);
+        return ObjectPtr(new JsonObject(allocator_, iter->value));
       else
         throw TypeExecption(name, "Object");
     } else {
@@ -117,7 +150,7 @@ public:
           value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
         iter != value_.MemberEnd()) {
       if (iter->value.IsObject())
-        return std::make_unique<const JsonObject>(allocator_, iter->value);
+        return ConstObjectPtr(new JsonObject(allocator_, iter->value));
       else
         throw TypeExecption(name, "Object");
     } else {
@@ -149,6 +182,48 @@ public:
   const GroupPtr get_group(std::string_view name) const override
   {
     return GroupPtr();
+  }
+
+private:
+  template<typename Type_>
+  Type_ get_value(std::string_view name, Type_ default_value) const
+  {
+    if (auto iter =
+          value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
+        iter != value_.MemberEnd() && detail::check_type<Type_>(iter->value)) {
+      return detail::get_value<Type_>(iter->value);
+    } else {
+      return default_value;
+    }
+  }
+
+  template<typename Type_>
+  Type_ get_value(std::string_view name) const
+  {
+    if (auto iter =
+          value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
+        iter != value_.MemberEnd()) {
+      if (detail::check_type<Type_>(iter->value))
+        return detail::get_value<Type_>(iter->value);
+      else
+        throw TypeExecption(name, detail::type_name(iter->value));
+    } else {
+      throw NoKeyException(name);
+    }
+  }
+
+  template<typename Type_>
+  void set_value(std::string_view name, Type_ value)
+  {
+    if (auto iter =
+          value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
+        iter != value_.MemberEnd()) {
+      detail::set_value(allocator_, iter->value, value);
+    } else {
+      value_.AddMember(rapidjson::StringRef(name.data(), name.size()),
+                       detail::create_value(allocator_, value),
+                       allocator_);
+    }
   }
 
 private:

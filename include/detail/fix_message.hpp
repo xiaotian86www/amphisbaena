@@ -15,6 +15,7 @@
 
 namespace translator {
 
+namespace detail {
 template<typename Value_>
 constexpr bool
 check_type(FIX::TYPE::Type type)
@@ -47,6 +48,7 @@ type_name(FIX::TYPE::Type type)
     default:
       return "Unknown";
   }
+}
 }
 
 class FixObject : public Object
@@ -116,7 +118,7 @@ private:
     if (!dd_.getFieldType(tag, type))
       return default_value;
 
-    if (!check_type<Value_>(type))
+    if (!detail::check_type<Value_>(type))
       return default_value;
 
     // 不能使用getFieldIfSet方法，因为需要传入临时变量field，无法返回string_view类型数据
@@ -139,8 +141,8 @@ private:
     if (!dd_.getFieldType(tag, type))
       throw NoKeyException(name);
 
-    if (!check_type<Value_>(type))
-      throw TypeExecption(name, type_name(type));
+    if (!detail::check_type<Value_>(type))
+      throw TypeExecption(name, detail::type_name(type));
 
     return static_cast<const Field_&>(fields_.getFieldRef(tag)).getValue();
   }
