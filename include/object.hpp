@@ -9,6 +9,11 @@
 #include <unordered_map>
 
 namespace translator {
+
+class Node;
+typedef std::unique_ptr<Node> NodePtr;
+typedef std::unique_ptr<const Node> ConstNodePtr;
+
 class Group;
 typedef std::unique_ptr<Group> GroupPtr;
 
@@ -32,13 +37,16 @@ public:
 
   virtual void set_value(std::string_view name, std::string_view value) = 0;
 
+  virtual NodePtr get_node(std::string_view name) = 0;
+
+  virtual ConstNodePtr get_node(std::string_view name) const = 0;
+
+  virtual NodePtr get_or_set_node(std::string_view name) = 0;
+
   virtual GroupPtr get_group(std::string_view name) = 0;
 
   virtual const GroupPtr get_group(std::string_view name) const = 0;
 };
-
-typedef std::unique_ptr<Node> NodePtr;
-typedef std::unique_ptr<const Node> ConstNodePtr;
 
 class Group
 {
@@ -71,24 +79,17 @@ public:
   virtual ~Object() = default;
 
 public:
-  // virtual int32_t get_value(std::string_view name,
-  //                           int32_t default_value) const noexcept = 0;
+  virtual Node& get_head() = 0;
 
-  // virtual std::string_view get_value(std::string_view name,
-  //                                    std::string_view default_value) const
-  //                                    noexcept = 0;
+  virtual const Node& get_head() const = 0;
 
-  // virtual int32_t get_int(std::string_view name) const = 0;
+  virtual Node& get_body() = 0;
 
-  // virtual std::string_view get_string(std::string_view name) const = 0;
+  virtual const Node& get_body() const = 0;
 
-  // virtual void set_value(std::string_view name, int32_t value) = 0;
+  virtual Node& get_tail() = 0;
 
-  // virtual void set_value(std::string_view name, std::string_view value) = 0;
-
-  virtual Node& get_root(/* std::string_view name */) = 0;
-
-  virtual const Node& get_root(/* std::string_view name */) const = 0;
+  virtual const Node& get_tail() const = 0;
 
   virtual std::string to_string() const = 0;
 

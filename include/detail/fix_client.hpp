@@ -28,7 +28,7 @@ public:
   void stop() override;
 
 public:
-  void send(const FixObject& obj);
+  void send(FixObject& obj);
 
 public:
 #pragma GCC diagnostic push

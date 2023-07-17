@@ -20,35 +20,35 @@ protected:
 
 TEST_P(Object, get_int)
 {
-  auto& root = obj->get_root();
-  root.set_value("MsgSeqNum", 1);
+  auto& body = obj->get_body();
+  body.set_value("MsgSeqNum", 1);
 
-  EXPECT_EQ(root.get_int("MsgSeqNum"), 1);
-  EXPECT_EQ(root.get_value("MsgSeqNum", 0), 1);
+  EXPECT_EQ(body.get_int("MsgSeqNum"), 1);
+  EXPECT_EQ(body.get_value("MsgSeqNum", 0), 1);
 
-  EXPECT_THROW(root.get_int("SenderCompID"), translator::NoKeyException);
-  EXPECT_EQ(root.get_value("SenderCompID", 10), 10);
+  EXPECT_THROW(body.get_int("SenderCompID"), translator::NoKeyException);
+  EXPECT_EQ(body.get_value("SenderCompID", 10), 10);
 
-  root.set_value("SenderCompID", "a");
+  body.set_value("SenderCompID", "a");
 
-  EXPECT_THROW(root.get_int("SenderCompID"), translator::TypeExecption);
-  EXPECT_EQ(root.get_value("SenderCompID", 10), 10);
+  EXPECT_THROW(body.get_int("SenderCompID"), translator::TypeExecption);
+  EXPECT_EQ(body.get_value("SenderCompID", 10), 10);
 }
 
 TEST_P(Object, get_string)
 {
-  auto& root = obj->get_root();
-  root.set_value("SenderCompID", "value1");
-  EXPECT_EQ(root.get_string("SenderCompID"), "value1");
-  EXPECT_EQ(root.get_value("SenderCompID", ""), "value1");
+  auto& body = obj->get_body();
+  body.set_value("SenderCompID", "value1");
+  EXPECT_EQ(body.get_string("SenderCompID"), "value1");
+  EXPECT_EQ(body.get_value("SenderCompID", ""), "value1");
 
-  EXPECT_THROW(root.get_string("MsgSeqNum"), translator::NoKeyException);
-  EXPECT_EQ(root.get_value("MsgSeqNum", ""), "");
+  EXPECT_THROW(body.get_string("MsgSeqNum"), translator::NoKeyException);
+  EXPECT_EQ(body.get_value("MsgSeqNum", ""), "");
 
-  root.set_value("MsgSeqNum", 1);
+  body.set_value("MsgSeqNum", 1);
 
-  EXPECT_THROW(root.get_string("MsgSeqNum"), translator::TypeExecption);
-  EXPECT_EQ(root.get_value("MsgSeqNum", ""), "");
+  EXPECT_THROW(body.get_string("MsgSeqNum"), translator::TypeExecption);
+  EXPECT_EQ(body.get_value("MsgSeqNum", ""), "");
 }
 
 #include "detail/json_object.hpp"

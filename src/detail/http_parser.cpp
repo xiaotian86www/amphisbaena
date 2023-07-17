@@ -94,10 +94,10 @@ void
 HttpParser::handle()
 {
   std::string response_name;
-  const auto& request_root = request_->get_root();
-  response_name += request_root.get_string("method");
+  const auto& request_body = request_->get_body();
+  response_name += request_body.get_string("method");
   response_name += " ";
-  response_name += request_root.get_string("url");
+  response_name += request_body.get_string("url");
 
   try {
     Environment env;
@@ -105,7 +105,7 @@ HttpParser::handle()
     env.co = co_;
     env.session = session_;
 
-    env.object_pool.add(request_root.get_value("url", ""), std::move(request_));
+    env.object_pool.add(request_body.get_value("url", ""), std::move(request_));
 
     request_ = std::make_unique<JsonObject>();
 
@@ -128,16 +128,16 @@ HttpParser::handle()
 void
 HttpParser::set_field(std::string_view name, std::string_view value)
 {
-  auto& request_root = request_->get_root();
-  request_root.set_value(name, value);
+  auto& request_body = request_->get_body();
+  request_body.set_value(name, value);
 }
 
 void
 HttpParser::handle_error(llhttp_status_t status)
 {
   std::string response;
-  const auto& request_root = request_->get_root();
-  response += request_root.get_value("version", "HTTP/1.1");
+  const auto& request_body = request_->get_body();
+  response += request_body.get_value("version", "HTTP/1.1");
   response += " ";
   response += std::to_string(status);
   response += " ";
@@ -151,8 +151,8 @@ void
 HttpParser::handle_success(const Object& object)
 {
   std::string response;
-  const auto& root = object.get_root();
-  response += root.get_value("version", "HTTP/1.1");
+  const auto& body = object.get_body();
+  response += body.get_value("version", "HTTP/1.1");
   response += " ";
   response += std::to_string(HTTP_STATUS_OK);
   response += " ";

@@ -89,6 +89,12 @@ public:
     set_value<FIX::StringField, const std::string&>(name, std::string(value));
   }
 
+  NodePtr get_node(std::string_view name) override { return {}; }
+
+  ConstNodePtr get_node(std::string_view name) const override { return {}; }
+
+  NodePtr get_or_set_node(std::string_view name) override { return {}; }
+
   GroupPtr get_group(std::string_view name) override { return {}; }
 
   const GroupPtr get_group(std::string_view name) const override { return {}; }
@@ -160,14 +166,24 @@ class FixObject : public Object
 public:
   FixObject(const FIX::DataDictionary& dd)
     : dd_(dd)
-    , root_(dd_, message_)
+    , head_(dd_, message_.getHeader())
+    , body_(dd_, message_)
+    , tail_(dd_, message_.getTrailer())
   {
   }
 
 public:
-  Node& get_root() override { return root_; }
+  Node& get_head() override { return head_; }
 
-  const Node& get_root() const override { return root_; }
+  const Node& get_head() const override { return head_; }
+
+  Node& get_body() override { return body_; }
+
+  const Node& get_body() const override { return body_; }
+
+  Node& get_tail() override { return tail_; }
+
+  const Node& get_tail() const override { return tail_; }
 
   std::string to_string() const override { return {}; }
 
@@ -179,9 +195,16 @@ public:
 
   void clear() override {}
 
+public:
+  FIX::Message& message() { return message_; }
+
+  const FIX::Message& message() const { return message_; }
+
 private:
   const FIX::DataDictionary& dd_;
   FIX::Message message_;
-  FixNode root_;
+  FixNode head_;
+  FixNode body_;
+  FixNode tail_;
 };
 }
