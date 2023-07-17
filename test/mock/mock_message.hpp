@@ -2,9 +2,9 @@
 
 #include "gmock/gmock.h"
 
-#include "object.hpp"
+#include "message.hpp"
 
-class MockNode : public translator::Node
+class MockObject : public translator::Object
 {
 public:
   MOCK_METHOD(int32_t,
@@ -32,15 +32,15 @@ public:
               (const, override));
 };
 
-class MockObject : public translator::Object
+class MockMessage : public translator::Message
 {
 public:
-  MOCK_METHOD(const translator::Node&, get_head, (), (const, override));
-  MOCK_METHOD(translator::Node&, get_head, (), (override));
-  MOCK_METHOD(const translator::Node&, get_body, (), (const, override));
-  MOCK_METHOD(translator::Node&, get_body, (), (override));
-  MOCK_METHOD(const translator::Node&, get_tail, (), (const, override));
-  MOCK_METHOD(translator::Node&, get_tail, (), (override));
+  MOCK_METHOD(const translator::Object&, get_head, (), (const, override));
+  MOCK_METHOD(translator::Object&, get_head, (), (override));
+  MOCK_METHOD(const translator::Object&, get_body, (), (const, override));
+  MOCK_METHOD(translator::Object&, get_body, (), (override));
+  MOCK_METHOD(const translator::Object&, get_tail, (), (const, override));
+  MOCK_METHOD(translator::Object&, get_tail, (), (override));
   MOCK_METHOD(std::string, to_string, (), (const, override));
   MOCK_METHOD(void, from_string, (std::string_view), (override));
   MOCK_METHOD(std::string, to_binary, (), (const, override));

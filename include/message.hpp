@@ -10,17 +10,17 @@
 
 namespace translator {
 
-class Node;
-typedef std::unique_ptr<Node> NodePtr;
-typedef std::unique_ptr<const Node> ConstNodePtr;
+class Object;
+typedef std::unique_ptr<Object> ObjectPtr;
+typedef std::unique_ptr<const Object> ConstObjectPtr;
 
 class Group;
 typedef std::unique_ptr<Group> GroupPtr;
 
-class Node
+class Object
 {
 public:
-  virtual ~Node() = default;
+  virtual ~Object() = default;
 
 public:
   virtual int32_t get_value(std::string_view name,
@@ -37,11 +37,11 @@ public:
 
   virtual void set_value(std::string_view name, std::string_view value) = 0;
 
-  virtual NodePtr get_node(std::string_view name) = 0;
+  virtual ObjectPtr get_object(std::string_view name) = 0;
 
-  virtual ConstNodePtr get_node(std::string_view name) const = 0;
+  virtual ConstObjectPtr get_object(std::string_view name) const = 0;
 
-  virtual NodePtr get_or_set_node(std::string_view name) = 0;
+  virtual ObjectPtr get_or_set_object(std::string_view name) = 0;
 
   virtual GroupPtr get_group(std::string_view name) = 0;
 
@@ -54,9 +54,9 @@ public:
   virtual ~Group() = default;
 
 public:
-  virtual NodePtr at(std::size_t index) = 0;
+  virtual ObjectPtr at(std::size_t index) = 0;
 
-  virtual const NodePtr at(std::size_t index) const = 0;
+  virtual const ObjectPtr at(std::size_t index) const = 0;
 
   virtual std::size_t get_size() const = 0;
 
@@ -73,23 +73,23 @@ public:
   ConstIterType_ end() const;
 };
 
-class Object
+class Message
 {
 public:
-  virtual ~Object() = default;
+  virtual ~Message() = default;
 
 public:
-  virtual Node& get_head() = 0;
+  virtual Object& get_head() = 0;
 
-  virtual const Node& get_head() const = 0;
+  virtual const Object& get_head() const = 0;
 
-  virtual Node& get_body() = 0;
+  virtual Object& get_body() = 0;
 
-  virtual const Node& get_body() const = 0;
+  virtual const Object& get_body() const = 0;
 
-  virtual Node& get_tail() = 0;
+  virtual Object& get_tail() = 0;
 
-  virtual const Node& get_tail() const = 0;
+  virtual const Object& get_tail() const = 0;
 
   virtual std::string to_string() const = 0;
 
@@ -105,19 +105,19 @@ public:
   std::string name;
 };
 
-typedef std::unique_ptr<Object> ObjectPtr;
+typedef std::unique_ptr<Message> MessagePtr;
 
 class Environment;
 
-class ObjectPool
+class MessagePool
 {
 public:
-  void add(std::string_view name, ObjectPtr&& object);
+  void add(std::string_view name, MessagePtr&& message);
 
-  const Object& get(std::string_view name, Environment& env) const;
+  const Message& get(std::string_view name, Environment& env) const;
 
 private:
-  mutable std::unordered_map<std::string_view, ObjectPtr> objects_;
+  mutable std::unordered_map<std::string_view, MessagePtr> messages_;
 };
 
 class NoKeyException : public std::exception

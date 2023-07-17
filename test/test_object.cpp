@@ -3,24 +3,24 @@
 #include <memory>
 #include <sstream>
 
-#include "object.hpp"
+#include "message.hpp"
 
-using ctor_prototype = translator::ObjectPtr();
+using ctor_prototype = translator::MessagePtr();
 
-class Object : public testing::TestWithParam<std::function<ctor_prototype>>
+class Message : public testing::TestWithParam<std::function<ctor_prototype>>
 {
 public:
-  void SetUp() { obj = GetParam()(); }
+  void SetUp() { message = GetParam()(); }
 
   void TearDown() {}
 
 protected:
-  translator::ObjectPtr obj;
+  translator::MessagePtr message;
 };
 
-TEST_P(Object, get_int)
+TEST_P(Message, get_int)
 {
-  auto& body = obj->get_body();
+  auto& body = message->get_body();
   body.set_value("MsgSeqNum", 1);
 
   EXPECT_EQ(body.get_int("MsgSeqNum"), 1);
@@ -35,9 +35,9 @@ TEST_P(Object, get_int)
   EXPECT_EQ(body.get_value("SenderCompID", 10), 10);
 }
 
-TEST_P(Object, get_string)
+TEST_P(Message, get_string)
 {
-  auto& body = obj->get_body();
+  auto& body = message->get_body();
   body.set_value("SenderCompID", "value1");
   EXPECT_EQ(body.get_string("SenderCompID"), "value1");
   EXPECT_EQ(body.get_value("SenderCompID", ""), "value1");
@@ -51,31 +51,31 @@ TEST_P(Object, get_string)
   EXPECT_EQ(body.get_value("MsgSeqNum", ""), "");
 }
 
-#include "detail/json_object.hpp"
+#include "detail/json_message.hpp"
 
-translator::ObjectPtr
-create_json_object()
+translator::MessagePtr
+create_json_message()
 {
-  return std::make_unique<translator::JsonObject>();
+  return std::make_unique<translator::JsonMessage>();
 }
 
-INSTANTIATE_TEST_SUITE_P(Json, Object, testing::Values(create_json_object));
+INSTANTIATE_TEST_SUITE_P(Json, Message, testing::Values(create_json_message));
 
-#include "detail/fix_object.hpp"
+#include "detail/fix_message.hpp"
 
-struct create_fix_object
+struct create_fix_message
 {
-  create_fix_object()
+  create_fix_message()
     : dd("/usr/local/share/quickfix/FIX42.xml")
   {
   }
 
-  translator::ObjectPtr operator()() const
+  translator::MessagePtr operator()() const
   {
-    return std::make_unique<translator::FixObject>(dd);
+    return std::make_unique<translator::FixMessage>(dd);
   }
 
   FIX::DataDictionary dd;
 };
 
-INSTANTIATE_TEST_SUITE_P(Fix, Object, testing::Values(create_fix_object()));
+INSTANTIATE_TEST_SUITE_P(Fix, Message, testing::Values(create_fix_message()));

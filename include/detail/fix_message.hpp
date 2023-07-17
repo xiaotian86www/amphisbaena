@@ -10,7 +10,7 @@
 #include <quickfix/Message.h>
 #pragma GCC diagnostic pop
 
-#include "object.hpp"
+#include "message.hpp"
 
 namespace translator {
 
@@ -48,10 +48,10 @@ type_name(FIX::TYPE::Type type)
   }
 }
 
-class FixNode : public Node
+class FixObject : public Object
 {
 public:
-  FixNode(const FIX::DataDictionary& dd, FIX::FieldMap& fields)
+  FixObject(const FIX::DataDictionary& dd, FIX::FieldMap& fields)
     : dd_(dd)
     , fields_(fields)
   {
@@ -89,11 +89,11 @@ public:
     set_value<FIX::StringField, const std::string&>(name, std::string(value));
   }
 
-  NodePtr get_node(std::string_view name) override { return {}; }
+  ObjectPtr get_object(std::string_view name) override { return {}; }
 
-  ConstNodePtr get_node(std::string_view name) const override { return {}; }
+  ConstObjectPtr get_object(std::string_view name) const override { return {}; }
 
-  NodePtr get_or_set_node(std::string_view name) override { return {}; }
+  ObjectPtr get_or_set_object(std::string_view name) override { return {}; }
 
   GroupPtr get_group(std::string_view name) override { return {}; }
 
@@ -161,10 +161,10 @@ private:
   FIX::FieldMap& fields_;
 };
 
-class FixObject : public Object
+class FixMessage : public Message
 {
 public:
-  FixObject(const FIX::DataDictionary& dd)
+  FixMessage(const FIX::DataDictionary& dd)
     : dd_(dd)
     , head_(dd_, message_.getHeader())
     , body_(dd_, message_)
@@ -173,17 +173,17 @@ public:
   }
 
 public:
-  Node& get_head() override { return head_; }
+  Object& get_head() override { return head_; }
 
-  const Node& get_head() const override { return head_; }
+  const Object& get_head() const override { return head_; }
 
-  Node& get_body() override { return body_; }
+  Object& get_body() override { return body_; }
 
-  const Node& get_body() const override { return body_; }
+  const Object& get_body() const override { return body_; }
 
-  Node& get_tail() override { return tail_; }
+  Object& get_tail() override { return tail_; }
 
-  const Node& get_tail() const override { return tail_; }
+  const Object& get_tail() const override { return tail_; }
 
   std::string to_string() const override { return {}; }
 
@@ -203,8 +203,8 @@ public:
 private:
   const FIX::DataDictionary& dd_;
   FIX::Message message_;
-  FixNode head_;
-  FixNode body_;
-  FixNode tail_;
+  FixObject head_;
+  FixObject body_;
+  FixObject tail_;
 };
 }

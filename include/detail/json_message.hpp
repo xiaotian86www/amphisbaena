@@ -1,6 +1,6 @@
 #pragma once
 
-#include "object.hpp"
+#include "message.hpp"
 
 #include <memory>
 #include <rapidjson/allocators.h>
@@ -9,10 +9,10 @@
 
 namespace translator {
 
-class JsonNode : public Node
+class JsonObject : public Object
 {
 public:
-  JsonNode(rapidjson::Document::AllocatorType& allocator,
+  JsonObject(rapidjson::Document::AllocatorType& allocator,
            rapidjson::Value& value)
     : allocator_(allocator)
     , value_(value)
@@ -97,35 +97,35 @@ public:
     }
   }
 
-  NodePtr get_node(std::string_view name) override
+  ObjectPtr get_object(std::string_view name) override
   {
     if (auto iter =
           value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
         iter != value_.MemberEnd()) {
       if (iter->value.IsObject())
-        return std::make_unique<JsonNode>(allocator_, iter->value);
+        return std::make_unique<JsonObject>(allocator_, iter->value);
       else
-        throw TypeExecption(name, "Node");
+        throw TypeExecption(name, "Object");
     } else {
       throw NoKeyException(name);
     }
   }
 
-  ConstNodePtr get_node(std::string_view name) const override
+  ConstObjectPtr get_object(std::string_view name) const override
   {
     if (auto iter =
           value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
         iter != value_.MemberEnd()) {
       if (iter->value.IsObject())
-        return std::make_unique<const JsonNode>(allocator_, iter->value);
+        return std::make_unique<const JsonObject>(allocator_, iter->value);
       else
-        throw TypeExecption(name, "Node");
+        throw TypeExecption(name, "Object");
     } else {
       throw NoKeyException(name);
     }
   }
 
-  NodePtr get_or_set_node(std::string_view name) override
+  ObjectPtr get_or_set_object(std::string_view name) override
   {
     if (auto iter =
           value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
@@ -133,14 +133,14 @@ public:
       if (!iter->value.IsObject()) {
         iter->value = rapidjson::Value(rapidjson::Type::kObjectType);
       }
-      return std::make_unique<JsonNode>(allocator_, iter->value);
+      return std::make_unique<JsonObject>(allocator_, iter->value);
     } else {
       auto& value =
         value_.AddMember(rapidjson::StringRef(name.data(), name.size()),
                          rapidjson::Value(rapidjson::Type::kObjectType),
                          allocator_);
 
-      return std::make_unique<JsonNode>(allocator_, value);
+      return std::make_unique<JsonObject>(allocator_, value);
     }
   }
 
@@ -156,10 +156,10 @@ private:
   rapidjson::Value& value_;
 };
 
-class JsonObject : public Object
+class JsonMessage : public Message
 {
 public:
-  JsonObject()
+  JsonMessage()
     : doc_(rapidjson::Type::kObjectType)
     , head_(doc_.GetAllocator(),
             doc_.AddMember("head",
@@ -177,17 +177,17 @@ public:
   }
 
 public:
-  Node& get_head() override { return head_; }
+  Object& get_head() override { return head_; }
 
-  const Node& get_head() const override { return head_; }
+  const Object& get_head() const override { return head_; }
 
-  Node& get_body() override { return body_; }
+  Object& get_body() override { return body_; }
 
-  const Node& get_body() const override { return body_; }
+  const Object& get_body() const override { return body_; }
 
-  Node& get_tail() override { return tail_; }
+  Object& get_tail() override { return tail_; }
 
-  const Node& get_tail() const override { return tail_; }
+  const Object& get_tail() const override { return tail_; }
 
   std::string to_string() const override { return {}; }
 
@@ -201,8 +201,8 @@ public:
 
 private:
   rapidjson::Document doc_;
-  JsonNode head_;
-  JsonNode body_;
-  JsonNode tail_;
+  JsonObject head_;
+  JsonObject body_;
+  JsonObject tail_;
 };
 }

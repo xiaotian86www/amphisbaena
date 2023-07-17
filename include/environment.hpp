@@ -3,7 +3,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "object.hpp"
+#include "message.hpp"
 #include "parser.hpp"
 #include "builder.hpp"
 #include "schedule.hpp"
@@ -15,6 +15,6 @@ public:
   ScheduleRef sch;
   CoroutineRef co;
   SessionRef session;
-  ObjectPool object_pool;
+  MessagePool message_pool;
 };
 } // namespace translator

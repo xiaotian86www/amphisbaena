@@ -6,8 +6,8 @@
 
 namespace detail
 {
-    class JsonObject
-        : public translator::Object
+    class JsonMessage
+        : public translator::Message
     {
     protected:
         void set_object(rapidjson::Value *obj)
@@ -81,7 +81,7 @@ namespace detail
 } // namespace detail
 
 class JsonDocument
-    : public detail::JsonObject
+    : public detail::JsonMessage
 {
 public:
     JsonDocument()

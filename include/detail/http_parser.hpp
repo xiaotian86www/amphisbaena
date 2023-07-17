@@ -1,5 +1,5 @@
 #include "builder.hpp"
-#include "object.hpp"
+#include "message.hpp"
 #include "parser.hpp"
 #include "schedule.hpp"
 
@@ -17,7 +17,7 @@ public:
   HttpSession(ConnectionRef conn);
 
 public:
-  void reply(ScheduleRef sch, CoroutineRef co, const Object& data) override;
+  void reply(ScheduleRef sch, CoroutineRef co, const Message& data) override;
 
 private:
   ConnectionRef conn_;
@@ -41,11 +41,11 @@ public:
 private:
   void handle_error(llhttp_status_t status);
 
-  void handle_success(const Object& object);
+  void handle_success(const Message& message);
 
 private:
   SessionPtr session_;
-  ObjectPtr request_;
+  MessagePtr request_;
 };
 
 class HttpParserFactory : public ParserFactory

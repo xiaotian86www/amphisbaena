@@ -8,9 +8,9 @@
 
 #include "context.hpp"
 #include "detail/http_parser.hpp"
-#include "detail/json_object.hpp"
+#include "detail/json_message.hpp"
 #include "environment.hpp"
-#include "object.hpp"
+#include "message.hpp"
 #include "parser.hpp"
 
 namespace translator {
@@ -66,7 +66,7 @@ init()
   g_settings.on_message_complete = handle_on_message_complete;
 }
 void
-HttpSession::reply(ScheduleRef sch, CoroutineRef co, const Object& data)
+HttpSession::reply(ScheduleRef sch, CoroutineRef co, const Message& data)
 {
 }
 
@@ -77,7 +77,7 @@ HttpParser::HttpParser(ScheduleRef sch, CoroutineRef co, ConnectionRef conn)
   std::call_once(init_once_flag, init);
   llhttp_init(this, HTTP_REQUEST, &g_settings);
 
-  request_ = std::make_unique<JsonObject>();
+  request_ = std::make_unique<JsonMessage>();
 }
 
 void
@@ -105,11 +105,11 @@ HttpParser::handle()
     env.co = co_;
     env.session = session_;
 
-    env.object_pool.add(request_body.get_value("url", ""), std::move(request_));
+    env.message_pool.add(request_body.get_value("url", ""), std::move(request_));
 
-    request_ = std::make_unique<JsonObject>();
+    request_ = std::make_unique<JsonMessage>();
 
-    const auto& response = env.object_pool.get(response_name, env);
+    const auto& response = env.message_pool.get(response_name, env);
 
     handle_success(response);
     
@@ -148,10 +148,10 @@ HttpParser::handle_error(llhttp_status_t status)
 }
 
 void
-HttpParser::handle_success(const Object& object)
+HttpParser::handle_success(const Message& message)
 {
   std::string response;
-  const auto& body = object.get_body();
+  const auto& body = message.get_body();
   response += body.get_value("version", "HTTP/1.1");
   response += " ";
   response += std::to_string(HTTP_STATUS_OK);

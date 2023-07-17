@@ -7,8 +7,8 @@ class FixServer
     : public translator::Server
 {
 public:
-    std::unique_ptr<translator::Object> call(
-        std::string_view method, const translator::Object *args) override
+    std::unique_ptr<translator::Message> call(
+        std::string_view method, const translator::Message *args) override
     {
         auto rsp = std::make_unique<JsonDocument>();
         rsp->set_value("field1", args->get_value("field1", ""));

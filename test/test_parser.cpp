@@ -8,11 +8,11 @@
 #include "builder.hpp"
 #include "context.hpp"
 #include "detail/http_parser.hpp"
-#include "detail/json_object.hpp"
+#include "detail/json_message.hpp"
 #include "environment.hpp"
 #include "mock/mock_builder.hpp"
 #include "mock/mock_parser.hpp"
-#include "object.hpp"
+#include "message.hpp"
 #include "parser.hpp"
 #include "schedule.hpp"
 
@@ -23,11 +23,11 @@ public:
   {
     sch = std::make_shared<translator::Schedule>(ios);
     parser_factory = std::make_shared<translator::HttpParserFactory>();
-    object_builder = std::make_shared<translator::ObjectBuilder>();
+    message_builder = std::make_shared<translator::MessageBuilder>();
 
-    translator::Context::get_instance().object_builder = object_builder;
+    translator::Context::get_instance().message_builder = message_builder;
 
-    object_builder->registe("GET /", object_ctor.AsStdFunction());
+    message_builder->registe("GET /", message_ctor.AsStdFunction());
   }
 
   virtual void TearDown() {}
@@ -37,22 +37,22 @@ protected:
   std::thread th;
   std::shared_ptr<translator::Schedule> sch;
   std::shared_ptr<translator::ParserFactory> parser_factory;
-  std::shared_ptr<translator::ObjectBuilder> object_builder;
-  testing::MockFunction<translator::ObjectBuilder::ctor_prototype> object_ctor;
+  std::shared_ptr<translator::MessageBuilder> message_builder;
+  testing::MockFunction<translator::MessageBuilder::ctor_prototype> message_ctor;
 };
 
 TEST_F(Parser, on_data)
 {
-  EXPECT_CALL(object_ctor,
+  EXPECT_CALL(message_ctor,
               Call(testing::Truly([](translator::Environment& env) {
-                const auto& obj = env.object_pool.get("/", env);
-                const auto& body = obj.get_body();
+                const auto& message = env.message_pool.get("/", env);
+                const auto& body = message.get_body();
                 return body.get_value("method", "") == "GET" &&
                        body.get_value("url", "") == "/";
               })))
     .Times(2)
     .WillRepeatedly(testing::Invoke(
-      [] { return std::make_unique<translator::JsonObject>(); }));
+      [] { return std::make_unique<translator::JsonMessage>(); }));
 
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);
@@ -101,14 +101,14 @@ TEST_F(Parser, on_data_not_found)
 
 TEST_F(Parser, on_data_fail)
 {
-  EXPECT_CALL(object_ctor,
+  EXPECT_CALL(message_ctor,
               Call(testing::Truly([](translator::Environment& env) {
-                const auto& obj = env.object_pool.get("/", env);
-                const auto& body = obj.get_body();
+                const auto& message = env.message_pool.get("/", env);
+                const auto& body = message.get_body();
                 return body.get_value("method", "") == "GET" &&
                        body.get_value("url", "") == "/";
               })))
-    .WillOnce(testing::Return(std::make_unique<translator::JsonObject>()));
+    .WillOnce(testing::Return(std::make_unique<translator::JsonMessage>()));
 
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);

@@ -10,9 +10,9 @@
 #include <quickfix/SessionSettings.h>
 #pragma GCC diagnostic pop
 
-#include "object.hpp"
+#include "message.hpp"
 #include "service.hpp"
-#include "fix_object.hpp"
+#include "fix_message.hpp"
 
 namespace translator {
 class FixClient
@@ -28,7 +28,7 @@ public:
   void stop() override;
 
 public:
-  void send(FixObject& obj);
+  void send(FixMessage& message);
 
 public:
 #pragma GCC diagnostic push

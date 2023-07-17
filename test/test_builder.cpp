@@ -5,8 +5,8 @@
 
 #include "context.hpp"
 #include "environment.hpp"
-#include "mock/mock_object.hpp"
-#include "object.hpp"
+#include "mock/mock_message.hpp"
+#include "message.hpp"
 #include "parser.hpp"
 
 class Builder : public testing::Test
@@ -21,16 +21,16 @@ protected:
 
 TEST_F(Builder, create)
 {
-  auto obj_factory = std::make_shared<translator::ObjectBuilder>();
-  translator::Context::get_instance().object_builder = obj_factory;
+  auto obj_factory = std::make_shared<translator::MessageBuilder>();
+  translator::Context::get_instance().message_builder = obj_factory;
   translator::Environment env;
 
-  testing::MockFunction<std::unique_ptr<translator::Object>(
+  testing::MockFunction<std::unique_ptr<translator::Message>(
     translator::Environment&)>
     func;
 
   EXPECT_CALL(func, Call(testing::_))
-    .WillOnce(testing::Return(std::make_unique<MockObject>()));
+    .WillOnce(testing::Return(std::make_unique<MockMessage>()));
 
   obj_factory->registe("a", func.AsStdFunction());
   obj_factory->create("a", env);
@@ -38,13 +38,13 @@ TEST_F(Builder, create)
 
 TEST_F(Builder, get)
 {
-  auto obj_factory = std::make_shared<translator::ObjectBuilder>();
-  translator::Context::get_instance().object_builder = obj_factory;
+  auto obj_factory = std::make_shared<translator::MessageBuilder>();
+  translator::Context::get_instance().message_builder = obj_factory;
   translator::Environment env;
 
-  auto obj = std::make_unique<MockObject>();
-  auto obj_ptr = obj.get();
+  auto message = std::make_unique<MockMessage>();
+  auto obj_ptr = message.get();
 
-  env.object_pool.add("a", std::move(obj));
-  EXPECT_EQ(&env.object_pool.get("a", env), obj_ptr);
+  env.message_pool.add("a", std::move(message));
+  EXPECT_EQ(&env.message_pool.get("a", env), obj_ptr);
 }

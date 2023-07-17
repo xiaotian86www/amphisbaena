@@ -55,13 +55,13 @@ FixClient::stop()
 }
 
 void
-FixClient::send(FixObject& obj)
+FixClient::send(FixMessage& message)
 {
-  FIX::Session::sendToTarget(obj.message());
+  FIX::Session::sendToTarget(message.message());
   // FIX::Message message;
-  // auto begin_string = std::string(obj.get_string(FIX::BEGINSTRING));
-  // auto sender_comp_id = std::string(obj.get_string(FIX::SENDERCOMPID));
-  // auto target_comp_id = std::string(obj.get_string(FIX::TARGETCOMPID));
+  // auto begin_string = std::string(message.get_string(FIX::BEGINSTRING));
+  // auto sender_comp_id = std::string(message.get_string(FIX::SENDERCOMPID));
+  // auto target_comp_id = std::string(message.get_string(FIX::TARGETCOMPID));
 
   // auto session_id =
   //   FIX::SessionID(begin_string, sender_comp_id, target_comp_id);
