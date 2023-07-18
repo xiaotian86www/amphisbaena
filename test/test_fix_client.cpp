@@ -30,7 +30,7 @@ SocketReuseAddress=Y
 StartTime=00:00:00
 EndTime=00:00:00
 #FileLogPath=log
-UseDataDictionary=Y
+UseDataDictionary=N
 #ServerCertificateFile=./cfg/certs/127_0_0_1_server.crt
 #ServerCertificateKeyFile=./cfg/certs/127_0_0_1_server.key
 SSLProtocol = all
@@ -42,28 +42,28 @@ BeginString=FIX.4.2
 SenderCompID=EXECUTOR
 TargetCompID=CLIENT1
 #FileStorePath=store
-DataDictionary=/usr/local/share/quickfix/FIX42.xml
+#DataDictionary=/usr/local/share/quickfix/FIX42.xml
 
 [SESSION]
 BeginString=FIX.4.2
 SenderCompID=EXECUTOR
 TargetCompID=CLIENT2
 #FileStorePath=store
-DataDictionary=/usr/local/share/quickfix/FIX42.xml
+#DataDictionary=/usr/local/share/quickfix/FIX42.xml
 
 [SESSION]
 BeginString=FIX.4.3
 SenderCompID=EXECUTOR
 TargetCompID=CLIENT1
-FileStorePath=store
-DataDictionary=/usr/local/share/quickfix/FIX43.xml
+#FileStorePath=store
+#DataDictionary=/usr/local/share/quickfix/FIX43.xml
 
 [SESSION]
 BeginString=FIX.4.3
 SenderCompID=EXECUTOR
 TargetCompID=CLIENT2
 #FileStorePath=store
-DataDictionary=/usr/local/share/quickfix/FIX43.xml
+#DataDictionary=/usr/local/share/quickfix/FIX43.xml
 )");
 
   std::stringstream client_settings(R"(
@@ -74,8 +74,8 @@ ReconnectInterval=2
 #FileLogPath=log
 StartTime=00:00:00
 EndTime=00:00:00
-UseDataDictionary=Y
-DataDictionary=/usr/local/share/quickfix/FIX42.xml
+UseDataDictionary=N
+#DataDictionary=/usr/local/share/quickfix/FIX42.xml
 #HttpAcceptPort=9911
 #ClientCertificateFile =
 #ClientCertificateKeyFile =
@@ -96,8 +96,25 @@ HeartBtInt=30
 )");
 
   FixServer server(server_settings);
-  translator::FixClient client(client_settings);
+  EXPECT_CALL(
+    server,
+    onLogon(testing::Eq(FIX::SessionID("FIX.4.2", "EXECUTOR", "CLIENT1"))))
+    .WillOnce(testing::Return());
+  EXPECT_CALL(
+    server,
+    onAdmin(testing::_,
+            testing::Eq(FIX::SessionID("FIX.4.2", "EXECUTOR", "CLIENT1"))))
+    .WillRepeatedly(testing::Return());
+  EXPECT_CALL(
+    server,
+    onApp(testing::_,
+          testing::Eq(FIX::SessionID("FIX.4.2", "EXECUTOR", "CLIENT1"))))
+    .WillOnce(testing::Return());
+  EXPECT_CALL(server, onLogout(testing::_)).WillOnce(testing::Return());
   server.start();
+
+  translator::FixClient client(client_settings);
+
   client.start();
 
   FIX::DataDictionary dd("/usr/local/share/quickfix/FIX42.xml");
@@ -107,6 +124,6 @@ HeartBtInt=30
   head.set_value("BeginString", "FIX.4.2");
   head.set_value("SenderCompID", "CLIENT1");
   head.set_value("TargetCompID", "EXECUTOR");
-  
+
   client.send(msg);
 }

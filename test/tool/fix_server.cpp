@@ -55,16 +55,6 @@ FixServer::onCreate(const FIX::SessionID&)
 }
 
 void
-FixServer::onLogon(const FIX::SessionID&)
-{
-}
-
-void
-FixServer::onLogout(const FIX::SessionID&)
-{
-}
-
-void
 FixServer::toAdmin(FIX::Message&, const FIX::SessionID&)
 {
 }
@@ -75,20 +65,22 @@ FixServer::toApp(FIX::Message&, const FIX::SessionID&) throw(FIX::DoNotSend)
 }
 
 void
-FixServer::fromAdmin(const FIX::Message&,
-                     const FIX::SessionID&) throw(FIX::FieldNotFound,
+FixServer::fromAdmin(const FIX::Message& message,
+                     const FIX::SessionID& session_id) throw(FIX::FieldNotFound,
                                                   FIX::IncorrectDataFormat,
                                                   FIX::IncorrectTagValue,
                                                   FIX::RejectLogon)
 {
+  onAdmin(message, session_id);
 }
 
 void
-FixServer::fromApp(const FIX::Message&,
-                   const FIX::SessionID&) throw(FIX::FieldNotFound,
+FixServer::fromApp(const FIX::Message& message,
+                   const FIX::SessionID& session_id) throw(FIX::FieldNotFound,
                                                 FIX::IncorrectDataFormat,
                                                 FIX::IncorrectTagValue,
                                                 FIX::UnsupportedMessageType)
 {
+  onApp(message, session_id);
 }
 #pragma GCC diagnostic pop

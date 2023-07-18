@@ -1,17 +1,18 @@
 #pragma once
 
+#include <gmock/gmock.h>
 #include <istream>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
-#include <quickfix/Application.h>
 #include <quickfix/Acceptor.h>
+#include <quickfix/Application.h>
 #include <quickfix/Log.h>
+#include <quickfix/SessionID.h>
 #include <quickfix/SessionSettings.h>
 #pragma GCC diagnostic pop
 
-class FixServer
-  : public FIX::Application
+class FixServer : public FIX::Application
 {
 public:
   FixServer(std::istream& is);
@@ -23,15 +24,19 @@ public:
 
   void stop();
 
+  MOCK_METHOD(void, onLogon, (const FIX::SessionID&), (override));
+
+  MOCK_METHOD(void, onLogout, (const FIX::SessionID&), (override));
+
+  MOCK_METHOD(void, onAdmin, (const FIX::Message&, const FIX::SessionID&), ());
+
+  MOCK_METHOD(void, onApp, (const FIX::Message&, const FIX::SessionID&), ());
+
 public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
   /// Notification of a session begin created
   void onCreate(const FIX::SessionID&) override;
-  /// Notification of a session successfully logging on
-  void onLogon(const FIX::SessionID&) override;
-  /// Notification of a session logging off or disconnecting
-  void onLogout(const FIX::SessionID&) override;
   /// Notification of admin message being sent to target
   void toAdmin(FIX::Message&, const FIX::SessionID&) override;
   /// Notification of app message being sent to target
