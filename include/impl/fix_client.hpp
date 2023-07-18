@@ -1,22 +1,40 @@
 #pragma once
 
 #include <istream>
+#include <memory>
+#include <string_view>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
-#include <quickfix/Message.h>
-#include <quickfix/DataDictionary.h>
 #include <quickfix/Application.h>
+#include <quickfix/DataDictionary.h>
 #include <quickfix/Initiator.h>
 #include <quickfix/Log.h>
+#include <quickfix/Message.h>
+#include <quickfix/Session.h>
 #include <quickfix/SessionSettings.h>
 #pragma GCC diagnostic pop
 
+#include "fix_message.hpp"
 #include "message.hpp"
 #include "service.hpp"
-#include "fix_message.hpp"
 
 namespace translator {
+
+class FixSession
+{
+public:
+  FixSession(FIX::Session& session);
+
+public:
+  std::unique_ptr<FixMessage> new_message();
+
+  void send(FixMessage& message);
+
+private:
+  FIX::Session& session_;
+};
+
 class FixClient
   : public Service
   , public FIX::Application
@@ -32,7 +50,9 @@ public:
   void stop() override;
 
 public:
-  void send(FixMessage& message);
+  FixSession get_session(std::string_view begin_string,
+                         std::string_view sender_comp_id,
+                         std::string_view target_comp_id);
 
 public:
 #pragma GCC diagnostic push

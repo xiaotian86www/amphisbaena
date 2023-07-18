@@ -45,6 +45,8 @@ type_name(FIX::TYPE::Type type)
       return "String";
     case FIX::TYPE::Type::Int:
       return "Int";
+    case FIX::TYPE::Type::Char:
+      return "Char";
     default:
       return "Unknown";
   }

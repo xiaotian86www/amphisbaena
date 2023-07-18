@@ -22,8 +22,24 @@
 
 namespace translator {
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
+FixSession::FixSession(FIX::Session& session)
+  : session_(session)
+{
+}
+
+std::unique_ptr<FixMessage>
+FixSession::new_message()
+{
+  return std::make_unique<FixMessage>(
+    session_.getDataDictionaryProvider().getSessionDataDictionary(
+      session_.getSessionID().getBeginString()));
+}
+
+void
+FixSession::send(FixMessage& message)
+{
+  session_.send(message.message());
+}
 
 FixClient::FixClient(std::istream& is)
   : settings_(is)
@@ -59,12 +75,25 @@ FixClient::stop()
   initiator_->stop();
 }
 
-void
-FixClient::send(FixMessage& message)
+FixSession
+FixClient::get_session(std::string_view begin_string,
+                       std::string_view sender_comp_id,
+                       std::string_view target_comp_id)
 {
-  FIX::Session::sendToTarget(message.message());
+  auto session =
+    initiator_->getSession(FIX::SessionID(std::string(begin_string),
+                                          std::string(sender_comp_id),
+                                          std::string(target_comp_id)));
+  if (!session) {
+    throw std::invalid_argument(
+      "invalid begin_string sender_comp_id and target_comp_id");
+  }
+
+  return FixSession(*session);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
 void
 FixClient::onCreate(const FIX::SessionID&)
 {
