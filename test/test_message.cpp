@@ -51,6 +51,38 @@ TEST_P(Message, get_string)
   EXPECT_EQ(body.get_value("MsgSeqNum", ""), "");
 }
 
+TEST_P(Message, get_string_char)
+{
+  auto& body = message->get_body();
+  body.set_value("OrdType", "1");
+  EXPECT_EQ(body.get_string("OrdType"), "1");
+  EXPECT_EQ(body.get_value("OrdType", ""), "1");
+
+  EXPECT_THROW(body.get_string("MsgSeqNum"), translator::NoKeyException);
+  EXPECT_EQ(body.get_value("MsgSeqNum", ""), "");
+
+  body.set_value("MsgSeqNum", 1);
+
+  EXPECT_THROW(body.get_string("MsgSeqNum"), translator::TypeExecption);
+  EXPECT_EQ(body.get_value("MsgSeqNum", ""), "");
+}
+
+TEST_P(Message, get_string_timestamp)
+{
+  auto& body = message->get_body();
+  body.set_value("TransactTime", "20230718-04:57:20.922010000");
+  EXPECT_EQ(body.get_string("TransactTime"), "20230718-04:57:20.922010000");
+  EXPECT_EQ(body.get_value("TransactTime", ""), "20230718-04:57:20.922010000");
+
+  EXPECT_THROW(body.get_string("MsgSeqNum"), translator::NoKeyException);
+  EXPECT_EQ(body.get_value("MsgSeqNum", ""), "");
+
+  body.set_value("MsgSeqNum", 1);
+
+  EXPECT_THROW(body.get_string("MsgSeqNum"), translator::TypeExecption);
+  EXPECT_EQ(body.get_value("MsgSeqNum", ""), "");
+}
+
 #include "impl/json_message.hpp"
 
 translator::MessagePtr

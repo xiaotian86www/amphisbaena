@@ -27,7 +27,8 @@ template<>
 constexpr bool
 check_type<std::string_view>(FIX::TYPE::Type type)
 {
-  return type == FIX::TYPE::Type::String;
+  return type == FIX::TYPE::Type::String || type == FIX::TYPE::Type::Char ||
+         type == FIX::TYPE::Type::UtcTimeStamp;
 }
 
 template<>
@@ -42,11 +43,11 @@ type_name(FIX::TYPE::Type type)
 {
   switch (type) {
     case FIX::TYPE::Type::String:
+    case FIX::TYPE::Type::Char:
+    case FIX::TYPE::Type::UtcTimeStamp:
       return "String";
     case FIX::TYPE::Type::Int:
       return "Int";
-    case FIX::TYPE::Type::Char:
-      return "Char";
     default:
       return "Unknown";
   }
