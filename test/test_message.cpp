@@ -88,7 +88,7 @@ TEST_P(Message, get_string_timestamp)
 translator::MessagePtr
 create_json_message()
 {
-  return std::make_unique<translator::JsonMessage>();
+  return std::make_shared<translator::JsonMessage>();
 }
 
 INSTANTIATE_TEST_SUITE_P(Json, Message, testing::Values(create_json_message));
@@ -104,7 +104,7 @@ struct create_fix_message
 
   translator::MessagePtr operator()() const
   {
-    return std::make_unique<translator::FixMessage>(dd);
+    return std::make_shared<translator::FixMessage>(dd);
   }
 
   FIX::DataDictionary dd;

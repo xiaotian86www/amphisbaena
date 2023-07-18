@@ -27,10 +27,10 @@ FixSession::FixSession(FIX::Session& session)
 {
 }
 
-std::unique_ptr<FixMessage>
+std::shared_ptr<FixMessage>
 FixSession::new_message()
 {
-  return std::make_unique<FixMessage>(
+  return std::make_shared<FixMessage>(
     session_.getDataDictionaryProvider().getSessionDataDictionary(
       session_.getSessionID().getBeginString()));
 }

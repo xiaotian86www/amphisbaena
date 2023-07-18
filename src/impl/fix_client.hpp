@@ -27,7 +27,7 @@ public:
   FixSession(FIX::Session& session);
 
 public:
-  std::unique_ptr<FixMessage> new_message();
+  std::shared_ptr<FixMessage> new_message();
 
   void send(FixMessage& message);
 

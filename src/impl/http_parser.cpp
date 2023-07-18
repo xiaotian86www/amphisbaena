@@ -7,9 +7,9 @@
 #include <string>
 
 #include "context.hpp"
+#include "environment.hpp"
 #include "http_parser.hpp"
 #include "json_message.hpp"
-#include "environment.hpp"
 #include "message.hpp"
 #include "parser.hpp"
 
@@ -77,7 +77,7 @@ HttpParser::HttpParser(ScheduleRef sch, CoroutineRef co, ConnectionRef conn)
   std::call_once(init_once_flag, init);
   llhttp_init(this, HTTP_REQUEST, &g_settings);
 
-  request_ = std::make_unique<JsonMessage>();
+  request_ = std::make_shared<JsonMessage>();
 }
 
 void
@@ -105,14 +105,13 @@ HttpParser::handle()
     env.co = co_;
     env.session = session_;
 
-    env.message_pool.add(request_body.get_value("url", ""), std::move(request_));
+    auto response = Context::get_instance().message_builder->create(
+      env, response_name, request_);
 
-    request_ = std::make_unique<JsonMessage>();
-
-    auto response = env.message_pool.get(response_name, env);
+    request_ = std::make_shared<JsonMessage>();
 
     handle_success(response);
-    
+
   } catch (const boost::coroutines::detail::forced_unwind&) {
     throw;
   } catch (const NotFoundException& ec) {
@@ -137,7 +136,8 @@ HttpParser::handle_error(llhttp_status_t status)
 {
   std::string response;
   const auto& request_body = request_->get_body();
-  response += request_body.get_value("version", "HTTP/1.1");
+  response += "HTTP/";
+  response += request_body.get_value("version", "1.1");
   response += " ";
   response += std::to_string(status);
   response += " ";
@@ -152,7 +152,8 @@ HttpParser::handle_success(MessagePtr message)
 {
   std::string response;
   const auto& body = message->get_body();
-  response += body.get_value("version", "HTTP/1.1");
+  response += "HTTP/";
+  response += body.get_value("version", "1.1");
   response += " ";
   response += std::to_string(HTTP_STATUS_OK);
   response += " ";

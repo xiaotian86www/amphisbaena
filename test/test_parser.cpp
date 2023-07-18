@@ -44,16 +44,16 @@ protected:
 
 TEST_F(Parser, on_data)
 {
-  EXPECT_CALL(message_ctor,
-              Call(testing::Truly([](translator::Environment& env) {
-                auto message = env.message_pool.get("/", env);
-                const auto& body = message->get_body();
-                return body.get_value("method", "") == "GET" &&
-                       body.get_value("url", "") == "/";
-              })))
+  EXPECT_CALL(
+    message_ctor,
+    Call(testing::_, testing::Truly([](translator::MessagePtr message) {
+           const auto& body = message->get_body();
+           return body.get_value("method", "") == "GET" &&
+                  body.get_value("url", "") == "/";
+         })))
     .Times(2)
     .WillRepeatedly(testing::Invoke(
-      [] { return std::make_unique<translator::JsonMessage>(); }));
+      [] { return std::make_shared<translator::JsonMessage>(); }));
 
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);
@@ -102,14 +102,14 @@ TEST_F(Parser, on_data_not_found)
 
 TEST_F(Parser, on_data_fail)
 {
-  EXPECT_CALL(message_ctor,
-              Call(testing::Truly([](translator::Environment& env) {
-                auto message = env.message_pool.get("/", env);
-                const auto& body = message->get_body();
-                return body.get_value("method", "") == "GET" &&
-                       body.get_value("url", "") == "/";
-              })))
-    .WillOnce(testing::Return(std::make_unique<translator::JsonMessage>()));
+  EXPECT_CALL(
+    message_ctor,
+    Call(testing::_, testing::Truly([](translator::MessagePtr message) {
+           const auto& body = message->get_body();
+           return body.get_value("method", "") == "GET" &&
+                  body.get_value("url", "") == "/";
+         })))
+    .WillOnce(testing::Return(std::make_shared<translator::JsonMessage>()));
 
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);

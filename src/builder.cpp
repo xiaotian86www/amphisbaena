@@ -15,11 +15,13 @@ MessageBuilder::registe(std::string_view name, ctor_function&& func)
 }
 
 MessagePtr
-MessageBuilder::create(std::string_view name, Environment& env) const
+MessageBuilder::create(Environment& env,
+                       std::string_view name,
+                       MessagePtr request) const
 {
   auto it = ctors_.find(name);
   if (it != ctors_.end()) {
-    return it->second(env);
+    return it->second(env, request);
   }
 
   throw NotFoundException(name);

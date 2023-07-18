@@ -15,6 +15,6 @@ public:
   ScheduleRef sch;
   CoroutineRef co;
   SessionRef session;
-  MessagePool message_pool;
+  // MessagePool message_pool;
 };
 } // namespace translator

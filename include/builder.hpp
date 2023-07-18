@@ -2,8 +2,8 @@
 
 #include <memory>
 
-#include "schedule.hpp"
 #include "message.hpp"
+#include "schedule.hpp"
 
 namespace translator {
 
@@ -13,9 +13,7 @@ public:
   virtual ~Session() = default;
 
 public:
-  virtual void reply(ScheduleRef sch,
-                     CoroutineRef co,
-                     const Message& data) = 0;
+  virtual void reply(ScheduleRef sch, CoroutineRef co, const Message& data) = 0;
 };
 
 typedef std::shared_ptr<Session> SessionPtr;
@@ -24,7 +22,7 @@ class SessionRef
 {
 public:
   SessionRef() {}
-  
+
   SessionRef(std::shared_ptr<Session> session)
     : session_(session)
   {
@@ -52,13 +50,15 @@ class Environment;
 class MessageBuilder
 {
 public:
-  using ctor_prototype = MessagePtr(Environment&);
+  using ctor_prototype = MessagePtr(Environment&, MessagePtr);
   using ctor_function = std::function<ctor_prototype>;
 
 public:
   void registe(std::string_view name, ctor_function&& func);
 
-  MessagePtr create(std::string_view name, Environment& env) const;
+  MessagePtr create(Environment& env,
+                    std::string_view name,
+                    MessagePtr request) const;
 
 private:
   std::unordered_map<std::string_view, ctor_function> ctors_;

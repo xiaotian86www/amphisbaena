@@ -21,9 +21,9 @@ MessagePool::get(std::string_view name, Environment& env) const
   if (it != messages_.end())
     return it->second;
 
-  auto message = Context::get_instance().message_builder->create(name, env);
+  // auto message = Context::get_instance().message_builder->create(name, env);
 
-  return messages_.insert(std::make_pair(name, std::move(message)))
-            .first->second;
+  // return messages_.insert(std::make_pair(name, std::move(message)))
+  //           .first->second;
 }
 } // namespace translator
