@@ -5,8 +5,8 @@
 
 #include "context.hpp"
 #include "environment.hpp"
-#include "mock/mock_message.hpp"
 #include "message.hpp"
+#include "mock/mock_message.hpp"
 #include "parser.hpp"
 
 class Builder : public testing::Test
@@ -38,13 +38,12 @@ TEST_F(Builder, create)
 
 TEST_F(Builder, get)
 {
-  auto obj_factory = std::make_shared<translator::MessageBuilder>();
-  translator::Context::get_instance().message_builder = obj_factory;
+  auto message_factory = std::make_shared<translator::MessageBuilder>();
+  translator::Context::get_instance().message_builder = message_factory;
   translator::Environment env;
 
-  auto message = std::make_unique<MockMessage>();
-  auto obj_ptr = message.get();
+  auto message = std::make_shared<MockMessage>();
 
-  env.message_pool.add("a", std::move(message));
-  EXPECT_EQ(&env.message_pool.get("a", env), obj_ptr);
+  env.message_pool.add("a", message);
+  EXPECT_EQ(env.message_pool.get("a", env), message);
 }

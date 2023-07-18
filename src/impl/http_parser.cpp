@@ -109,7 +109,7 @@ HttpParser::handle()
 
     request_ = std::make_unique<JsonMessage>();
 
-    const auto& response = env.message_pool.get(response_name, env);
+    auto response = env.message_pool.get(response_name, env);
 
     handle_success(response);
     
@@ -148,10 +148,10 @@ HttpParser::handle_error(llhttp_status_t status)
 }
 
 void
-HttpParser::handle_success(const Message& message)
+HttpParser::handle_success(MessagePtr message)
 {
   std::string response;
-  const auto& body = message.get_body();
+  const auto& body = message->get_body();
   response += body.get_value("version", "HTTP/1.1");
   response += " ";
   response += std::to_string(HTTP_STATUS_OK);

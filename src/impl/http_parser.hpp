@@ -41,7 +41,7 @@ public:
 private:
   void handle_error(llhttp_status_t status);
 
-  void handle_success(const Message& message);
+  void handle_success(MessagePtr message);
 
 private:
   SessionPtr session_;

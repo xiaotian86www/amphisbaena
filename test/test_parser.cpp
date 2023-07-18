@@ -46,8 +46,8 @@ TEST_F(Parser, on_data)
 {
   EXPECT_CALL(message_ctor,
               Call(testing::Truly([](translator::Environment& env) {
-                const auto& message = env.message_pool.get("/", env);
-                const auto& body = message.get_body();
+                auto message = env.message_pool.get("/", env);
+                const auto& body = message->get_body();
                 return body.get_value("method", "") == "GET" &&
                        body.get_value("url", "") == "/";
               })))
@@ -104,8 +104,8 @@ TEST_F(Parser, on_data_fail)
 {
   EXPECT_CALL(message_ctor,
               Call(testing::Truly([](translator::Environment& env) {
-                const auto& message = env.message_pool.get("/", env);
-                const auto& body = message.get_body();
+                auto message = env.message_pool.get("/", env);
+                const auto& body = message->get_body();
                 return body.get_value("method", "") == "GET" &&
                        body.get_value("url", "") == "/";
               })))

@@ -105,16 +105,16 @@ public:
   std::string name;
 };
 
-typedef std::unique_ptr<Message> MessagePtr;
+typedef std::shared_ptr<Message> MessagePtr;
 
 class Environment;
 
 class MessagePool
 {
 public:
-  void add(std::string_view name, MessagePtr&& message);
+  void add(std::string_view name, MessagePtr message);
 
-  const Message& get(std::string_view name, Environment& env) const;
+  MessagePtr get(std::string_view name, Environment& env) const;
 
 private:
   mutable std::unordered_map<std::string_view, MessagePtr> messages_;
