@@ -8,8 +8,8 @@
 #include <sstream>
 #include <thread>
 
-#include "detail/fix_client.hpp"
-#include "detail/fix_message.hpp"
+#include "impl/fix_client.hpp"
+#include "impl/fix_message.hpp"
 #include "tool/fix_server.hpp"
 
 class FixClient : public testing::Test
@@ -29,7 +29,7 @@ SocketAcceptPort=10000
 SocketReuseAddress=Y
 StartTime=00:00:00
 EndTime=00:00:00
-#FileLogPath=log
+FileLogPath=log
 UseDataDictionary=N
 #ServerCertificateFile=./cfg/certs/127_0_0_1_server.crt
 #ServerCertificateKeyFile=./cfg/certs/127_0_0_1_server.key
@@ -71,7 +71,7 @@ TargetCompID=CLIENT2
 ConnectionType=initiator
 ReconnectInterval=2
 #FileStorePath=store
-#FileLogPath=log
+FileLogPath=log
 StartTime=00:00:00
 EndTime=00:00:00
 UseDataDictionary=N

@@ -51,7 +51,7 @@ TEST_P(Message, get_string)
   EXPECT_EQ(body.get_value("MsgSeqNum", ""), "");
 }
 
-#include "detail/json_message.hpp"
+#include "impl/json_message.hpp"
 
 translator::MessagePtr
 create_json_message()
@@ -61,7 +61,7 @@ create_json_message()
 
 INSTANTIATE_TEST_SUITE_P(Json, Message, testing::Values(create_json_message));
 
-#include "detail/fix_message.hpp"
+#include "impl/fix_message.hpp"
 
 struct create_fix_message
 {

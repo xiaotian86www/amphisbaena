@@ -7,12 +7,12 @@
 
 #include "builder.hpp"
 #include "context.hpp"
-#include "detail/http_parser.hpp"
-#include "detail/json_message.hpp"
 #include "environment.hpp"
+#include "impl/http_parser.hpp"
+#include "impl/json_message.hpp"
+#include "message.hpp"
 #include "mock/mock_builder.hpp"
 #include "mock/mock_parser.hpp"
-#include "message.hpp"
 #include "parser.hpp"
 #include "schedule.hpp"
 
@@ -38,7 +38,8 @@ protected:
   std::shared_ptr<translator::Schedule> sch;
   std::shared_ptr<translator::ParserFactory> parser_factory;
   std::shared_ptr<translator::MessageBuilder> message_builder;
-  testing::MockFunction<translator::MessageBuilder::ctor_prototype> message_ctor;
+  testing::MockFunction<translator::MessageBuilder::ctor_prototype>
+    message_ctor;
 };
 
 TEST_F(Parser, on_data)

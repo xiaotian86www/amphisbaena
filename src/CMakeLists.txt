@@ -4,7 +4,7 @@ project(translator VERSION 0.1.0)
 find_package(Boost REQUIRED)
 
 aux_source_directory(${PROJECT_SOURCE_DIR} SRC_LIST)
-aux_source_directory(${PROJECT_SOURCE_DIR}/detail SRC_LIST)
+aux_source_directory(${PROJECT_SOURCE_DIR}/impl SRC_LIST)
 
 add_library(${PROJECT_NAME} ${SRC_LIST})
 

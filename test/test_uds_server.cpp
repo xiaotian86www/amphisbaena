@@ -8,7 +8,7 @@
 #include <memory>
 
 #include "context.hpp"
-#include "detail/uds_server.hpp"
+#include "impl/uds_server.hpp"
 #include "mock/mock_parser.hpp"
 #include "schedule.hpp"
 
@@ -48,13 +48,9 @@ TEST_F(UDSServer, on_data)
                                      translator::ConnectionRef conn) {
       auto parser = std::make_shared<MockParser>(sch, co, conn);
 
-      EXPECT_CALL(
-        *parser,
-        on_data(testing::StrEq(data)))
-        .WillOnce(
-          testing::Invoke([conn](std::string_view data) mutable {
-            conn.send(data);
-          }));
+      EXPECT_CALL(*parser, on_data(testing::StrEq(data)))
+        .WillOnce(testing::Invoke(
+          [conn](std::string_view data) mutable { conn.send(data); }));
 
       return parser;
     }));

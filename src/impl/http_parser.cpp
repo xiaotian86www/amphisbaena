@@ -7,8 +7,8 @@
 #include <string>
 
 #include "context.hpp"
-#include "detail/http_parser.hpp"
-#include "detail/json_message.hpp"
+#include "impl/http_parser.hpp"
+#include "impl/json_message.hpp"
 #include "environment.hpp"
 #include "message.hpp"
 #include "parser.hpp"

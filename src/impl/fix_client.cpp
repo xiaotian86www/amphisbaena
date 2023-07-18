@@ -18,7 +18,7 @@
 #include <quickfix/SocketInitiator.h>
 #pragma GCC diagnostic pop
 
-#include "detail/fix_client.hpp"
+#include "impl/fix_client.hpp"
 
 namespace translator {
 
