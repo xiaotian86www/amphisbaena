@@ -36,7 +36,9 @@ public:
   void stop() override;
 
 public:
-  void send(std::shared_ptr<FixMessage> message);
+  void send(FixMessagePtr message);
+
+  virtual void on_data(FixMessagePtr message);
 
 public:
 #pragma GCC diagnostic push

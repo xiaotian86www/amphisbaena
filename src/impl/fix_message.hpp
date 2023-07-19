@@ -191,6 +191,14 @@ public:
   {
   }
 
+  FixMessage(const FIX::Message& message)
+    : message_(message)
+    , head_(message_.getHeader())
+    , body_(message_)
+    , tail_(message_.getTrailer())
+  {
+  }
+
 public:
   Object& get_head() override { return head_; }
 
@@ -225,4 +233,6 @@ private:
   FixObject body_;
   FixObject tail_;
 };
+
+typedef std::shared_ptr<FixMessage> FixMessagePtr;
 }

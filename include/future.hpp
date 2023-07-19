@@ -7,17 +7,14 @@
 #include "schedule.hpp"
 
 namespace translator {
-template<typename Tp_>
-class Promise;
-
+namespace detail {
 template<typename Tp_>
 class Future
 {
-  friend class Promise<Tp_>;
-
-private:
-  Future(Promise<Tp_>& pms)
-    : pms_(pms)
+public:
+  Future(ScheduleRef sch, CoroutineRef co)
+    : sch_(sch)
+    , co_(co)
   {
   }
 
@@ -25,54 +22,85 @@ private:
   Future<Tp_>& operator=(const Future<Tp_>&) = delete;
 
 public:
-  Tp_&& get() &&
+  Tp_&& get()
   {
-    pms_.co_.yield();
-    return std::move(pms_.value().value());
+    co_.yield();
+    std::lock_guard<std::mutex> lg(mtx_);
+    return std::move(value_.value());
   }
 
-  const Tp_& get() &
+  Tp_&& get_for(int milli, Tp_&& default_value)
   {
-    if (!has_get_) {
-      pms_.co_.yield();
-      has_get_ = true;
-    }
-    return pms_.value().value();
+    co_.yield_for(milli);
+    std::lock_guard<std::mutex> lg(mtx_);
+    return std::move(value_.value_or(std::move(default_value)));
   }
 
-  Tp_&& get_for(int milli,
-                Tp_&& default_value) &&
+  template<typename ValueTp_>
+  void set(ValueTp_&& value)
   {
-    pms_.co_.yield_for(milli);
-    return std::move(pms_.value().value_or(std::move(default_value)));
-  }
-
-  const Tp_& get_for(int milli,
-                     const Tp_& default_value) &
-  {
-    if (!has_get_) {
-      pms_.co_.yield_for(milli);
-      has_get_ = true;
+    {
+      std::lock_guard<std::mutex> lg(mtx_);
+      value_ = std::forward<ValueTp_>(value);
     }
 
-    return pms_.value().value_or(default_value);
+    sch_.resume(co_);
   }
 
 private:
-  Promise<Tp_>& pms_;
-  bool has_get_ = false;
+  ScheduleRef sch_;
+  CoroutineRef co_;
+  std::mutex mtx_;
+  std::optional<Tp_> value_;
+};
+}
+
+template<typename Tp_>
+class Future
+{
+public:
+  Future(std::shared_ptr<detail::Future<Tp_>> ftr)
+    : ftr_(ftr)
+  {
+  }
+
+  Future(const Future<Tp_>&) = delete;
+  Future<Tp_>& operator=(const Future<Tp_>&) = delete;
+
+public:
+  Tp_&& get() { return std::move(ftr_->get()); }
+
+  Tp_&& get_for(int milli, Tp_&& default_value)
+  {
+    return std::move(ftr_->get_for(milli, std::move(default_value)));
+  }
+
+private:
+  std::shared_ptr<detail::Future<Tp_>> ftr_;
 };
 
 template<typename Tp_>
 class Promise
 {
-  friend class Future<Tp_>;
-
 public:
   Promise(ScheduleRef sch, CoroutineRef co)
-    : sch_(sch)
-    , co_(co)
   {
+    ftr_ = std::make_shared<detail::Future<Tp_>>(sch, co);
+  }
+
+  Promise(Promise<Tp_>&& other)
+    : ftr_(std::move(other.ftr_))
+  {
+  }
+
+  Promise<Tp_>& operator=(Promise<Tp_>&& other)
+  {
+    if (this == &other)
+      return *this;
+
+    ftr_ = std::move(other.ftr_);
+
+    return *this;
   }
 
   Promise(const Promise<Tp_>&) = delete;
@@ -82,26 +110,13 @@ public:
   template<typename ValueTp_>
   void set(ValueTp_&& value)
   {
-    std::lock_guard<std::mutex> lg(mtx_);
-    value_ = std::forward<ValueTp_>(value);
-
-    sch_.resume(co_);
+    ftr_->set(std::move(value));
   }
 
-  Future<Tp_> future() { return Future<Tp_>(*this); }
+  Future<Tp_> future() { return Future<Tp_>(ftr_); }
 
 private:
-  std::optional<Tp_>&& value()
-  {
-    std::lock_guard<std::mutex> lg(mtx_);
-    return std::move(value_);
-  }
-
-private:
-  ScheduleRef sch_;
-  CoroutineRef co_;
-  std::mutex mtx_;
-  std::optional<Tp_> value_;
+  std::shared_ptr<detail::Future<Tp_>> ftr_;
 };
 
 } // namespace translator
