@@ -8,16 +8,21 @@
 #include "future.hpp"
 
 namespace translator {
-FixMessageBuilder::FixMessageBuilder(std::istream& is)
-  : FixClient(is)
+FixMessageBuilder::FixMessageBuilder(std::unique_ptr<Service> service)
+  : service_(std::move(service))
 {
-  start();
+  service_->handler = this;
+  service_->start();
+}
+
+FixMessageBuilder::~FixMessageBuilder()
+{
+  service_->stop();
 }
 
 MessagePtr
 FixMessageBuilder::operator()(Environment& env, MessagePtr request)
 {
-  send(std::static_pointer_cast<FixMessage>(request));
   auto cl_ord_id = request->get_body().get_string("ClOrdID");
 
   Promise<MessagePtr> pms(env.sch, env.co);
@@ -32,6 +37,8 @@ FixMessageBuilder::operator()(Environment& env, MessagePtr request)
     pmss_.erase(std::string(cl_ord_id));
   }
   BOOST_SCOPE_EXIT_END
+
+  service_->send(request);
 
   for (;;) {
     auto response = ftr.get_for(5000, MessagePtr());

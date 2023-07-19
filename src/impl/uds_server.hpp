@@ -33,7 +33,6 @@ private:
 
 class UDSServer
   : public std::enable_shared_from_this<UDSServer>
-  , public Service
 {
 public:
   UDSServer(boost::asio::io_service& ios,
@@ -43,9 +42,9 @@ public:
   virtual ~UDSServer();
 
 public:
-  void start() override;
+  void start();
 
-  void stop() override;
+  void stop();
 
 private:
   stream_protocol::socket accept(ScheduleRef sch, CoroutineRef co);

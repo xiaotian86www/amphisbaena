@@ -58,14 +58,10 @@ FixClient::stop()
 }
 
 void
-FixClient::send(FixMessagePtr message)
+FixClient::send(MessagePtr message)
 {
-  FIX::Session::sendToTarget(message->message());
-}
-
-void
-FixClient::on_data(FixMessagePtr message)
-{
+  FIX::Session::sendToTarget(
+    std::static_pointer_cast<FixMessage>(message)->message());
 }
 
 #pragma GCC diagnostic push

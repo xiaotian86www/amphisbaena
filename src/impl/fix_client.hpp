@@ -36,10 +36,8 @@ public:
   void stop() override;
 
 public:
-  void send(FixMessagePtr message);
-
-  virtual void on_data(FixMessagePtr message);
-
+  void send(MessagePtr message) override;
+  
 public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"

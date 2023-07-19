@@ -1,26 +1,30 @@
 #pragma once
 
+#include <map>
+
 #include "builder.hpp"
-#include "fix_client.hpp"
-#include "fix_message.hpp"
 #include "future.hpp"
 #include "message.hpp"
+#include "service.hpp"
 
 namespace translator {
 
-class FixMessageBuilder : private FixClient
+class FixMessageBuilder : public Service::MessageHandler
 {
 public:
-  FixMessageBuilder(std::istream& is);
+  FixMessageBuilder(std::unique_ptr<Service> service);
+
+  ~FixMessageBuilder() override;
 
 public:
   MessagePtr operator()(Environment& env, MessagePtr request);
 
 private:
-  void on_data(FixMessagePtr message) override;
+  void on_message(MessagePtr message) override;
 
 private:
   std::map<std::string, Promise<MessagePtr>, std::less<>> pmss_;
   std::mutex pmss_mtx_;
+  std::unique_ptr<Service> service_;
 };
 }
