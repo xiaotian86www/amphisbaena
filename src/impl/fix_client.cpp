@@ -1,3 +1,4 @@
+#include "fix_message.hpp"
 #include <istream>
 #include <memory>
 #include <stdexcept>
@@ -21,25 +22,6 @@
 #include "fix_client.hpp"
 
 namespace translator {
-
-FixSession::FixSession(FIX::Session& session)
-  : session_(session)
-{
-}
-
-std::shared_ptr<FixMessage>
-FixSession::new_message()
-{
-  return std::make_shared<FixMessage>(
-    session_.getDataDictionaryProvider().getSessionDataDictionary(
-      session_.getSessionID().getBeginString()));
-}
-
-void
-FixSession::send(FixMessage& message)
-{
-  session_.send(message.message());
-}
 
 FixClient::FixClient(std::istream& is)
   : settings_(is)
@@ -75,21 +57,10 @@ FixClient::stop()
   initiator_->stop();
 }
 
-FixSession
-FixClient::get_session(std::string_view begin_string,
-                       std::string_view sender_comp_id,
-                       std::string_view target_comp_id)
+void
+FixClient::send(std::shared_ptr<FixMessage> message)
 {
-  auto session =
-    initiator_->getSession(FIX::SessionID(std::string(begin_string),
-                                          std::string(sender_comp_id),
-                                          std::string(target_comp_id)));
-  if (!session) {
-    throw std::invalid_argument(
-      "invalid begin_string sender_comp_id and target_comp_id");
-  }
-
-  return FixSession(*session);
+  FIX::Session::sendToTarget(message->message());
 }
 
 #pragma GCC diagnostic push

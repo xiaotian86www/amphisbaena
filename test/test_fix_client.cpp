@@ -17,7 +17,10 @@
 class FixClient : public testing::Test
 {
 public:
-  void SetUp() {}
+  void SetUp() {
+    translator::detail::get_field_info::init(
+      "/usr/local/share/quickfix/FIX42.xml");
+  }
 
   void TearDown() {}
 };
@@ -123,9 +126,7 @@ HeartBtInt=30
 
   pms.get_future().wait_for(std::chrono::milliseconds(10));
 
-  auto session = client.get_session("FIX.4.2", "CLIENT1", "EXECUTOR");
-
-  auto msg = session.new_message();
+  auto msg = std::make_shared<translator::FixMessage>();
   auto& head = msg->get_head();
   head.set_value("MsgType", FIX::MsgType_NewOrderSingle);
   head.set_value("BeginString", "FIX.4.2");
@@ -140,5 +141,5 @@ HeartBtInt=30
   body.set_value("Side", "1");
   body.set_value("TransactTime", "20230718-04:57:20.922010000");
 
-  session.send(*msg);
+  client.send(msg);
 }

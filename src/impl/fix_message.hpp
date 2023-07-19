@@ -1,12 +1,14 @@
 #pragma once
 
-#include <quickfix/FieldTypes.h>
+#include <map>
 #include <string_view>
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
 #include <quickfix/DataDictionary.h>
 #include <quickfix/Field.h>
 #include <quickfix/FieldMap.h>
+#include <quickfix/FieldTypes.h>
 #include <quickfix/FixFields.h>
 #include <quickfix/Message.h>
 #pragma GCC diagnostic pop
@@ -52,14 +54,35 @@ type_name(FIX::TYPE::Type type)
       return "Unknown";
   }
 }
+
+class get_field_info
+{
+public:
+  std::tuple<int, FIX::TYPE::Type> operator()(std::string_view name)
+  {
+    if (auto iter = tags_.find(name); iter != tags_.end()) {
+      return iter->second;
+    } else {
+      return { 0, FIX::TYPE::Type::Unknown };
+    }
+  }
+
+public:
+  static void init(std::string_view url);
+
+  static void init(std::istream& is);
+
+private:
+  static std::map<std::string, std::tuple<int, FIX::TYPE::Type>, std::less<>>
+    tags_;
+};
 }
 
 class FixObject : public Object
 {
 public:
-  FixObject(const FIX::DataDictionary& dd, FIX::FieldMap& fields)
-    : dd_(dd)
-    , fields_(fields)
+  FixObject(FIX::FieldMap& fields)
+    : fields_(fields)
   {
   }
 
@@ -110,15 +133,11 @@ private:
   Value_ get_value(std::string_view name, Value_ default_value) const
   {
     auto name_ = std::string(name);
-    int tag;
-    if (!dd_.getFieldTag(name_, tag))
+    auto [tag, type] = detail::get_field_info()(name_);
+    if (!tag)
       return default_value;
 
     if (!fields_.isSetField(tag))
-      return default_value;
-
-    FIX::TYPE::Type type;
-    if (!dd_.getFieldType(tag, type))
       return default_value;
 
     if (!detail::check_type<Value_>(type))
@@ -133,15 +152,11 @@ private:
   Value_ get_value(std::string_view name) const
   {
     auto name_ = std::string(name);
-    int tag;
-    if (!dd_.getFieldTag(name_, tag))
+    auto [tag, type] = detail::get_field_info()(name_);
+    if (!tag)
       throw NoKeyException(name);
 
     if (!fields_.isSetField(tag))
-      throw NoKeyException(name);
-
-    FIX::TYPE::Type type;
-    if (!dd_.getFieldType(tag, type))
       throw NoKeyException(name);
 
     if (!detail::check_type<Value_>(type))
@@ -154,8 +169,8 @@ private:
   void set_value(std::string_view name, Value_ value)
   {
     auto name_ = std::string(name);
-    int tag;
-    if (!dd_.getFieldTag(name_, tag))
+    auto [tag, type] = detail::get_field_info()(name_);
+    if (!tag)
       return;
 
     Field_ field(tag, value);
@@ -163,18 +178,16 @@ private:
   }
 
 private:
-  const FIX::DataDictionary& dd_;
   FIX::FieldMap& fields_;
 };
 
 class FixMessage : public Message
 {
 public:
-  FixMessage(const FIX::DataDictionary& dd)
-    : dd_(dd)
-    , head_(dd_, message_.getHeader())
-    , body_(dd_, message_)
-    , tail_(dd_, message_.getTrailer())
+  FixMessage()
+    : head_(message_.getHeader())
+    , body_(message_)
+    , tail_(message_.getTrailer())
   {
   }
 
@@ -207,7 +220,6 @@ public:
   const FIX::Message& message() const { return message_; }
 
 private:
-  const FIX::DataDictionary& dd_;
   FIX::Message message_;
   FixObject head_;
   FixObject body_;

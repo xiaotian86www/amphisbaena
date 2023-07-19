@@ -21,20 +21,6 @@
 
 namespace translator {
 
-class FixSession
-{
-public:
-  FixSession(FIX::Session& session);
-
-public:
-  std::shared_ptr<FixMessage> new_message();
-
-  void send(FixMessage& message);
-
-private:
-  FIX::Session& session_;
-};
-
 class FixClient
   : public Service
   , public FIX::Application
@@ -50,9 +36,7 @@ public:
   void stop() override;
 
 public:
-  FixSession get_session(std::string_view begin_string,
-                         std::string_view sender_comp_id,
-                         std::string_view target_comp_id);
+  void send(std::shared_ptr<FixMessage> message);
 
 public:
 #pragma GCC diagnostic push

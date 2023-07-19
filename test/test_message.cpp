@@ -95,19 +95,12 @@ INSTANTIATE_TEST_SUITE_P(Json, Message, testing::Values(create_json_message));
 
 #include "impl/fix_message.hpp"
 
-struct create_fix_message
+translator::MessagePtr
+create_fix_message()
 {
-  create_fix_message()
-    : dd("/usr/local/share/quickfix/FIX42.xml")
-  {
-  }
+  translator::detail::get_field_info::init(
+    "/usr/local/share/quickfix/FIX42.xml");
+  return std::make_shared<translator::FixMessage>();
+}
 
-  translator::MessagePtr operator()() const
-  {
-    return std::make_shared<translator::FixMessage>(dd);
-  }
-
-  FIX::DataDictionary dd;
-};
-
-INSTANTIATE_TEST_SUITE_P(Fix, Message, testing::Values(create_fix_message()));
+INSTANTIATE_TEST_SUITE_P(Fix, Message, testing::Values(create_fix_message));
