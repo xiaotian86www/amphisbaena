@@ -24,6 +24,8 @@ public:
 
   void stop();
 
+  void send(FIX::Message& message);
+
   MOCK_METHOD(void, onLogon, (const FIX::SessionID&), (override));
 
   MOCK_METHOD(void, onLogout, (const FIX::SessionID&), (override));

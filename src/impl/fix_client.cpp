@@ -1,4 +1,5 @@
 #include "fix_message.hpp"
+#include <cassert>
 #include <istream>
 #include <memory>
 #include <stdexcept>
@@ -101,12 +102,15 @@ FixClient::fromAdmin(const FIX::Message&,
 }
 
 void
-FixClient::fromApp(const FIX::Message&,
+FixClient::fromApp(const FIX::Message& message,
                    const FIX::SessionID&) throw(FIX::FieldNotFound,
                                                 FIX::IncorrectDataFormat,
                                                 FIX::IncorrectTagValue,
                                                 FIX::UnsupportedMessageType)
 {
+  auto response = std::make_shared<FixMessage>(message);
+  assert(handler);
+  handler->on_message(response);
 }
 #pragma GCC diagnostic pop
 }

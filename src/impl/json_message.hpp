@@ -27,6 +27,13 @@ check_type<std::string_view>(const rapidjson::Value& value)
   return value.IsString();
 }
 
+template<>
+constexpr bool
+check_type<double>(const rapidjson::Value& value)
+{
+  return value.IsDouble();
+}
+
 constexpr std::string_view
 type_name(const rapidjson::Value& value)
 {
@@ -110,6 +117,11 @@ public:
     return get_value<>(name, default_value);
   }
 
+  double get_value(std::string_view name, double default_value) const override
+  {
+    return get_value<>(name, default_value);
+  }
+
   int32_t get_int(std::string_view name) const override
   {
     return get_value<int32_t>(name);
@@ -120,12 +132,22 @@ public:
     return get_value<std::string_view>(name);
   }
 
+  double get_double(std::string_view name) const override
+  {
+    return get_value<double>(name);
+  }
+
   void set_value(std::string_view name, int32_t value) override
   {
     set_value<>(name, value);
   }
 
   void set_value(std::string_view name, std::string_view value) override
+  {
+    set_value<>(name, value);
+  }
+
+  void set_value(std::string_view name, double value) override
   {
     set_value<>(name, value);
   }

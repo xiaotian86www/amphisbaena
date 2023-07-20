@@ -64,3 +64,20 @@ TEST_P(Message, get_string_timestamp)
   EXPECT_THROW(body.get_string("MsgSeqNum"), translator::TypeExecption);
   EXPECT_EQ(body.get_value("MsgSeqNum", ""), "");
 }
+
+TEST_P(Message, get_double)
+{
+  auto& body = message->get_body();
+  body.set_value("LeavesQty", 1.01);
+
+  EXPECT_EQ(body.get_double("LeavesQty"), 1.01);
+  EXPECT_EQ(body.get_value("LeavesQty", 0.01), 1.01);
+
+  EXPECT_THROW(body.get_double("SenderCompID"), translator::NoKeyException);
+  EXPECT_EQ(body.get_value("SenderCompID", 0.01), 0.01);
+
+  body.set_value("SenderCompID", "a");
+
+  EXPECT_THROW(body.get_double("SenderCompID"), translator::TypeExecption);
+  EXPECT_EQ(body.get_value("SenderCompID", 0.01), 0.01);
+}

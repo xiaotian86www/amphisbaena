@@ -42,6 +42,13 @@ check_type<int32_t>(FIX::TYPE::Type type)
   return type == FIX::TYPE::Type::Int;
 }
 
+template<>
+constexpr bool
+check_type<double>(FIX::TYPE::Type type)
+{
+  return type == FIX::TYPE::Type::Qty || FIX::TYPE::Type::Price;
+}
+
 constexpr std::string_view
 type_name(FIX::TYPE::Type type)
 {
@@ -52,6 +59,9 @@ type_name(FIX::TYPE::Type type)
       return "String";
     case FIX::TYPE::Type::Int:
       return "Int";
+    case FIX::TYPE::Type::Qty:
+    case FIX::TYPE::Type::Price:
+      return "Double";
     default:
       return "Unknown";
   }
@@ -120,6 +130,11 @@ public:
     return get_value<FIX::StringField>(name, default_value);
   }
 
+  double get_value(std::string_view name, double default_value) const override
+  {
+    return get_value<FIX::DoubleField>(name, default_value);
+  }
+
   int32_t get_int(std::string_view name) const override
   {
     return get_value<FIX::IntField, int32_t>(name);
@@ -130,6 +145,11 @@ public:
     return get_value<FIX::StringField, std::string_view>(name);
   }
 
+  double get_double(std::string_view name) const override
+  {
+    return get_value<FIX::DoubleField, double>(name);
+  }
+
   void set_value(std::string_view name, int32_t value) override
   {
     set_value<FIX::IntField>(name, value);
@@ -138,6 +158,11 @@ public:
   void set_value(std::string_view name, std::string_view value) override
   {
     set_value<FIX::StringField, const std::string&>(name, std::string(value));
+  }
+
+  void set_value(std::string_view name, double value) override
+  {
+    set_value<FIX::DoubleField, double>(name, value);
   }
 
   ObjectPtr get_object(std::string_view name) override { return {}; }

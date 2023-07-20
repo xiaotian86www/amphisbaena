@@ -29,13 +29,19 @@ public:
   virtual std::string_view get_value(std::string_view name,
                                      std::string_view default_value) const = 0;
 
+  virtual double get_value(std::string_view name, double default_value) const = 0;
+
   virtual int32_t get_int(std::string_view name) const = 0;
 
   virtual std::string_view get_string(std::string_view name) const = 0;
 
+  virtual double get_double(std::string_view name) const = 0;
+
   virtual void set_value(std::string_view name, int32_t value) = 0;
 
   virtual void set_value(std::string_view name, std::string_view value) = 0;
+
+  virtual void set_value(std::string_view name, double value) = 0;
 
   virtual ObjectPtr get_object(std::string_view name) = 0;
 
@@ -109,16 +115,16 @@ typedef std::shared_ptr<Message> MessagePtr;
 
 class Environment;
 
-class MessagePool
-{
-public:
-  void add(std::string_view name, MessagePtr message);
+// class MessagePool
+// {
+// public:
+//   void add(std::string_view name, MessagePtr message);
 
-  MessagePtr get(std::string_view name, Environment& env) const;
+//   MessagePtr get(std::string_view name, Environment& env) const;
 
-private:
-  mutable std::unordered_map<std::string_view, MessagePtr> messages_;
-};
+// private:
+//   mutable std::unordered_map<std::string_view, MessagePtr> messages_;
+// };
 
 class NoKeyException : public std::exception
 {
