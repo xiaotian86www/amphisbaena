@@ -9,6 +9,7 @@
 #include "builder.hpp"
 #include "context.hpp"
 #include "environment.hpp"
+#include "fixture/fixture_schedule.hpp"
 #include "impl/http_parser.hpp"
 #include "impl/json_message.hpp"
 #include "message.hpp"
@@ -17,38 +18,18 @@
 #include "parser.hpp"
 #include "schedule.hpp"
 
-class Parser : public testing::Test
+class Parser : public FixtureSchedule
 {
 public:
   Parser()
-    : sch(std::make_shared<translator::Schedule>(ios_))
-    , parser_factory(std::make_shared<translator::HttpParserFactory>())
+    : parser_factory(std::make_shared<translator::HttpParserFactory>())
     , message_builder(std::make_shared<translator::MessageBuilder>())
   {
     translator::Context::get_instance().message_builder = message_builder;
     message_builder->registe("GET /", message_ctor.AsStdFunction());
   }
 
-public:
-  virtual void SetUp()
-  {
-    work_ = std::make_unique<boost::asio::io_service::work>(ios_);
-    th_ = std::thread([this] { ios_.run(); });
-  }
-
-  virtual void TearDown()
-  {
-    work_.reset();
-    th_.join();
-  }
-
-private:
-  boost::asio::io_service ios_;
-  std::unique_ptr<boost::asio::io_service::work> work_;
-  std::thread th_;
-
 protected:
-  std::shared_ptr<translator::Schedule> sch;
   std::shared_ptr<translator::ParserFactory> parser_factory;
   std::shared_ptr<translator::MessageBuilder> message_builder;
   testing::MockFunction<translator::MessageBuilder::ctor_prototype>
@@ -88,7 +69,6 @@ TEST_F(Parser, on_data)
 
 TEST_F(Parser, on_data_not_found)
 {
-
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);
     EXPECT_CALL(*conn, send(testing::StrEq("HTTP/1.1 404 NOT_FOUND\r\n\r\n")))

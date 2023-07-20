@@ -34,15 +34,3 @@ TEST_F(Builder, create)
   message_builder->registe("a", func.AsStdFunction());
   message_builder->create(env, "a", std::make_shared<MockMessage>());
 }
-
-// TEST_F(Builder, get)
-// {
-//   auto message_factory = std::make_shared<translator::MessageBuilder>();
-//   translator::Context::get_instance().message_builder = message_factory;
-//   translator::Environment env;
-
-//   auto message = std::make_shared<MockMessage>();
-
-//   env.message_pool.add("a", message);
-//   EXPECT_EQ(env.message_pool.get("a", env), message);
-// }

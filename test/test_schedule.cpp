@@ -1,102 +1,55 @@
+#include "gtest/gtest.h"
 #include <boost/asio/io_service.hpp>
 #include <chrono>
 #include <ctime>
 #include <exception>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <memory>
 #include <thread>
 
+#include "fixture/fixture_schedule.hpp"
 #include "schedule.hpp"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 
-class Coroutine : public testing::Test
+class Coroutine : public FixtureSchedule
 {
-public:
-  Coroutine()
-    : sch(std::make_shared<translator::Schedule>(ios_))
-  {
-  }
-
-public:
-  virtual void SetUp()
-  {
-    work_ = std::make_unique<boost::asio::io_service::work>(ios_);
-    th_ = std::thread([this] { ios_.run(); });
-  }
-
-  virtual void TearDown()
-  {
-    work_.reset();
-    th_.join();
-  }
-
-public:
-  void foo(translator::ScheduleRef sch, translator::CoroutineRef co)
-  {
-    for (int i = 0; i < 2; i++) {
-      foo_mock.AsStdFunction()(sch, co, i);
-    }
-  }
-
-  void stop() { ios_.stop(); }
-
-private:
-  boost::asio::io_service ios_;
-  std::unique_ptr<boost::asio::io_service::work> work_;
-  std::thread th_;
-
 protected:
-  std::shared_ptr<translator::Schedule> sch;
-
-  testing::MockFunction<
-    void(translator::ScheduleRef, translator::CoroutineRef, int)>
-    foo_mock;
+  testing::MockFunction<void(int)> foo_mock;
 };
 
 TEST_F(Coroutine, resume)
 {
-  auto invoke_foo =
-    [](translator::ScheduleRef sch, translator::CoroutineRef co, int) {
+  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+    for (int i = 0; i < 2; i++) {
       sch.resume(co);
       co.yield();
-    };
+      foo_mock.Call(i);
+    }
+  };
 
   testing::Sequence seq;
-  EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 0))
-    .Times(2)
-    .WillRepeatedly(testing::Invoke(invoke_foo));
-  EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 1))
-    .Times(2)
-    .WillRepeatedly(testing::Invoke(invoke_foo));
+  EXPECT_CALL(foo_mock, Call(0)).Times(2);
+  EXPECT_CALL(foo_mock, Call(1)).Times(2);
 
-  sch->spawn(std::bind(
-    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
-  sch->spawn(std::bind(
-    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
+  sch->spawn(foo);
+  sch->spawn(foo);
 }
 
 TEST_F(Coroutine, multi_resume)
 {
-  auto invoke_foo =
-    [](translator::ScheduleRef sch, translator::CoroutineRef co, int) {
-      sch.resume(co);
-      sch.resume(co);
-      sch.resume(co);
-      co.yield();
-    };
+  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+    sch.resume(co);
+    sch.resume(co);
+    sch.resume(co);
+    co.yield();
+    foo_mock.Call(0);
+  };
 
   testing::Sequence seq;
-  EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 0))
-    .Times(2)
-    .WillRepeatedly(testing::Invoke(invoke_foo));
-  EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 1))
-    .Times(2)
-    .WillRepeatedly(testing::Invoke(invoke_foo));
+  EXPECT_CALL(foo_mock, Call(testing::_)).Times(2);
 
-  sch->spawn(std::bind(
-    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
-  sch->spawn(std::bind(
-    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
+  sch->spawn(foo);
+  sch->spawn(foo);
 }
 
 /**
@@ -105,31 +58,37 @@ TEST_F(Coroutine, multi_resume)
  */
 TEST_F(Coroutine, stop)
 {
-  auto invoke_foo =
-    [this](translator::ScheduleRef, translator::CoroutineRef co, int) {
-      stop();
-      sch->resume(co);
-      co.yield();
-    };
+  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+    stop();
+    foo_mock.Call(0);
+    sch.resume(co);
+    foo_mock.Call(1);
+    co.yield();
+    foo_mock.Call(2);
+  };
 
-  EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 0))
-    .WillOnce(testing::Invoke(invoke_foo));
+  EXPECT_CALL(foo_mock, Call(testing::Lt(2))).Times(2);
 
-  sch->spawn(std::bind(
-    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
+  sch->spawn(foo);
 }
 
+/**
+ * @brief 触发异常
+ *
+ */
 TEST_F(Coroutine, exception)
 {
-  auto invoke_foo = [this](translator::ScheduleRef,
-                           translator::CoroutineRef co,
-                           int) { throw std::exception(); };
+  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+    sch.resume(co);
+    foo_mock.Call(0);
+    co.yield();
+    throw std::exception();
+    foo_mock.Call(1);
+  };
 
-  EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 0))
-    .WillOnce(testing::Invoke(invoke_foo));
+  EXPECT_CALL(foo_mock, Call(testing::Lt(1))).Times(1);
 
-  sch->spawn(std::bind(
-    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
+  sch->spawn(foo);
 }
 
 /**
@@ -138,26 +97,21 @@ TEST_F(Coroutine, exception)
  */
 TEST_F(Coroutine, yield_for_timeout)
 {
-  auto invoke_foo =
-    [](translator::ScheduleRef sch, translator::CoroutineRef co, int) {
-      timespec start, stop;
-      clock_gettime(CLOCK_MONOTONIC, &start);
-      co.yield_for(1);
-      clock_gettime(CLOCK_MONOTONIC, &stop);
+  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+    timespec start, stop;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    co.yield_for(1);
+    clock_gettime(CLOCK_MONOTONIC, &stop);
 
-      EXPECT_GT((stop.tv_sec - start.tv_sec) * 1000000000 +
-                  (stop.tv_nsec - start.tv_nsec),
-                1000000);
-    };
+    EXPECT_GT((stop.tv_sec - start.tv_sec) * 1000000000 +
+                (stop.tv_nsec - start.tv_nsec),
+              1000000);
+    foo_mock.Call(0);
+  };
 
-  testing::Sequence seq;
-  EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 0))
-    .WillOnce(testing::Invoke(invoke_foo));
-  EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 1))
-    .WillOnce(testing::Invoke(invoke_foo));
+  EXPECT_CALL(foo_mock, Call(testing::_)).Times(1);
 
-  sch->spawn(std::bind(
-    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
+  sch->spawn(foo);
 }
 
 /**
@@ -166,27 +120,22 @@ TEST_F(Coroutine, yield_for_timeout)
  */
 TEST_F(Coroutine, resume_yield_for)
 {
-  auto invoke_foo =
-    [](translator::ScheduleRef sch, translator::CoroutineRef co, int) {
-      sch.resume(co);
-      timespec start, stop;
-      clock_gettime(CLOCK_MONOTONIC, &start);
-      co.yield_for(1);
-      clock_gettime(CLOCK_MONOTONIC, &stop);
+  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+    sch.resume(co);
+    timespec start, stop;
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    co.yield_for(1);
+    clock_gettime(CLOCK_MONOTONIC, &stop);
 
-      EXPECT_LT((stop.tv_sec - start.tv_sec) * 1000000000 +
-                  (stop.tv_nsec - start.tv_nsec),
-                1000000);
-    };
+    EXPECT_LT((stop.tv_sec - start.tv_sec) * 1000000000 +
+                (stop.tv_nsec - start.tv_nsec),
+              1000000);
+    foo_mock.Call(0);
+  };
 
-  testing::Sequence seq;
-  EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 0))
-    .WillOnce(testing::Invoke(invoke_foo));
-  EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 1))
-    .WillOnce(testing::Invoke(invoke_foo));
+  EXPECT_CALL(foo_mock, Call(testing::_)).Times(1);
 
-  sch->spawn(std::bind(
-    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
+  sch->spawn(foo);
 }
 
 /**
@@ -195,19 +144,21 @@ TEST_F(Coroutine, resume_yield_for)
  */
 TEST_F(Coroutine, stop_yield_for)
 {
-  testing::Sequence seq;
-  EXPECT_CALL(foo_mock, Call(testing::_, testing::_, 0))
-    .WillOnce(testing::Invoke([](translator::ScheduleRef sch,
-                                 translator::CoroutineRef co,
-                                 int) { co.yield_for(10); }))
-    .WillOnce(testing::Invoke(
-      [this](translator::ScheduleRef, translator::CoroutineRef co, int) {
-        stop();
-        co.yield();
-      }));
+  auto foo1 = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+    foo_mock.Call(0);
+    co.yield_for(10);
+    foo_mock.Call(2);
+  };
 
-  sch->spawn(std::bind(
-    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
-  sch->spawn(std::bind(
-    &Coroutine::foo, this, std::placeholders::_1, std::placeholders::_2));
+  auto foo2 = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+    foo_mock.Call(1);
+    stop();
+    co.yield();
+    foo_mock.Call(3);
+  };
+
+  EXPECT_CALL(foo_mock, Call(testing::Lt(2))).Times(2);
+
+  sch->spawn(foo1);
+  sch->spawn(foo2);
 }

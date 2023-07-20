@@ -11,26 +11,19 @@
 #include "impl/uds_server.hpp"
 #include "mock/mock_parser.hpp"
 #include "schedule.hpp"
+#include "fixture/fixture_schedule.hpp"
 
-class UDSServer : public testing::Test
+class UDSServer : public FixtureSchedule
 {
 public:
-  virtual void SetUp()
+  UDSServer()
+    : parser_factory(std::make_shared<MockParserFactory>())
+    , server(std::make_shared<translator::UDSServer>(ios, sch, "server.socket"))
   {
-    parser_factory = std::make_shared<MockParserFactory>();
-
     translator::Context::get_instance().parser_factory = parser_factory;
-
-    sch = std::make_shared<translator::Schedule>(ios);
-    server = std::make_shared<translator::UDSServer>(ios, sch, "server.socket");
   }
 
-  virtual void TearDown() {}
-
 protected:
-  boost::asio::io_service ios;
-  std::thread th;
-  std::shared_ptr<translator::Schedule> sch;
   std::shared_ptr<MockParserFactory> parser_factory;
   std::shared_ptr<translator::UDSServer> server;
 };
@@ -57,8 +50,6 @@ TEST_F(UDSServer, on_data)
 
   server->start();
 
-  th = std::thread([this] { ios.run(); });
-
   sock.connect("server.socket");
   sock.write_some(boost::asio::buffer(data));
 
@@ -68,7 +59,5 @@ TEST_F(UDSServer, on_data)
                std::string_view(buffer, size),
                data);
 
-  ios.stop();
-
-  th.join();
+  stop();
 }
