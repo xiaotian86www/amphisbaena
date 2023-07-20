@@ -9,19 +9,19 @@
 
 namespace translator {
 
-class HttpSession
-  : public std::enable_shared_from_this<HttpSession>
-  , public Session
-{
-public:
-  HttpSession(ConnectionRef conn);
+// class HttpSession
+//   : public std::enable_shared_from_this<HttpSession>
+//   , public Session
+// {
+// public:
+//   HttpSession(ConnectionRef conn);
 
-public:
-  void reply(ScheduleRef sch, CoroutineRef co, const Message& data) override;
+// public:
+//   void send(ScheduleRef sch, CoroutineRef co, MessagePtr data) override;
 
-private:
-  ConnectionRef conn_;
-};
+// private:
+//   ConnectionRef conn_;
+// };
 
 class HttpParser
   : public Parser
@@ -44,7 +44,7 @@ private:
   void handle_success(MessagePtr message);
 
 private:
-  SessionPtr session_;
+  // SessionPtr session_;
   MessagePtr request_;
 };
 

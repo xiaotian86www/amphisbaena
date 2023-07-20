@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 #include <memory>
 
+#include "builder.hpp"
 #include "context.hpp"
 #include "environment.hpp"
 #include "message.hpp"
@@ -25,8 +26,7 @@ TEST_F(Builder, create)
   translator::Context::get_instance().message_builder = message_builder;
   translator::Environment env;
 
-  testing::MockFunction<translator::MessageBuilder::ctor_prototype>
-    func;
+  testing::MockFunction<translator::MessageBuilder::ctor_prototype> func;
 
   EXPECT_CALL(func, Call(testing::_, testing::_))
     .WillOnce(testing::Return(std::make_shared<MockMessage>()));

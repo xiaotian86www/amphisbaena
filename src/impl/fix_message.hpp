@@ -46,7 +46,7 @@ template<>
 constexpr bool
 check_type<double>(FIX::TYPE::Type type)
 {
-  return type == FIX::TYPE::Type::Qty || FIX::TYPE::Type::Price;
+  return type == FIX::TYPE::Type::Qty || type == FIX::TYPE::Type::Price;
 }
 
 constexpr std::string_view

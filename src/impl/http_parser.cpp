@@ -65,10 +65,10 @@ init()
   g_settings.on_body = handle_on_body;
   g_settings.on_message_complete = handle_on_message_complete;
 }
-void
-HttpSession::reply(ScheduleRef sch, CoroutineRef co, const Message& data)
-{
-}
+// void
+// HttpSession::send(ScheduleRef sch, CoroutineRef co, MessagePtr data)
+// {
+// }
 
 HttpParser::HttpParser(ScheduleRef sch, CoroutineRef co, ConnectionRef conn)
   : Parser(sch, co, conn)
@@ -103,7 +103,6 @@ HttpParser::handle()
     Environment env;
     env.sch = sch_;
     env.co = co_;
-    env.session = session_;
 
     auto response = Context::get_instance().message_builder->create(
       env, response_name, request_);

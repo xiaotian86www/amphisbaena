@@ -2,16 +2,15 @@
 
 #include <gmock/gmock.h>
 
-#include "builder.hpp"
+#include "message.hpp"
+#include "service.hpp"
 
 class MockSession : public translator::Session
 {
 public:
   MOCK_METHOD(void,
-              reply,
-              (translator::ScheduleRef sch,
-               translator::CoroutineRef co,
-               const translator::Message& data),
+              send,
+              (translator::Environment & env, translator::MessagePtr data),
               (override));
 };
 

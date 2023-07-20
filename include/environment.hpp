@@ -5,8 +5,8 @@
 
 #include "message.hpp"
 #include "parser.hpp"
-#include "builder.hpp"
 #include "schedule.hpp"
+#include "service.hpp"
 
 namespace translator {
 class Environment
@@ -14,7 +14,8 @@ class Environment
 public:
   ScheduleRef sch;
   CoroutineRef co;
-  SessionRef session;
+  SessionRef up;
+  SessionRef down;
   // MessagePool message_pool;
 };
 } // namespace translator

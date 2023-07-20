@@ -21,6 +21,27 @@
 
 namespace translator {
 
+class FixClient;
+
+class FixSession : public Session
+{
+  friend FixClient;
+
+private:
+  FixSession(FixClient& client, FIX::Session& session)
+    : client_(client)
+    , session_(session)
+  {
+  }
+
+public:
+  void send(Environment& env, MessagePtr data) override;
+
+private:
+  FixClient& client_;
+  FIX::Session& session_;
+};
+
 class FixClient
   : public Service
   , public FIX::Application
@@ -37,7 +58,7 @@ public:
 
 public:
   void send(MessagePtr message) override;
-  
+
 public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
