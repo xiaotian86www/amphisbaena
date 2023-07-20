@@ -1,6 +1,7 @@
 #include <ctime>
 #include <gtest/gtest.h>
 
+// TODO 需要隐藏变量，并且防止冲突
 #define EXPECT_SPEND_LT(func, ns)                                              \
   timespec start, stop;                                                        \
   clock_gettime(CLOCK_MONOTONIC, &start);                                      \
