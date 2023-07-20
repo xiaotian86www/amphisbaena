@@ -10,6 +10,7 @@
 
 #include "fixture/fixture_schedule.hpp"
 #include "schedule.hpp"
+#include "tool/util.hpp"
 
 class Coroutine : public FixtureSchedule
 {
@@ -98,14 +99,7 @@ TEST_F(Coroutine, exception)
 TEST_F(Coroutine, yield_for_timeout)
 {
   auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
-    timespec start, stop;
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    co.yield_for(1);
-    clock_gettime(CLOCK_MONOTONIC, &stop);
-
-    EXPECT_GT((stop.tv_sec - start.tv_sec) * 1000000000 +
-                (stop.tv_nsec - start.tv_nsec),
-              1000000);
+    EXPECT_SPEND_GT(co.yield_for(1), 1000000);
     foo_mock.Call(0);
   };
 
@@ -122,14 +116,7 @@ TEST_F(Coroutine, resume_yield_for)
 {
   auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     sch.resume(co);
-    timespec start, stop;
-    clock_gettime(CLOCK_MONOTONIC, &start);
-    co.yield_for(1);
-    clock_gettime(CLOCK_MONOTONIC, &stop);
-
-    EXPECT_LT((stop.tv_sec - start.tv_sec) * 1000000000 +
-                (stop.tv_nsec - start.tv_nsec),
-              1000000);
+    EXPECT_SPEND_LT(co.yield_for(1), 1000000);
     foo_mock.Call(0);
   };
 

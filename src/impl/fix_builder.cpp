@@ -8,8 +8,9 @@
 #include "future.hpp"
 
 namespace translator {
-FixMessageBuilder::FixMessageBuilder(std::unique_ptr<Service> service)
+FixMessageBuilder::FixMessageBuilder(std::unique_ptr<Service> service, int timeout_milli)
   : service_(std::move(service))
+  , timeout_milli_(timeout_milli)
 {
   service_->handler = this;
   service_->start();
@@ -42,7 +43,7 @@ FixMessageBuilder::operator()(Environment& env, MessagePtr request)
   service_->send(request);
 
   for (;;) {
-    auto response = ftr.get_for(1000, MessagePtr());
+    auto response = ftr.get_for(timeout_milli_, MessagePtr());
     if (!response) {
       // TODO 超时
       return response;
