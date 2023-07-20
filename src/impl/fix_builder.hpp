@@ -20,7 +20,7 @@ public:
   MessagePtr operator()(Environment& env, MessagePtr request);
 
 private:
-  void on_message(MessagePtr message) override;
+  void on_message(MessagePtr response) override;
 
 private:
   std::map<std::string, Promise<MessagePtr>, std::less<>> pmss_;

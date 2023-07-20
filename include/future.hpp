@@ -84,8 +84,8 @@ class Promise
 {
 public:
   Promise(ScheduleRef sch, CoroutineRef co)
+    : ftr_(std::make_shared<detail::Future<Tp_>>(sch, co))
   {
-    ftr_ = std::make_shared<detail::Future<Tp_>>(sch, co);
   }
 
   Promise(Promise<Tp_>&& other)

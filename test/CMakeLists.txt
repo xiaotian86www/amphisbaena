@@ -5,9 +5,11 @@ add_subdirectory(tool)
 
 find_package(GTest REQUIRED)
 
+include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/../src)
 
 aux_source_directory(${PROJECT_SOURCE_DIR} SRC_LIST)
+aux_source_directory(${PROJECT_SOURCE_DIR}/impl SRC_LIST)
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 

@@ -11,7 +11,7 @@ public:
   public:
     virtual ~MessageHandler() = default;
 
-  private:
+  public:
     virtual void on_message(MessagePtr message) = 0;
   };
 

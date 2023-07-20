@@ -7,6 +7,7 @@
 #include <boost/system/error_code.hpp>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <unordered_map>
 
 using namespace boost::coroutines2;
@@ -51,8 +52,11 @@ public:
     boost::system::error_code ec;
     timer_.cancel(ec);
 
-    assert(ps_);
-    ps_();
+    try {
+      assert(ps_);
+      ps_();
+    } catch (...) {
+    }
 
     return !ps_;
   }
@@ -80,10 +84,12 @@ void
 Schedule::spawn(task&& fn)
 {
   auto co = std::make_shared<Coroutine>(ios_, weak_from_this(), std::move(fn));
+  {
+    std::lock_guard<std::mutex> lg(cos_mtx_);
+    cos_.insert(co);
+  }
 
-  cos_.insert(co);
-
-  co->resume();
+  resume(co);
 }
 
 void
@@ -91,6 +97,7 @@ Schedule::resume(CoroutineRef co)
 {
   ios_.post([this, co]() mutable {
     if (auto c = co.co_.lock(); c && c->resume()) {
+      std::lock_guard<std::mutex> lg(cos_mtx_);
       cos_.erase(c);
     }
   });

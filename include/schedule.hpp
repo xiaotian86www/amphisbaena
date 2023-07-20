@@ -27,6 +27,11 @@ public:
   {
   }
 
+  CoroutineRef(std::shared_ptr<Coroutine> co)
+    : co_(co)
+  {
+  }
+
 public:
   void yield();
 
@@ -51,6 +56,7 @@ public:
 
 private:
   boost::asio::io_service& ios_;
+  std::mutex cos_mtx_;
   std::unordered_set<std::shared_ptr<Coroutine>> cos_;
 };
 

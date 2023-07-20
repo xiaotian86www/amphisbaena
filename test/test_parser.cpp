@@ -1,5 +1,6 @@
 
 #include "gmock/gmock.h"
+#include <boost/asio/io_service.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
@@ -19,22 +20,34 @@
 class Parser : public testing::Test
 {
 public:
-  virtual void SetUp()
+  Parser()
+    : sch(std::make_shared<translator::Schedule>(ios_))
+    , parser_factory(std::make_shared<translator::HttpParserFactory>())
+    , message_builder(std::make_shared<translator::MessageBuilder>())
   {
-    sch = std::make_shared<translator::Schedule>(ios);
-    parser_factory = std::make_shared<translator::HttpParserFactory>();
-    message_builder = std::make_shared<translator::MessageBuilder>();
-
     translator::Context::get_instance().message_builder = message_builder;
-
     message_builder->registe("GET /", message_ctor.AsStdFunction());
   }
 
-  virtual void TearDown() {}
+public:
+  virtual void SetUp()
+  {
+    work_ = std::make_unique<boost::asio::io_service::work>(ios_);
+    th_ = std::thread([this] { ios_.run(); });
+  }
+
+  virtual void TearDown()
+  {
+    work_.reset();
+    th_.join();
+  }
+
+private:
+  boost::asio::io_service ios_;
+  std::unique_ptr<boost::asio::io_service::work> work_;
+  std::thread th_;
 
 protected:
-  boost::asio::io_service ios;
-  std::thread th;
   std::shared_ptr<translator::Schedule> sch;
   std::shared_ptr<translator::ParserFactory> parser_factory;
   std::shared_ptr<translator::MessageBuilder> message_builder;
@@ -71,11 +84,6 @@ TEST_F(Parser, on_data)
     parser->on_data("GET / HTTP/1.1\r\n\r\n");
     parser->on_data("GET / HTTP/1.1\r\n\r\n");
   });
-
-  th = std::thread([this] { ios.run(); });
-
-  ios.stop();
-  th.join();
 }
 
 TEST_F(Parser, on_data_not_found)
@@ -93,11 +101,6 @@ TEST_F(Parser, on_data_not_found)
     parser->on_data("GET /root HTTP/1.1\r\n\r\n");
     parser->on_data("GET /root HTTP/1.1\r\n\r\n");
   });
-
-  th = std::thread([this] { ios.run(); });
-
-  ios.stop();
-  th.join();
 }
 
 TEST_F(Parser, on_data_fail)
@@ -125,9 +128,4 @@ TEST_F(Parser, on_data_fail)
     parser->on_data("GET HTTP/1.1\r\n\r\n");
     parser->on_data("GET / HTTP/1.1\r\n\r\n");
   });
-
-  th = std::thread([this] { ios.run(); });
-
-  ios.stop();
-  th.join();
 }
