@@ -154,7 +154,9 @@ TEST_F(FixClient, send)
   body.set_value("Side", "1");
   body.set_value("TransactTime", "20230718-04:57:20.922010000");
 
-  client.send(msg);
+  auto session = client.create(msg);
+
+  session->send(msg);
 
   pms2.get_future().wait_for(std::chrono::milliseconds(1));
 }
@@ -173,9 +175,13 @@ TEST_F(FixClient, recv)
     onAdmin(testing::_,
             testing::Eq(FIX::SessionID("FIX.4.2", "EXECUTOR", "CLIENT1"))))
     .WillRepeatedly(testing::Return());
-  EXPECT_CALL(message_handler, on_message(testing::_))
+  EXPECT_CALL(message_handler,
+              on_recv(testing::_, testing::_, testing::_, testing::_))
     .WillOnce(
-      testing::Invoke([&pms2](translator::MessagePtr) { pms2.set_value(); }));
+      testing::Invoke([&pms2](translator::ScheduleRef,
+                              translator::CoroutineRef,
+                              translator::SessionPtr,
+                              translator::MessagePtr) { pms2.set_value(); }));
   EXPECT_CALL(server, onLogout(testing::_)).WillOnce(testing::Return());
 
   server.start();

@@ -7,17 +7,19 @@
 #include <thread>
 
 #include "environment.hpp"
+#include "fixture/fixture_schedule.hpp"
 #include "impl/fix_builder.hpp"
 #include "impl/fix_message.hpp"
+#include "mock/mock_builder.hpp"
 #include "mock/mock_service.hpp"
 #include "schedule.hpp"
-#include "fixture/fixture_schedule.hpp"
 
 class FixBuilder : public FixtureSchedule
 {
 public:
   FixBuilder()
     : service(new testing::NiceMock<MockService>())
+    , session(std::make_shared<MockSession>())
     , builder(std::unique_ptr<translator::Service>(service), 1)
   {
     translator::detail::get_field_info::init(
@@ -26,6 +28,7 @@ public:
 
 protected:
   testing::NiceMock<MockService>* service;
+  std::shared_ptr<MockSession> session;
   translator::FixMessageBuilder builder;
 };
 
@@ -56,23 +59,28 @@ TEST_F(FixBuilder, call)
   auto& rsp_body = response->get_body();
   rsp_body.set_value("ClOrdID", "100001");
 
-  EXPECT_CALL(*service, send(testing::_))
-    .WillOnce(testing::Invoke([response, this](translator::MessagePtr) {
-      sch->spawn([response, this](translator::ScheduleRef sch,
-                                 translator::CoroutineRef co) {
-        EXPECT_NO_THROW(service->handler->on_message(response));
+  EXPECT_CALL(*service, create(testing::_)).WillOnce(testing::Return(session));
+
+  EXPECT_CALL(*session, send(testing::_))
+    .WillOnce(testing::Invoke([this, response](translator::MessagePtr) {
+      sch->spawn([this, response](translator::ScheduleRef sch,
+                                  translator::CoroutineRef co) {
+        EXPECT_NO_THROW(service->handler->on_recv(translator::ScheduleRef(),
+                                                  translator::CoroutineRef(),
+                                                  session,
+                                                  response));
       });
     }));
 
-  sch->spawn(
-    [request, response, this](translator::ScheduleRef sch_, translator::CoroutineRef co_) {
-      translator::Environment env;
-      env.sch = sch_;
-      env.co = co_;
+  sch->spawn([request, response, this](translator::ScheduleRef sch_,
+                                       translator::CoroutineRef co_) {
+    translator::Environment env;
+    env.sch = sch_;
+    env.co = co_;
 
-      auto response_ = builder(env, request);
-      EXPECT_EQ(response, response_);
-    });
+    auto response_ = builder(env, request);
+    EXPECT_EQ(response, response_);
+  });
 }
 
 TEST_F(FixBuilder, timeout)
@@ -92,15 +100,17 @@ TEST_F(FixBuilder, timeout)
   req_body.set_value("Side", "1");
   req_body.set_value("TransactTime", "20230718-04:57:20.922010000");
 
-  EXPECT_CALL(*service, send(testing::_)).Times(1);
+  EXPECT_CALL(*service, create(testing::_)).WillOnce(testing::Return(session));
 
-  sch->spawn(
-    [request, this](translator::ScheduleRef sch_, translator::CoroutineRef co_) {
-      translator::Environment env;
-      env.sch = sch_;
-      env.co = co_;
+  EXPECT_CALL(*session, send(testing::_)).Times(1);
 
-      auto response = builder(env, request);
-      EXPECT_EQ(response, nullptr);
-    });
+  sch->spawn([request, this](translator::ScheduleRef sch_,
+                             translator::CoroutineRef co_) {
+    translator::Environment env;
+    env.sch = sch_;
+    env.co = co_;
+
+    auto response = builder(env, request);
+    EXPECT_EQ(response, nullptr);
+  });
 }

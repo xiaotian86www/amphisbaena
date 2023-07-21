@@ -10,7 +10,13 @@ public:
   class MockMessageHandler : public MessageHandler
   {
   public:
-    MOCK_METHOD(void, on_message, (translator::MessagePtr message), (override));
+    MOCK_METHOD(void,
+                on_recv,
+                (translator::ScheduleRef sch,
+                 translator::CoroutineRef co,
+                 translator::SessionPtr session,
+                 translator::MessagePtr message),
+                (override));
   };
 
 public:
@@ -18,5 +24,5 @@ public:
 
   MOCK_METHOD(void, stop, (), (override));
 
-  MOCK_METHOD(void, send, (translator::MessagePtr message), (override));
+  MOCK_METHOD(translator::SessionPtr, create, (translator::MessagePtr message), (override));
 };

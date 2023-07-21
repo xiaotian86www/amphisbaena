@@ -21,10 +21,10 @@ public:
   MessagePtr operator()(Environment& env, MessagePtr request);
 
 public:
-  void on_message(MessagePtr response) override;
+  void on_recv(ScheduleRef sch, CoroutineRef co, SessionPtr session, MessagePtr response) override;
 
 private:
-  std::map<std::string, Promise<MessagePtr>, std::less<>> pmss_;
+  std::map<SessionPtr, Promise<MessagePtr>> pmss_;
   std::mutex pmss_mtx_;
   std::unique_ptr<Service> service_;
   int timeout_milli_;

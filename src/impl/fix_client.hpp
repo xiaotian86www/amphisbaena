@@ -1,6 +1,7 @@
 #pragma once
 
 #include <istream>
+#include <map>
 #include <memory>
 #include <string_view>
 
@@ -12,6 +13,7 @@
 #include <quickfix/Log.h>
 #include <quickfix/Message.h>
 #include <quickfix/Session.h>
+#include <quickfix/SessionID.h>
 #include <quickfix/SessionSettings.h>
 #pragma GCC diagnostic pop
 
@@ -21,25 +23,19 @@
 
 namespace translator {
 
-class FixClient;
-
 class FixSession : public Session
 {
-  friend FixClient;
-
-private:
-  FixSession(FixClient& client, FIX::Session& session)
-    : client_(client)
-    , session_(session)
+public:
+  FixSession(FIX::Session* session)
+    : session_(session)
   {
   }
 
 public:
-  void send(Environment& env, MessagePtr data) override;
+  void send(MessagePtr data) override;
 
 private:
-  FixClient& client_;
-  FIX::Session& session_;
+  FIX::Session* session_;
 };
 
 class FixClient
@@ -56,8 +52,7 @@ public:
 
   void stop() override;
 
-public:
-  void send(MessagePtr message) override;
+  SessionPtr create(MessagePtr message) override;
 
 public:
 #pragma GCC diagnostic push
@@ -86,10 +81,15 @@ public:
     FIX::IncorrectTagValue,
     FIX::UnsupportedMessageType) override;
 #pragma GCC diagnostic pop
+
+private:
+  void init_sessions();
+
 private:
   FIX::SessionSettings settings_;
   std::unique_ptr<FIX::MessageStoreFactory> store_factory_;
   std::unique_ptr<FIX::LogFactory> log_factory_;
   std::unique_ptr<FIX::Initiator> initiator_;
+  std::map<FIX::SessionID, std::shared_ptr<FixSession>> sessions_;
 };
 }

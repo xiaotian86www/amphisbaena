@@ -14,8 +14,8 @@ class Environment
 public:
   ScheduleRef sch;
   CoroutineRef co;
-  SessionRef up;
-  SessionRef down;
+  SessionPtr up;
+  SessionPtr down;
   // MessagePool message_pool;
 };
 } // namespace translator

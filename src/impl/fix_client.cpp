@@ -1,7 +1,8 @@
-#include "fix_message.hpp"
+
 #include <cassert>
 #include <istream>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 
 #pragma GCC diagnostic push
@@ -21,8 +22,18 @@
 #pragma GCC diagnostic pop
 
 #include "fix_client.hpp"
+#include "fix_message.hpp"
+#include "schedule.hpp"
+#include "service.hpp"
 
 namespace translator {
+
+void
+FixSession::send(MessagePtr data)
+{
+  assert(session_);
+  session_->send(std::static_pointer_cast<FixMessage>(data)->message());
+}
 
 FixClient::FixClient(std::istream& is)
   : settings_(is)
@@ -49,6 +60,7 @@ FixClient::~FixClient()
 void
 FixClient::start()
 {
+  init_sessions();
   initiator_->start();
 }
 
@@ -58,12 +70,27 @@ FixClient::stop()
   initiator_->stop();
 }
 
-void
-FixClient::send(MessagePtr message)
+SessionPtr
+FixClient::create(MessagePtr message)
 {
-  FIX::Session::sendToTarget(
-    std::static_pointer_cast<FixMessage>(message)->message());
+  FIX::SessionID session_id(
+    std::string(message->get_head().get_string("BeginString")),
+    std::string(message->get_head().get_string("SenderCompID")),
+    std::string(message->get_head().get_string("TargetCompID")));
+
+  if (auto iter = sessions_.find(session_id); iter != sessions_.end()) {
+    return iter->second;
+  } else {
+    return SessionPtr();
+  }
 }
+
+// void
+// FixClient::send(MessagePtr message)
+// {
+//   FIX::Session::sendToTarget(
+//     std::static_pointer_cast<FixMessage>(message)->message());
+// }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
@@ -102,15 +129,34 @@ FixClient::fromAdmin(const FIX::Message&,
 }
 
 void
-FixClient::fromApp(const FIX::Message& message,
-                   const FIX::SessionID&) throw(FIX::FieldNotFound,
-                                                FIX::IncorrectDataFormat,
-                                                FIX::IncorrectTagValue,
-                                                FIX::UnsupportedMessageType)
+FixClient::fromApp(
+  const FIX::Message& message,
+  const FIX::SessionID& session_id) throw(FIX::FieldNotFound,
+                                          FIX::IncorrectDataFormat,
+                                          FIX::IncorrectTagValue,
+                                          FIX::UnsupportedMessageType)
 {
+  auto iter = sessions_.find(session_id);
+  if (iter == sessions_.end())
+    return;
+
+  SessionPtr session = iter->second;
+
   auto response = std::make_shared<FixMessage>(message);
   assert(handler);
-  handler->on_message(response);
+  handler->on_recv(
+    translator::ScheduleRef(), translator::CoroutineRef(), session, response);
 }
 #pragma GCC diagnostic pop
+
+void
+FixClient::init_sessions()
+{
+  auto session_ids = FIX::Session::getSessions();
+  for (const auto& session_id : session_ids) {
+    auto session = FIX::Session::lookupSession(session_id);
+    auto fix_session = std::make_shared<FixSession>(session);
+    sessions_.insert_or_assign(session_id, fix_session);
+  }
+}
 }
