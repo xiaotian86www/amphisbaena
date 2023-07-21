@@ -30,7 +30,7 @@ public:
                          MessagePtr message) = 0;
   };
 
-  MessageHandler* handler;
+  MessageHandler* message_handler = nullptr;
 
 public:
   virtual ~Service() = default;

@@ -13,7 +13,7 @@ FixMessageBuilder::FixMessageBuilder(std::unique_ptr<Service> service, int timeo
   : service_(std::move(service))
   , timeout_milli_(timeout_milli)
 {
-  service_->handler = this;
+  service_->message_handler = this;
   service_->start();
 }
 

@@ -7,21 +7,19 @@
 #include <memory>
 #include <unistd.h>
 
-#include "context.hpp"
-#include "parser.hpp"
 #include "schedule.hpp"
 
 namespace translator {
-UDSSocket::UDSSocket(ScheduleRef sch,
-                     CoroutineRef co,
-                     stream_protocol::socket sock)
+UDSConnection::UDSConnection(ScheduleRef sch,
+                             CoroutineRef co,
+                             stream_protocol::socket sock)
   : Connection(sch, co)
   , sock_(std::move(sock))
 {
 }
 
 void
-UDSSocket::send(std::string_view data)
+UDSConnection::send(std::string_view data)
 {
   std::size_t send_size = 0;
   for (;;) {
@@ -50,7 +48,7 @@ UDSSocket::send(std::string_view data)
 }
 
 std::size_t
-UDSSocket::recv(char* buffer, std::size_t buf_len)
+UDSConnection::recv(char* buffer, std::size_t buf_len)
 {
   boost::system::error_code ec;
   std::size_t size;
@@ -75,7 +73,7 @@ UDSSocket::recv(char* buffer, std::size_t buf_len)
 }
 
 void
-UDSSocket::close()
+UDSConnection::close()
 {
   boost::system::error_code ec;
   sock_.close(ec);
@@ -143,16 +141,18 @@ UDSServer::handle(ScheduleRef sch, CoroutineRef co)
 {
   // 接受连接
   auto sock = accept(sch, co);
+  std::array<char, 8192> data;
+  void* context = nullptr;
 
   // 开启新协程接受连接
   sch_->spawn(std::bind(
     &UDSServer::handle, this, std::placeholders::_1, std::placeholders::_2));
 
   // 接受消息
-  std::shared_ptr<Connection> conn =
-    std::make_shared<UDSSocket>(sch, co, std::move(sock));
-  auto parser = Context::get_instance().parser_factory->create(sch, co, conn);
-  std::array<char, 8192> data;
+  std::shared_ptr<UDSConnection> conn =
+    std::make_shared<UDSConnection>(sch, co, std::move(sock));
+  // auto parser = Context::get_instance().parser_factory->create(
+  //   sch, co, std::static_pointer_cast<Connection>(conn));
   for (;;) {
     boost::system::error_code ec;
     std::size_t size = conn->recv(data.data(), data.size());
@@ -160,7 +160,14 @@ UDSServer::handle(ScheduleRef sch, CoroutineRef co)
       break;
     }
 
-    parser->on_data({ data.data(), size });
+    assert(message_handler);
+    message_handler->on_recv(sch,
+                             co,
+                             std::static_pointer_cast<Connection>(conn),
+                             { data.data(), size },
+                             &context);
+
+    // parser->on_data({ data.data(), size });
   }
 }
 

@@ -97,7 +97,7 @@ HeartBtInt=30
     translator::detail::get_field_info::init(
       "/usr/local/share/quickfix/FIX42.xml");
 
-    client.handler = &message_handler;
+    client.message_handler = &message_handler;
   }
 
 private:

@@ -8,45 +8,38 @@
 #include <memory>
 
 #include "context.hpp"
-#include "impl/uds_server.hpp"
-#include "mock/mock_parser.hpp"
-#include "schedule.hpp"
 #include "fixture/fixture_schedule.hpp"
+#include "impl/uds_server.hpp"
+#include "mock/mock_server.hpp"
+#include "schedule.hpp"
 
 class UDSServer : public FixtureSchedule
 {
 public:
   UDSServer()
-    : parser_factory(std::make_shared<MockParserFactory>())
-    , server(std::make_shared<translator::UDSServer>(ios, sch, "server.socket"))
+    : server(std::make_shared<translator::UDSServer>(ios, sch, "server.socket"))
   {
-    translator::Context::get_instance().parser_factory = parser_factory;
+    server->message_handler = &message_handler;
   }
 
 protected:
-  std::shared_ptr<MockParserFactory> parser_factory;
   std::shared_ptr<translator::UDSServer> server;
+  MockServer::MockMessageHandler message_handler;
 };
 
-TEST_F(UDSServer, on_data)
+TEST_F(UDSServer, on_recv)
 {
   boost::asio::io_service io_service;
   boost::asio::local::stream_protocol::socket sock(io_service);
 
   std::string_view data("1234567890");
 
-  EXPECT_CALL(*parser_factory, create(testing::_, testing::_, testing::_))
-    .WillOnce(testing::Invoke([data](translator::ScheduleRef sch,
-                                     translator::CoroutineRef co,
-                                     translator::ConnectionRef conn) {
-      auto parser = std::make_shared<MockParser>(sch, co, conn);
-
-      EXPECT_CALL(*parser, on_data(testing::StrEq(data)))
-        .WillOnce(testing::Invoke(
-          [conn](std::string_view data) mutable { conn.send(data); }));
-
-      return parser;
-    }));
+  EXPECT_CALL(message_handler,
+              on_recv(testing::_, testing::_, testing::_, testing::_, testing::_))
+    .WillOnce(testing::Invoke([](translator::ScheduleRef sch,
+                                 translator::CoroutineRef co,
+                                 translator::ConnectionRef conn,
+                                 std::string_view data, void** context) { conn.send(data); }));
 
   server->start();
 

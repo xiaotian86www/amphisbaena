@@ -13,17 +13,17 @@
 using namespace boost::asio::local;
 
 namespace translator {
-class UDSSocket
+class UDSConnection
   : public std::enable_shared_from_this<Connection>
   , public Connection
 {
 public:
-  UDSSocket(ScheduleRef sch, CoroutineRef co, stream_protocol::socket sock);
+  UDSConnection(ScheduleRef sch, CoroutineRef co, stream_protocol::socket sock);
 
 public:
   void send(std::string_view data) override;
 
-  std::size_t recv(char* buffer, std::size_t buf_len) override;
+  std::size_t recv(char* buffer, std::size_t buf_len);
 
   void close() override;
 
@@ -33,6 +33,7 @@ private:
 
 class UDSServer
   : public std::enable_shared_from_this<UDSServer>
+  , public Server
 {
 public:
   UDSServer(boost::asio::io_service& ios,
@@ -42,9 +43,9 @@ public:
   virtual ~UDSServer();
 
 public:
-  void start();
+  void start() override;
 
-  void stop();
+  void stop() override;
 
 private:
   stream_protocol::socket accept(ScheduleRef sch, CoroutineRef co);

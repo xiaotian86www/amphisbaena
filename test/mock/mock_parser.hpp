@@ -13,10 +13,10 @@ public:
               send,
               (std::string_view),
               (override));
-  MOCK_METHOD(std::size_t,
-              recv,
-              (char* buffer, std::size_t buf_len),
-              (override));
+  // MOCK_METHOD(std::size_t,
+  //             recv,
+  //             (char* buffer, std::size_t buf_len),
+  //             (override));
   MOCK_METHOD(void,
               close,
               (),

@@ -65,7 +65,7 @@ TEST_F(FixBuilder, call)
     .WillOnce(testing::Invoke([this, response](translator::MessagePtr) {
       sch->spawn([this, response](translator::ScheduleRef sch,
                                   translator::CoroutineRef co) {
-        EXPECT_NO_THROW(service->handler->on_recv(translator::ScheduleRef(),
+        EXPECT_NO_THROW(service->message_handler->on_recv(translator::ScheduleRef(),
                                                   translator::CoroutineRef(),
                                                   session,
                                                   response));

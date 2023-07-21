@@ -143,8 +143,8 @@ FixClient::fromApp(
   SessionPtr session = iter->second;
 
   auto response = std::make_shared<FixMessage>(message);
-  assert(handler);
-  handler->on_recv(
+  assert(message_handler);
+  message_handler->on_recv(
     translator::ScheduleRef(), translator::CoroutineRef(), session, response);
 }
 #pragma GCC diagnostic pop
