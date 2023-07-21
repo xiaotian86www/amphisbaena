@@ -2,7 +2,6 @@
 
 #include <sstream>
 
-#include "context.hpp"
 #include "environment.hpp"
 #include "builder.hpp"
 

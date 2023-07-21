@@ -3,7 +3,6 @@
 #include <memory>
 #include <sstream>
 
-#include "context.hpp"
 #include "environment.hpp"
 #include "message.hpp"
 

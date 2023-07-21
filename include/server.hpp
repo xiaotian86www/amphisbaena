@@ -67,12 +67,14 @@ public:
   public:
     virtual void on_recv(ScheduleRef sch,
                          CoroutineRef co,
-                         ConnectionRef conn,
-                         std::string_view data,
-                         void** context) = 0;
+                         ConnectionPtr conn,
+                         std::string_view data) = 0;
   };
 
   MessageHandler* message_handler;
+
+public:
+  virtual ~Server() = default;
 
 public:
   virtual void start() = 0;

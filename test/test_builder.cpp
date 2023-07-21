@@ -4,11 +4,9 @@
 #include <memory>
 
 #include "builder.hpp"
-#include "context.hpp"
 #include "environment.hpp"
 #include "message.hpp"
 #include "mock/mock_message.hpp"
-#include "parser.hpp"
 
 class Builder : public testing::Test
 {
@@ -23,7 +21,6 @@ protected:
 TEST_F(Builder, create)
 {
   auto message_builder = std::make_shared<translator::MessageBuilder>();
-  translator::Context::get_instance().message_builder = message_builder;
   translator::Environment env;
 
   testing::MockFunction<translator::MessageBuilder::ctor_prototype> func;

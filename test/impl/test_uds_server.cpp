@@ -7,7 +7,6 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "context.hpp"
 #include "fixture/fixture_schedule.hpp"
 #include "impl/uds_server.hpp"
 #include "mock/mock_server.hpp"
@@ -35,11 +34,11 @@ TEST_F(UDSServer, on_recv)
   std::string_view data("1234567890");
 
   EXPECT_CALL(message_handler,
-              on_recv(testing::_, testing::_, testing::_, testing::_, testing::_))
+              on_recv(testing::_, testing::_, testing::_, testing::_))
     .WillOnce(testing::Invoke([](translator::ScheduleRef sch,
                                  translator::CoroutineRef co,
                                  translator::ConnectionRef conn,
-                                 std::string_view data, void** context) { conn.send(data); }));
+                                 std::string_view data) { conn.send(data); }));
 
   server->start();
 

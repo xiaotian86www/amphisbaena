@@ -9,7 +9,8 @@
 #include "message.hpp"
 
 namespace translator {
-FixMessageBuilder::FixMessageBuilder(std::unique_ptr<Service> service, int timeout_milli)
+FixMessageBuilder::FixMessageBuilder(std::unique_ptr<Service> service,
+                                     int timeout_milli)
   : service_(std::move(service))
   , timeout_milli_(timeout_milli)
 {
@@ -32,7 +33,6 @@ FixMessageBuilder::operator()(Environment& env, MessagePtr request)
       return MessagePtr();
     }
   }
-
 
   // auto cl_ord_id = request->get_body().get_string("ClOrdID");
 
@@ -69,7 +69,10 @@ FixMessageBuilder::operator()(Environment& env, MessagePtr request)
 }
 
 void
-FixMessageBuilder::on_recv(ScheduleRef sch, CoroutineRef co, SessionPtr session, MessagePtr response)
+FixMessageBuilder::on_recv(ScheduleRef sch,
+                           CoroutineRef co,
+                           SessionPtr session,
+                           MessagePtr response)
 {
   // auto cl_ord_id = response->get_body().get_string("ClOrdID");
 

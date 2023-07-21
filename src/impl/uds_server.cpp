@@ -142,7 +142,6 @@ UDSServer::handle(ScheduleRef sch, CoroutineRef co)
   // 接受连接
   auto sock = accept(sch, co);
   std::array<char, 8192> data;
-  void* context = nullptr;
 
   // 开启新协程接受连接
   sch_->spawn(std::bind(
@@ -164,8 +163,7 @@ UDSServer::handle(ScheduleRef sch, CoroutineRef co)
     message_handler->on_recv(sch,
                              co,
                              std::static_pointer_cast<Connection>(conn),
-                             { data.data(), size },
-                             &context);
+                             { data.data(), size });
 
     // parser->on_data({ data.data(), size });
   }
