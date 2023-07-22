@@ -41,8 +41,7 @@ private:
 
 typedef std::shared_ptr<HttpSession> HttpSessionPtr;
 
-class HttpServer
-  : public Server::MessageHandler
+class HttpServer : public Server::MessageHandler
 {
 public:
   HttpServer(std::unique_ptr<Server> server);
@@ -63,6 +62,7 @@ public:
   MessageBuilderPtr message_builder;
 
 private:
+  llhttp_settings_t settings_;
   std::unique_ptr<Server> server_;
   std::map<ConnectionPtr, HttpSessionPtr> sessions_;
 };

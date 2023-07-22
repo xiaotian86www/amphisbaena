@@ -7,8 +7,6 @@
 
 namespace translator {
 
-static llhttp_settings_t g_settings;
-
 static int
 handle_on_method(llhttp_t* http, const char* at, size_t length)
 {
@@ -47,25 +45,11 @@ handle_on_message_complete(llhttp_t* http)
   return HPE_OK;
 }
 
-static void
-init()
-{
-  llhttp_settings_init(&g_settings);
-  g_settings.on_method = handle_on_method;
-  g_settings.on_url = handle_on_url;
-  g_settings.on_version = handle_on_version;
-  g_settings.on_body = handle_on_body;
-  g_settings.on_message_complete = handle_on_message_complete;
-}
-
 HttpSession::HttpSession(HttpServer* server, ConnectionRef conn)
   : server_(server)
   , conn_(conn)
   , message_(std::make_shared<JsonMessage>())
 {
-  static std::once_flag init_once_flag;
-  std::call_once(init_once_flag, init);
-  llhttp_init(this, HTTP_REQUEST, &g_settings);
 }
 
 void
@@ -158,6 +142,13 @@ HttpServer::HttpServer(std::unique_ptr<Server> server)
   : server_(std::move(server))
 {
   server_->message_handler = this;
+
+  llhttp_settings_init(&settings_);
+  settings_.on_method = handle_on_method;
+  settings_.on_url = handle_on_url;
+  settings_.on_version = handle_on_version;
+  settings_.on_body = handle_on_body;
+  settings_.on_message_complete = handle_on_message_complete;
 }
 
 HttpServer::~HttpServer()
@@ -186,6 +177,7 @@ HttpServer::on_recv(ScheduleRef sch,
   HttpSessionPtr session;
   if (auto iter = sessions_.find(conn); iter == sessions_.end()) {
     session = std::make_shared<HttpSession>(this, conn);
+    llhttp_init(session.get(), HTTP_REQUEST, &settings_);
     sessions_.insert_or_assign(conn, session);
   } else {
     session = iter->second;
