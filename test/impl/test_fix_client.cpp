@@ -13,7 +13,7 @@
 #include "impl/fix_client.hpp"
 #include "impl/fix_message.hpp"
 #include "message.hpp"
-#include "mock/mock_service.hpp"
+#include "mock/mock_client.hpp"
 #include "tool/fix_server.hpp"
 
 class FixClient : public testing::Test
@@ -105,7 +105,7 @@ private:
   std::stringstream client_settings;
 
 protected:
-  MockService::MockMessageHandler message_handler;
+  MockClient::MockMessageHandler message_handler;
   FixServer server;
   translator::FixClient client;
 };

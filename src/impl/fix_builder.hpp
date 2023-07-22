@@ -5,14 +5,14 @@
 #include "builder.hpp"
 #include "future.hpp"
 #include "message.hpp"
-#include "service.hpp"
+#include "client.hpp"
 
 namespace translator {
 
-class FixMessageBuilder : public Service::MessageHandler
+class FixMessageBuilder : public Client::MessageHandler
 {
 public:
-  explicit FixMessageBuilder(std::unique_ptr<Service> service,
+  explicit FixMessageBuilder(std::unique_ptr<Client> service,
                              int timeout_milli = 1000);
 
   ~FixMessageBuilder() override;
@@ -26,7 +26,7 @@ public:
 private:
   std::map<SessionPtr, Promise<MessagePtr>> pmss_;
   std::mutex pmss_mtx_;
-  std::unique_ptr<Service> service_;
+  std::unique_ptr<Client> service_;
   int timeout_milli_;
 };
 }

@@ -24,7 +24,7 @@
 #include "fix_client.hpp"
 #include "fix_message.hpp"
 #include "schedule.hpp"
-#include "service.hpp"
+#include "client.hpp"
 
 namespace translator {
 

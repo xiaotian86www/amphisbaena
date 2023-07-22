@@ -19,7 +19,7 @@
 
 #include "fix_message.hpp"
 #include "message.hpp"
-#include "service.hpp"
+#include "client.hpp"
 
 namespace translator {
 
@@ -39,7 +39,7 @@ private:
 };
 
 class FixClient
-  : public Service
+  : public Client
   , public FIX::Application
 {
 public:

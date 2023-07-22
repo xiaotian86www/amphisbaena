@@ -3,7 +3,7 @@
 #include <gmock/gmock.h>
 
 #include "message.hpp"
-#include "service.hpp"
+#include "session.hpp"
 
 class MockSession : public translator::Session
 {

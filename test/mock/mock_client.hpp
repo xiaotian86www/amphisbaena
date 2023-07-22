@@ -2,9 +2,9 @@
 
 #include <gmock/gmock.h>
 
-#include "service.hpp"
+#include "client.hpp"
 
-class MockService : public translator::Service
+class MockClient : public translator::Client
 {
 public:
   class MockMessageHandler : public MessageHandler

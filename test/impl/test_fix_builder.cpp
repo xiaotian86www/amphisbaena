@@ -11,23 +11,23 @@
 #include "impl/fix_builder.hpp"
 #include "impl/fix_message.hpp"
 #include "mock/mock_builder.hpp"
-#include "mock/mock_service.hpp"
+#include "mock/mock_client.hpp"
 #include "schedule.hpp"
 
 class FixBuilder : public FixtureSchedule
 {
 public:
   FixBuilder()
-    : service(new testing::NiceMock<MockService>())
+    : service(new testing::NiceMock<MockClient>())
     , session(std::make_shared<MockSession>())
-    , builder(std::unique_ptr<translator::Service>(service), 1)
+    , builder(std::unique_ptr<translator::Client>(service), 1)
   {
     translator::detail::get_field_info::init(
       "/usr/local/share/quickfix/FIX42.xml");
   }
 
 protected:
-  testing::NiceMock<MockService>* service;
+  testing::NiceMock<MockClient>* service;
   std::shared_ptr<MockSession> session;
   translator::FixMessageBuilder builder;
 };

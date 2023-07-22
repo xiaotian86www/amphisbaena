@@ -9,7 +9,7 @@
 #include "message.hpp"
 
 namespace translator {
-FixMessageBuilder::FixMessageBuilder(std::unique_ptr<Service> service,
+FixMessageBuilder::FixMessageBuilder(std::unique_ptr<Client> service,
                                      int timeout_milli)
   : service_(std::move(service))
   , timeout_milli_(timeout_milli)

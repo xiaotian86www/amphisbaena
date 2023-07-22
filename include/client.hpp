@@ -2,20 +2,10 @@
 
 #include "message.hpp"
 #include "schedule.hpp"
+#include "session.hpp"
 
 namespace translator {
-class Session
-{
-public:
-  virtual ~Session() = default;
-
-public:
-  virtual void send(MessagePtr data) = 0;
-};
-
-typedef std::shared_ptr<Session> SessionPtr;
-
-class Service
+class Client
 {
 public:
   class MessageHandler
@@ -33,7 +23,7 @@ public:
   MessageHandler* message_handler = nullptr;
 
 public:
-  virtual ~Service() = default;
+  virtual ~Client() = default;
 
 public:
   virtual void start() = 0;

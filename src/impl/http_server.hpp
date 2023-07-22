@@ -6,7 +6,7 @@
 
 #include "builder.hpp"
 #include "server.hpp"
-#include "service.hpp"
+#include "session.hpp"
 
 namespace translator {
 class HttpServer;
