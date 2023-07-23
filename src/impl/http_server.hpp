@@ -26,7 +26,9 @@ public:
 
   void do_recv();
 
-  void set_field(std::string_view name, std::string_view value);
+  void set_head(std::string_view name, std::string_view value);
+
+  void set_body(std::string_view value);
 
 private:
   void handle_error(llhttp_status_t status);
@@ -36,7 +38,7 @@ private:
   ScheduleRef sch_;
   CoroutineRef co_;
   ConnectionRef conn_;
-  MessagePtr message_;
+  MessagePtr request_;
 };
 
 typedef std::shared_ptr<HttpSession> HttpSessionPtr;

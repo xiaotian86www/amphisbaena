@@ -35,15 +35,15 @@ public:
 class MockMessage : public translator::Message
 {
 public:
-  MOCK_METHOD(const translator::Object&, get_head, (), (const, override));
-  MOCK_METHOD(translator::Object&, get_head, (), (override));
-  MOCK_METHOD(const translator::Object&, get_body, (), (const, override));
-  MOCK_METHOD(translator::Object&, get_body, (), (override));
-  MOCK_METHOD(const translator::Object&, get_tail, (), (const, override));
-  MOCK_METHOD(translator::Object&, get_tail, (), (override));
-  MOCK_METHOD(std::string, to_string, (), (const, override));
-  MOCK_METHOD(void, from_string, (std::string_view), (override));
-  MOCK_METHOD(std::string, to_binary, (), (const, override));
-  MOCK_METHOD(void, from_binary, (std::string_view), (override));
+  MOCK_METHOD(translator::ConstObjectPtr, get_head, (), (const, override));
+  MOCK_METHOD(translator::ObjectPtr, get_head, (), (override));
+  MOCK_METHOD(translator::ConstObjectPtr, get_body, (), (const, override));
+  MOCK_METHOD(translator::ObjectPtr, get_body, (), (override));
+  MOCK_METHOD(translator::ConstObjectPtr, get_tail, (), (const, override));
+  MOCK_METHOD(translator::ObjectPtr, get_tail, (), (override));
+  // MOCK_METHOD(std::string, to_string, (), (const, override));
+  // MOCK_METHOD(void, from_string, (std::string_view), (override));
+  // MOCK_METHOD(std::string, to_binary, (), (const, override));
+  // MOCK_METHOD(void, from_binary, (std::string_view), (override));
   MOCK_METHOD(void, clear, (), (override));
 };

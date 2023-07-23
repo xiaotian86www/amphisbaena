@@ -2,6 +2,7 @@
 
 #include <exception>
 #include <map>
+#include <memory>
 #include <stdexcept>
 #include <string_view>
 
@@ -231,41 +232,53 @@ private:
 class FixMessage : public Message
 {
 public:
-  FixMessage()
-    : head_(message_.getHeader())
-    , body_(message_)
-    , tail_(message_.getTrailer())
-  {
-  }
+  FixMessage() {}
 
   FixMessage(const FIX::Message& message)
     : message_(message)
-    , head_(message_.getHeader())
-    , body_(message_)
-    , tail_(message_.getTrailer())
   {
   }
 
 public:
-  Object& get_head() override { return head_; }
+  ObjectPtr get_head() override
+  {
+    return std::make_unique<FixObject>(message_.getHeader());
+  }
 
-  const Object& get_head() const override { return head_; }
+  ConstObjectPtr get_head() const override
+  {
+    return std::make_unique<FixObject>(
+      const_cast<FIX::Header&>(message_.getHeader()));
+  }
 
-  Object& get_body() override { return body_; }
+  ObjectPtr get_body() override
+  {
+    return std::make_unique<FixObject>(message_);
+  }
 
-  const Object& get_body() const override { return body_; }
+  ConstObjectPtr get_body() const override
+  {
+    return std::make_unique<FixObject>(const_cast<FIX::Message&>(message_));
+  }
 
-  Object& get_tail() override { return tail_; }
+  ObjectPtr get_tail() override
+  {
+    return std::make_unique<FixObject>(message_.getTrailer());
+  }
 
-  const Object& get_tail() const override { return tail_; }
+  ConstObjectPtr get_tail() const override
+  {
+    return std::make_unique<FixObject>(
+      const_cast<FIX::Trailer&>(message_.getTrailer()));
+  }
 
-  std::string to_string() const override { return {}; }
+  // std::string to_string() const override { return {}; }
 
-  void from_string(std::string_view str) override {}
+  // void from_string(std::string_view str) override {}
 
-  std::string to_binary() const override { return {}; }
+  // std::string to_binary() const override { return {}; }
 
-  void from_binary(std::string_view bin) override {}
+  // void from_binary(std::string_view bin) override {}
 
   void clear() override {}
 
@@ -276,9 +289,6 @@ public:
 
 private:
   FIX::Message message_;
-  FixObject head_;
-  FixObject body_;
-  FixObject tail_;
 };
 
 typedef std::shared_ptr<FixMessage> FixMessagePtr;

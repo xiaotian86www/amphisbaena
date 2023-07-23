@@ -41,9 +41,11 @@ TEST_F(HttpServer, on_data)
   EXPECT_CALL(
     message_ctor,
     Call(testing::_, testing::Truly([](translator::MessagePtr message) {
-           const auto& body = message->get_body();
-           return body.get_value("method", "") == "GET" &&
-                  body.get_value("url", "") == "/";
+           auto head = message->get_head();
+           auto body = message->get_body();
+           return head->get_string("method") == "GET" &&
+                  head->get_string("url") == "/" &&
+                  body->get_string("SenderCompID") == "CLIENT1";
          })))
     .Times(2)
     .WillRepeatedly(testing::Invoke(
@@ -57,15 +59,32 @@ TEST_F(HttpServer, on_data)
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);
 
-    EXPECT_CALL(*conn,
-                send(testing::StrEq(
-                  "HTTP/1.1 200 OK\r\n"
-                  "Content-Type: application/json; charset=utf-8\r\n\r\n")))
+    EXPECT_CALL(
+      *conn,
+      send(testing::StrEq("HTTP/1.1 200 OK\r\n"
+                          "Content-Type: application/json; charset=utf-8\r\n"
+                          "Content-Length: 2\r\n"
+                          "\r\n"
+                          "{}")))
       .Times(2)
       .WillRepeatedly(testing::Return());
 
-    http_server.on_recv(sch, co, conn, "GET / HTTP/1.1\r\n\r\n");
-    http_server.on_recv(sch, co, conn, "GET / HTTP/1.1\r\n\r\n");
+    http_server.on_recv(sch,
+                        co,
+                        conn,
+                        "GET / HTTP/1.1\r\n"
+                        "Content-Type: application/json; charset=utf-8\r\n"
+                        "Content-Length: 27\r\n"
+                        "\r\n"
+                        "{\"SenderCompID\": \"CLIENT1\"}");
+    http_server.on_recv(sch,
+                        co,
+                        conn,
+                        "GET / HTTP/1.1\r\n"
+                        "Content-Type: application/json; charset=utf-8\r\n"
+                        "Content-Length: 27\r\n"
+                        "\r\n"
+                        "{\"SenderCompID\": \"CLIENT1\"}");
   });
 }
 
@@ -92,9 +111,9 @@ TEST_F(HttpServer, on_data_fail)
   EXPECT_CALL(
     message_ctor,
     Call(testing::_, testing::Truly([](translator::MessagePtr message) {
-           const auto& body = message->get_body();
-           return body.get_value("method", "") == "GET" &&
-                  body.get_value("url", "") == "/";
+           auto head = message->get_head();
+           return head->get_value("method", "") == "GET" &&
+                  head->get_value("url", "") == "/";
          })))
     .WillOnce(testing::Return(std::make_shared<translator::JsonMessage>()));
 
@@ -105,10 +124,11 @@ TEST_F(HttpServer, on_data_fail)
 
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);
-    EXPECT_CALL(*conn,
-                send(testing::StrEq(
-                  "HTTP/1.1 200 OK\r\n"
-                  "Content-Type: application/json; charset=utf-8\r\n\r\n")))
+    EXPECT_CALL(
+      *conn,
+      send(testing::StrEq("HTTP/1.1 200 OK\r\n"
+                          "Content-Type: application/json; "
+                          "charset=utf-8\r\nContent-Length: 2\r\n\r\n{}")))
       .WillOnce(testing::Return());
 
     http_server.on_recv(sch, co, conn, "GET HTTP/1.1\r\n\r\n");

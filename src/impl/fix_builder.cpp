@@ -59,9 +59,10 @@ FixMessageBuilder::operator()(Environment& env, MessagePtr request)
       return response;
     }
 
-    if (request->get_head().get_string("MsgType") ==
-        FIX::MsgType_NewOrderSingle) {
-      if (response->get_head().get_string("MsgType") ==
+    if (auto request_head = request->get_head();
+        request_head->get_string("MsgType") == FIX::MsgType_NewOrderSingle) {
+      if (auto response_head = response->get_head();
+          response_head->get_string("MsgType") ==
           FIX::MsgType_ExecutionReport)
         return response;
     }

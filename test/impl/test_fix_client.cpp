@@ -140,19 +140,19 @@ TEST_F(FixClient, send)
   pms1.get_future().wait_for(std::chrono::milliseconds(1));
 
   auto msg = std::make_shared<translator::FixMessage>();
-  auto& head = msg->get_head();
-  head.set_value("MsgType", FIX::MsgType_NewOrderSingle);
-  head.set_value("BeginString", "FIX.4.2");
-  head.set_value("SenderCompID", "CLIENT1");
-  head.set_value("TargetCompID", "EXECUTOR");
+  auto head = msg->get_head();
+  head->set_value("MsgType", FIX::MsgType_NewOrderSingle);
+  head->set_value("BeginString", "FIX.4.2");
+  head->set_value("SenderCompID", "CLIENT1");
+  head->set_value("TargetCompID", "EXECUTOR");
 
-  auto& body = msg->get_body();
-  body.set_value("ClOrdID", "100001");
-  body.set_value("HandlInst", "1");
-  body.set_value("OrdType", "1");
-  body.set_value("Symbol", "AAPL");
-  body.set_value("Side", "1");
-  body.set_value("TransactTime", "20230718-04:57:20.922010000");
+  auto body = msg->get_body();
+  body->set_value("ClOrdID", "100001");
+  body->set_value("HandlInst", "1");
+  body->set_value("OrdType", "1");
+  body->set_value("Symbol", "AAPL");
+  body->set_value("Side", "1");
+  body->set_value("TransactTime", "20230718-04:57:20.922010000");
 
   auto session = client.create(msg);
 
@@ -190,24 +190,24 @@ TEST_F(FixClient, recv)
   pms1.get_future().wait_for(std::chrono::milliseconds(1));
 
   auto msg = std::make_shared<translator::FixMessage>();
-  auto& head = msg->get_head();
-  head.set_value("MsgType", FIX::MsgType_ExecutionReport);
-  head.set_value("BeginString", "FIX.4.2");
-  head.set_value("SenderCompID", "EXECUTOR");
-  head.set_value("TargetCompID", "CLIENT1");
+  auto head = msg->get_head();
+  head->set_value("MsgType", FIX::MsgType_ExecutionReport);
+  head->set_value("BeginString", "FIX.4.2");
+  head->set_value("SenderCompID", "EXECUTOR");
+  head->set_value("TargetCompID", "CLIENT1");
 
-  auto& body = msg->get_body();
-  body.set_value("OrderID", "100001");
-  body.set_value("ClOrdID", "100001");
-  body.set_value("ExecID", "100001");
-  body.set_value("ExecTransType", "0");
-  body.set_value("ExecType", "0");
-  body.set_value("OrdStatus", "0");
-  body.set_value("Symbol", "AAPL");
-  body.set_value("Side", "1");
-  body.set_value("LeavesQty", 100.78);
-  body.set_value("CumQty", 88.88);
-  body.set_value("AvgPx", 10.01);
+  auto body = msg->get_body();
+  body->set_value("OrderID", "100001");
+  body->set_value("ClOrdID", "100001");
+  body->set_value("ExecID", "100001");
+  body->set_value("ExecTransType", "0");
+  body->set_value("ExecType", "0");
+  body->set_value("OrdStatus", "0");
+  body->set_value("Symbol", "AAPL");
+  body->set_value("Side", "1");
+  body->set_value("LeavesQty", 100.78);
+  body->set_value("CumQty", 88.88);
+  body->set_value("AvgPx", 10.01);
 
   server.send(msg->message());
 

@@ -5,37 +5,42 @@
 #include <memory>
 #include <rapidjson/allocators.h>
 #include <rapidjson/document.h>
+#include <rapidjson/encodings.h>
 #include <rapidjson/rapidjson.h>
 
 namespace translator {
+
+typedef rapidjson::Document RapidDocument;
+typedef rapidjson::Value RapidValue;
+
 namespace detail {
 template<typename Type_>
 constexpr bool
-check_type(const rapidjson::Value& value);
+check_type(const RapidValue& value);
 
 template<>
 constexpr bool
-check_type<int32_t>(const rapidjson::Value& value)
+check_type<int32_t>(const RapidValue& value)
 {
   return value.IsInt();
 }
 
 template<>
 constexpr bool
-check_type<std::string_view>(const rapidjson::Value& value)
+check_type<std::string_view>(const RapidValue& value)
 {
   return value.IsString();
 }
 
 template<>
 constexpr bool
-check_type<double>(const rapidjson::Value& value)
+check_type<double>(const RapidValue& value)
 {
   return value.IsDouble();
 }
 
 constexpr std::string_view
-type_name(const rapidjson::Value& value)
+type_name(const RapidValue& value)
 {
   switch (value.GetType()) {
     case rapidjson::Type::kStringType:
@@ -49,57 +54,54 @@ type_name(const rapidjson::Value& value)
 
 template<typename Type_>
 constexpr Type_
-get_value(const rapidjson::Value& value)
+get_value(const RapidValue& value)
 {
   return value.Get<Type_>();
 }
 
 template<>
 constexpr std::string_view
-get_value<std::string_view>(const rapidjson::Value& value)
+get_value<std::string_view>(const RapidValue& value)
 {
   return { value.GetString(), value.GetStringLength() };
 }
 
 template<typename Type_>
 constexpr void
-set_value(rapidjson::Document::AllocatorType& allocator,
-          rapidjson::Value& value,
-          Type_ v)
+set_value(RapidDocument::AllocatorType& allocator, RapidValue& value, Type_ v)
 {
   value.Set<Type_>(v);
 }
 
 template<>
 constexpr void
-set_value<std::string_view>(rapidjson::Document::AllocatorType& allocator,
-                            rapidjson::Value& value,
+set_value<std::string_view>(RapidDocument::AllocatorType& allocator,
+                            RapidValue& value,
                             std::string_view v)
 {
   value.SetString(v.data(), v.size(), allocator);
 }
 
 template<typename Type_>
-inline rapidjson::Value
-create_value(rapidjson::Document::AllocatorType& allocator, Type_ type)
+inline RapidValue
+create_value(RapidDocument::AllocatorType& allocator, Type_ type)
 {
-  return rapidjson::Value(type);
+  return RapidValue(type);
 }
 
 template<>
-inline rapidjson::Value
-create_value<std::string_view>(rapidjson::Document::AllocatorType& allocator,
+inline RapidValue
+create_value<std::string_view>(RapidDocument::AllocatorType& allocator,
                                std::string_view value)
 {
-  return rapidjson::Value(value.data(), value.size(), allocator);
+  return RapidValue(value.data(), value.size(), allocator);
 }
 }
 
 class JsonObject : public Object
 {
 public:
-  JsonObject(rapidjson::Document::AllocatorType& allocator,
-             rapidjson::Value& value)
+  JsonObject(RapidDocument::AllocatorType& allocator, RapidValue& value)
     : allocator_(allocator)
     , value_(value)
   {
@@ -186,13 +188,13 @@ public:
           value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
         iter != value_.MemberEnd()) {
       if (!iter->value.IsObject()) {
-        iter->value = rapidjson::Value(rapidjson::Type::kObjectType);
+        iter->value = RapidValue(rapidjson::Type::kObjectType);
       }
       return std::make_unique<JsonObject>(allocator_, iter->value);
     } else {
       auto& value =
         value_.AddMember(rapidjson::StringRef(name.data(), name.size()),
-                         rapidjson::Value(rapidjson::Type::kObjectType),
+                         RapidValue(rapidjson::Type::kObjectType),
                          allocator_);
 
       return std::make_unique<JsonObject>(allocator_, value);
@@ -205,6 +207,11 @@ public:
   {
     return GroupPtr();
   }
+
+public:
+  void from_string(std::string_view str);
+
+  std::string to_string() const;
 
 private:
   template<typename Type_>
@@ -242,15 +249,15 @@ private:
         iter != value_.MemberEnd()) {
       detail::set_value(allocator_, iter->value, value);
     } else {
-      value_.AddMember(rapidjson::StringRef(name.data(), name.size()),
+      value_.AddMember(RapidValue(name.data(), name.size(), allocator_),
                        detail::create_value(allocator_, value),
                        allocator_);
     }
   }
 
 private:
-  rapidjson::Document::AllocatorType& allocator_;
-  rapidjson::Value& value_;
+  RapidDocument::AllocatorType& allocator_;
+  RapidValue& value_;
 };
 
 class JsonMessage : public Message
@@ -258,48 +265,60 @@ class JsonMessage : public Message
 public:
   JsonMessage()
     : doc_(rapidjson::Type::kObjectType)
-    , head_(doc_.GetAllocator(),
-            doc_.AddMember("head",
-                           rapidjson::Value(rapidjson::Type::kObjectType),
-                           doc_.GetAllocator()))
-    , body_(doc_.GetAllocator(),
-            doc_.AddMember("body",
-                           rapidjson::Value(rapidjson::Type::kObjectType),
-                           doc_.GetAllocator()))
-    , tail_(doc_.GetAllocator(),
-            doc_.AddMember("tail",
-                           rapidjson::Value(rapidjson::Type::kObjectType),
-                           doc_.GetAllocator()))
   {
+    doc_.AddMember(
+      "head", RapidValue(rapidjson::Type::kObjectType), doc_.GetAllocator());
+    doc_.AddMember(
+      "body", RapidValue(rapidjson::Type::kObjectType), doc_.GetAllocator());
+    doc_.AddMember(
+      "tail", RapidValue(rapidjson::Type::kObjectType), doc_.GetAllocator());
   }
 
 public:
-  Object& get_head() override { return head_; }
+  ObjectPtr get_head() override
+  {
+    return std::make_unique<JsonObject>(doc_.GetAllocator(),
+                                        doc_.FindMember("head")->value);
+  }
 
-  const Object& get_head() const override { return head_; }
+  ConstObjectPtr get_head() const override
+  {
+    return const_cast<JsonMessage*>(this)->get_head();
+  }
 
-  Object& get_body() override { return body_; }
+  ObjectPtr get_body() override
+  {
+    return std::make_unique<JsonObject>(doc_.GetAllocator(),
+                                        doc_.FindMember("body")->value);
+  }
 
-  const Object& get_body() const override { return body_; }
+  ConstObjectPtr get_body() const override
+  {
+    return const_cast<JsonMessage*>(this)->get_body();
+  }
 
-  Object& get_tail() override { return tail_; }
+  ObjectPtr get_tail() override
+  {
+    return std::make_unique<JsonObject>(doc_.GetAllocator(),
+                                        doc_.FindMember("tail")->value);
+  }
 
-  const Object& get_tail() const override { return tail_; }
+  ConstObjectPtr get_tail() const override
+  {
+    return const_cast<JsonMessage*>(this)->get_tail();
+  }
 
-  std::string to_string() const override { return {}; }
+  // std::string to_string() const override { return {}; }
 
-  std::string to_binary() const override { return {}; }
+  // std::string to_binary() const override { return {}; }
 
-  void from_string(std::string_view str) override {}
+  // void from_string(std::string_view str) override {}
 
-  void from_binary(std::string_view bin) override {}
+  // void from_binary(std::string_view bin) override {}
 
   void clear() override { doc_.RemoveAllMembers(); }
 
 private:
-  rapidjson::Document doc_;
-  JsonObject head_;
-  JsonObject body_;
-  JsonObject tail_;
+  RapidDocument doc_;
 };
 }

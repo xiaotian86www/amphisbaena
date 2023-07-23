@@ -73,10 +73,11 @@ FixClient::stop()
 SessionPtr
 FixClient::create(MessagePtr message)
 {
+  auto head = message->get_head();
   FIX::SessionID session_id(
-    std::string(message->get_head().get_string("BeginString")),
-    std::string(message->get_head().get_string("SenderCompID")),
-    std::string(message->get_head().get_string("TargetCompID")));
+    std::string(head->get_string("BeginString")),
+    std::string(head->get_string("SenderCompID")),
+    std::string(head->get_string("TargetCompID")));
 
   if (auto iter = sessions_.find(session_id); iter != sessions_.end()) {
     return iter->second;

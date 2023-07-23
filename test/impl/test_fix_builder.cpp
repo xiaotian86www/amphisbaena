@@ -35,29 +35,29 @@ protected:
 TEST_F(FixBuilder, call)
 {
   auto request = std::make_shared<translator::FixMessage>();
-  auto& req_head = request->get_head();
-  req_head.set_value("MsgType", FIX::MsgType_NewOrderSingle);
-  req_head.set_value("BeginString", "FIX.4.2");
-  req_head.set_value("SenderCompID", "CLIENT1");
-  req_head.set_value("TargetCompID", "EXECUTOR");
+  auto req_head = request->get_head();
+  req_head->set_value("MsgType", FIX::MsgType_NewOrderSingle);
+  req_head->set_value("BeginString", "FIX.4.2");
+  req_head->set_value("SenderCompID", "CLIENT1");
+  req_head->set_value("TargetCompID", "EXECUTOR");
 
-  auto& req_body = request->get_body();
-  req_body.set_value("ClOrdID", "100001");
-  req_body.set_value("HandlInst", "1");
-  req_body.set_value("OrdType", "1");
-  req_body.set_value("Symbol", "AAPL");
-  req_body.set_value("Side", "1");
-  req_body.set_value("TransactTime", "20230718-04:57:20.922010000");
+  auto req_body = request->get_body();
+  req_body->set_value("ClOrdID", "100001");
+  req_body->set_value("HandlInst", "1");
+  req_body->set_value("OrdType", "1");
+  req_body->set_value("Symbol", "AAPL");
+  req_body->set_value("Side", "1");
+  req_body->set_value("TransactTime", "20230718-04:57:20.922010000");
 
   auto response = std::make_shared<translator::FixMessage>();
-  auto& rsp_head = response->get_head();
-  rsp_head.set_value("MsgType", FIX::MsgType_ExecutionReport);
-  rsp_head.set_value("BeginString", "FIX.4.2");
-  rsp_head.set_value("SenderCompID", "EXECUTOR");
-  rsp_head.set_value("TargetCompID", "CLIENT1");
+  auto rsp_head = response->get_head();
+  rsp_head->set_value("MsgType", FIX::MsgType_ExecutionReport);
+  rsp_head->set_value("BeginString", "FIX.4.2");
+  rsp_head->set_value("SenderCompID", "EXECUTOR");
+  rsp_head->set_value("TargetCompID", "CLIENT1");
 
-  auto& rsp_body = response->get_body();
-  rsp_body.set_value("ClOrdID", "100001");
+  auto rsp_body = response->get_body();
+  rsp_body->set_value("ClOrdID", "100001");
 
   EXPECT_CALL(*service, create(testing::_)).WillOnce(testing::Return(session));
 
@@ -86,19 +86,19 @@ TEST_F(FixBuilder, call)
 TEST_F(FixBuilder, timeout)
 {
   auto request = std::make_shared<translator::FixMessage>();
-  auto& req_head = request->get_head();
-  req_head.set_value("MsgType", FIX::MsgType_NewOrderSingle);
-  req_head.set_value("BeginString", "FIX.4.2");
-  req_head.set_value("SenderCompID", "CLIENT1");
-  req_head.set_value("TargetCompID", "EXECUTOR");
+  auto req_head = request->get_head();
+  req_head->set_value("MsgType", FIX::MsgType_NewOrderSingle);
+  req_head->set_value("BeginString", "FIX.4.2");
+  req_head->set_value("SenderCompID", "CLIENT1");
+  req_head->set_value("TargetCompID", "EXECUTOR");
 
-  auto& req_body = request->get_body();
-  req_body.set_value("ClOrdID", "100001");
-  req_body.set_value("HandlInst", "1");
-  req_body.set_value("OrdType", "1");
-  req_body.set_value("Symbol", "AAPL");
-  req_body.set_value("Side", "1");
-  req_body.set_value("TransactTime", "20230718-04:57:20.922010000");
+  auto req_body = request->get_body();
+  req_body->set_value("ClOrdID", "100001");
+  req_body->set_value("HandlInst", "1");
+  req_body->set_value("OrdType", "1");
+  req_body->set_value("Symbol", "AAPL");
+  req_body->set_value("Side", "1");
+  req_body->set_value("TransactTime", "20230718-04:57:20.922010000");
 
   EXPECT_CALL(*service, create(testing::_)).WillOnce(testing::Return(session));
 

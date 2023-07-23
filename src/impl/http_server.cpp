@@ -1,10 +1,12 @@
 
 #include <boost/coroutine/exceptions.hpp>
 #include <memory>
+#include <rapidjson/document.h>
 
 #include "environment.hpp"
 #include "http_server.hpp"
 #include "json_message.hpp"
+#include "message.hpp"
 #include "session.hpp"
 
 namespace translator {
@@ -13,7 +15,7 @@ static int
 handle_on_method(llhttp_t* http, const char* at, size_t length)
 {
   auto* parser = static_cast<HttpSession*>(http);
-  parser->set_field("method", std::string_view(at, length));
+  parser->set_head("method", std::string_view(at, length));
   return HPE_OK;
 }
 
@@ -21,7 +23,7 @@ static int
 handle_on_url(llhttp_t* http, const char* at, size_t length)
 {
   auto* parser = static_cast<HttpSession*>(http);
-  parser->set_field("url", std::string_view(at, length));
+  parser->set_head("url", std::string_view(at, length));
   return HPE_OK;
 }
 
@@ -29,13 +31,15 @@ static int
 handle_on_version(llhttp_t* http, const char* at, size_t length)
 {
   auto* parser = static_cast<HttpSession*>(http);
-  parser->set_field("version", std::string_view(at, length));
+  parser->set_head("version", std::string_view(at, length));
   return HPE_OK;
 }
 
 static int
 handle_on_body(llhttp_t* http, const char* at, size_t length)
 {
+  auto* parser = static_cast<HttpSession*>(http);
+  parser->set_body(std::string_view(at, length));
   return HPE_OK;
 }
 
@@ -50,7 +54,7 @@ handle_on_message_complete(llhttp_t* http)
 HttpSession::HttpSession(HttpServer* server, ConnectionRef conn)
   : server_(server)
   , conn_(conn)
-  , message_(std::make_shared<JsonMessage>())
+  , request_(std::make_shared<JsonMessage>())
 {
 }
 
@@ -58,17 +62,21 @@ void
 HttpSession::send(MessagePtr message)
 {
   std::string response;
-  const auto& body = message->get_body();
+  auto head = message->get_head();
+  auto body = message->get_body();
+  const auto& body_str = static_cast<JsonObject*>(body.get())->to_string();
+  // const auto& body = message->get_body();
   response += "HTTP/";
-  response += body.get_value("version", "1.1");
+  response += head->get_value("version", "1.1");
   response += " ";
   response += std::to_string(HTTP_STATUS_OK);
   response += " ";
   response += llhttp_status_name(HTTP_STATUS_OK);
   response += "\r\n";
   response += "Content-Type: application/json; charset=utf-8\r\n";
-  // response += "Content-Length: " + std::to_string()
+  response += "Content-Length: " + std::to_string(body_str.length()) + "\r\n";
   response += "\r\n";
+  response += body_str;
 
   conn_.send(response);
 }
@@ -78,8 +86,8 @@ HttpSession::on_recv(ScheduleRef sch, CoroutineRef co, std::string_view data)
 {
   enum llhttp_errno err = llhttp_execute(this, data.data(), data.length());
   if (err != HPE_OK) {
-    message_->clear();
     llhttp_reset(this);
+    request_ = std::make_shared<JsonMessage>();
   }
 }
 
@@ -87,10 +95,10 @@ void
 HttpSession::do_recv()
 {
   std::string response_name;
-  const auto& request_body = message_->get_body();
-  response_name += request_body.get_string("method");
+  auto request_head = request_->get_head();
+  response_name += request_head->get_string("method");
   response_name += " ";
-  response_name += request_body.get_string("url");
+  response_name += request_head->get_string("url");
 
   try {
     Environment env;
@@ -98,10 +106,12 @@ HttpSession::do_recv()
     env.co = co_;
     env.down = shared_from_this();
 
+    auto request = request_;
+    
+    request_ = std::make_shared<JsonMessage>();
+    
     auto response =
-      server_->message_builder->create(env, response_name, message_);
-
-    message_ = std::make_shared<JsonMessage>();
+      server_->message_builder->create(env, response_name, request);
 
     send(response);
 
@@ -118,19 +128,26 @@ HttpSession::do_recv()
 }
 
 void
-HttpSession::set_field(std::string_view name, std::string_view value)
+HttpSession::set_head(std::string_view name, std::string_view value)
 {
-  auto& request_body = message_->get_body();
-  request_body.set_value(name, value);
+  auto request_head = request_->get_head();
+  request_head->set_value(name, value);
+}
+
+void
+HttpSession::set_body(std::string_view value)
+{
+  auto request_body = request_->get_body();
+  static_cast<JsonObject*>(request_body.get())->from_string(value);
 }
 
 void
 HttpSession::handle_error(llhttp_status_t status)
 {
   std::string response;
-  const auto& request_body = message_->get_body();
+  auto request_head = request_->get_head();
   response += "HTTP/";
-  response += request_body.get_value("version", "1.1");
+  response += request_head->get_value("version", "1.1");
   response += " ";
   response += std::to_string(status);
   response += " ";

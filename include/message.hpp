@@ -85,30 +85,30 @@ public:
   virtual ~Message() = default;
 
 public:
-  virtual Object& get_head() = 0;
+  virtual ObjectPtr get_head() = 0;
 
-  virtual const Object& get_head() const = 0;
+  virtual ConstObjectPtr get_head() const = 0;
 
-  virtual Object& get_body() = 0;
+  virtual ObjectPtr get_body() = 0;
 
-  virtual const Object& get_body() const = 0;
+  virtual ConstObjectPtr get_body() const = 0;
 
-  virtual Object& get_tail() = 0;
+  virtual ObjectPtr get_tail() = 0;
 
-  virtual const Object& get_tail() const = 0;
+  virtual ConstObjectPtr get_tail() const = 0;
 
-  virtual std::string to_string() const = 0;
+  // virtual std::string to_string() const = 0;
 
-  virtual void from_string(std::string_view str) = 0;
+  // virtual void from_string(std::string_view str) = 0;
 
-  virtual std::string to_binary() const = 0;
+  // virtual std::string to_binary() const = 0;
 
-  virtual void from_binary(std::string_view bin) = 0;
+  // virtual void from_binary(std::string_view bin) = 0;
 
   virtual void clear() = 0;
 
-public:
-  std::string name;
+// public:
+//   std::string name;
 };
 
 typedef std::shared_ptr<Message> MessagePtr;
