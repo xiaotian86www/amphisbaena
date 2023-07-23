@@ -5,7 +5,7 @@
 translator::MessagePtr
 create_fix_message()
 {
-  translator::detail::get_field_info::init(
+  translator::FixMessage::init(
     "/usr/local/share/quickfix/FIX42.xml");
   return std::make_shared<translator::FixMessage>();
 }

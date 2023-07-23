@@ -32,7 +32,7 @@ void
 FixSession::send(MessagePtr data)
 {
   assert(session_);
-  session_->send(std::static_pointer_cast<FixMessage>(data)->message());
+  session_->send(std::static_pointer_cast<FixMessage>(data)->fix_message);
 }
 
 FixClient::FixClient(std::istream& is)

@@ -94,7 +94,7 @@ HeartBtInt=30
     , server(server_settings)
     , client(client_settings)
   {
-    translator::detail::get_field_info::init(
+    translator::FixMessage::init(
       "/usr/local/share/quickfix/FIX42.xml");
 
     client.message_handler = &message_handler;
@@ -209,7 +209,7 @@ TEST_F(FixClient, recv)
   body->set_value("CumQty", 88.88);
   body->set_value("AvgPx", 10.01);
 
-  server.send(msg->message());
+  server.send(msg->fix_message);
 
   pms2.get_future().wait_for(std::chrono::milliseconds(1));
 }

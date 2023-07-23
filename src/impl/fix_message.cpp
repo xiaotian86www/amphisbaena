@@ -10,10 +10,68 @@
 
 namespace translator {
 namespace detail {
-std::map<std::string, std::tuple<int, FIX::TYPE::Type>, std::less<>>
-  get_field_info::tags_;
 
-static FIX::TYPE::Type
+static std::map<std::string, std::tuple<int, FIX::TYPE::Type>, std::less<>>
+  g_tags;
+
+template<typename Value_>
+constexpr bool
+check_type(FIX::TYPE::Type type)
+{
+  return false;
+}
+
+template<>
+constexpr bool
+check_type<std::string_view>(FIX::TYPE::Type type)
+{
+  return type == FIX::TYPE::Type::String || type == FIX::TYPE::Type::Char ||
+         type == FIX::TYPE::Type::UtcTimeStamp;
+}
+
+template<>
+constexpr bool
+check_type<int32_t>(FIX::TYPE::Type type)
+{
+  return type == FIX::TYPE::Type::Int;
+}
+
+template<>
+constexpr bool
+check_type<double>(FIX::TYPE::Type type)
+{
+  return type == FIX::TYPE::Type::Qty || type == FIX::TYPE::Type::Price;
+}
+
+constexpr std::string_view
+type_name(FIX::TYPE::Type type)
+{
+  switch (type) {
+    case FIX::TYPE::Type::String:
+    case FIX::TYPE::Type::Char:
+    case FIX::TYPE::Type::UtcTimeStamp:
+      return "String";
+    case FIX::TYPE::Type::Int:
+      return "Int";
+    case FIX::TYPE::Type::Qty:
+    case FIX::TYPE::Type::Price:
+      return "Double";
+    default:
+      return "Unknown";
+  }
+}
+
+std::tuple<int, FIX::TYPE::Type>
+get_field_info(std::string_view name)
+{
+  if (auto iter = g_tags.find(name); iter != g_tags.end()) {
+    return iter->second;
+  } else {
+    return { 0, FIX::TYPE::Type::Unknown };
+  }
+}
+
+FIX::TYPE::Type
 get_field_type(boost::optional<std::string> type)
 {
   if (!type)
@@ -77,7 +135,7 @@ get_field_type(boost::optional<std::string> type)
   return FIX::TYPE::Unknown;
 }
 
-static std::map<std::string, std::tuple<int, FIX::TYPE::Type>, std::less<>>
+std::map<std::string, std::tuple<int, FIX::TYPE::Type>, std::less<>>
 init_tags(boost::property_tree::ptree& pt)
 {
   std::map<std::string, std::tuple<int, FIX::TYPE::Type>, std::less<>> tags;
@@ -96,20 +154,241 @@ init_tags(boost::property_tree::ptree& pt)
   return std::move(tags);
 }
 
-void
-get_field_info::init(std::string_view url)
+class UnknownKeyException : public std::exception
 {
-  boost::property_tree::ptree pt;
-  boost::property_tree::xml_parser::read_xml(std::string(url), pt);
-  tags_ = init_tags(pt);
+public:
+  UnknownKeyException(std::string_view name)
+    : name_(name)
+  {
+    what_ += "unknown field: ";
+    what_ += name;
+  }
+
+public:
+  const char* what() const noexcept override { return what_.c_str(); }
+
+  std::string_view name() const noexcept { return name_; }
+
+private:
+  std::string name_;
+  std::string what_;
+};
+
+}
+
+FixObject::FixObject(FIX::FieldMap& fields)
+  : fields_(fields)
+{
+}
+
+int32_t
+FixObject::get_value(std::string_view name, int32_t default_value) const
+{
+  return get_value<FIX::IntField>(name, default_value);
+}
+
+std::string_view
+FixObject::get_value(std::string_view name,
+                     std::string_view default_value) const
+{
+  return FixObject::get_value<FIX::StringField>(name, default_value);
+}
+
+double
+FixObject::get_value(std::string_view name, double default_value) const
+{
+  return get_value<FIX::DoubleField>(name, default_value);
+}
+
+int32_t
+FixObject::get_int(std::string_view name) const
+{
+  return get_value<FIX::IntField, int32_t>(name);
+}
+
+std::string_view
+FixObject::get_string(std::string_view name) const
+{
+  return get_value<FIX::StringField, std::string_view>(name);
+}
+
+double
+FixObject::get_double(std::string_view name) const
+{
+  return get_value<FIX::DoubleField, double>(name);
 }
 
 void
-get_field_info::init(std::istream& is)
+FixObject::set_value(std::string_view name, int32_t value)
+{
+  set_value<FIX::IntField>(name, value);
+}
+
+void
+FixObject::set_value(std::string_view name, std::string_view value)
+{
+  set_value<FIX::StringField, const std::string&>(name, std::string(value));
+}
+
+void
+FixObject::set_value(std::string_view name, double value)
+{
+  set_value<FIX::DoubleField, double>(name, value);
+}
+
+ObjectPtr
+FixObject::get_object(std::string_view name)
+{
+  return {};
+}
+
+ConstObjectPtr
+FixObject::get_object(std::string_view name) const
+{
+  return {};
+}
+
+ObjectPtr
+FixObject::get_or_set_object(std::string_view name)
+{
+  return {};
+}
+
+GroupPtr
+FixObject::get_group(std::string_view name)
+{
+  return {};
+}
+
+const GroupPtr
+FixObject::get_group(std::string_view name) const
+{
+  return {};
+}
+
+template<typename Field_, typename Value_>
+Value_
+FixObject::get_value(std::string_view name, Value_ default_value) const
+{
+  auto name_ = std::string(name);
+  auto [tag, type] = detail::get_field_info(name_);
+  if (!tag)
+    return default_value;
+
+  if (!fields_.isSetField(tag))
+    return default_value;
+
+  if (!detail::check_type<Value_>(type))
+    return default_value;
+
+  // 不能使用getFieldIfSet方法，因为需要传入临时变量field，无法返回string_view类型数据
+
+  return static_cast<const Field_&>(fields_.getFieldRef(tag)).getValue();
+}
+
+template<typename Field_, typename Value_>
+Value_
+FixObject::get_value(std::string_view name) const
+{
+  auto name_ = std::string(name);
+  auto [tag, type] = detail::get_field_info(name_);
+  if (!tag)
+    throw detail::UnknownKeyException(name);
+
+  if (!fields_.isSetField(tag))
+    throw NoKeyException(name);
+
+  if (!detail::check_type<Value_>(type))
+    throw TypeExecption(name, detail::type_name(type));
+
+  return static_cast<const Field_&>(fields_.getFieldRef(tag)).getValue();
+}
+
+template<typename Field_, typename Value_>
+void
+FixObject::set_value(std::string_view name, Value_ value)
+{
+  auto name_ = std::string(name);
+  auto [tag, type] = detail::get_field_info(name_);
+  if (!tag)
+    return;
+
+  Field_ field(tag, value);
+  return fields_.setField(field);
+}
+
+FixMessage::FixMessage() {}
+
+FixMessage::FixMessage(const FIX::Message& msg)
+  : fix_message(msg)
+{
+}
+
+ObjectPtr
+FixMessage::get_head()
+{
+  return std::make_unique<FixObject>(fix_message.getHeader());
+}
+
+ConstObjectPtr
+FixMessage::get_head() const
+{
+  return std::make_unique<FixObject>(
+    const_cast<FIX::Header&>(fix_message.getHeader()));
+}
+
+ObjectPtr
+FixMessage::get_body()
+{
+  return std::make_unique<FixObject>(fix_message);
+}
+
+ConstObjectPtr
+FixMessage::get_body() const
+{
+  return std::make_unique<FixObject>(const_cast<FIX::Message&>(fix_message));
+}
+
+ObjectPtr
+FixMessage::get_tail()
+{
+  return std::make_unique<FixObject>(fix_message.getTrailer());
+}
+
+ConstObjectPtr
+FixMessage::get_tail() const
+{
+  return std::make_unique<FixObject>(
+    const_cast<FIX::Trailer&>(fix_message.getTrailer()));
+}
+
+// std::string to_string() const { return {}; }
+
+// void from_string(std::string_view str) {}
+
+// std::string to_binary() const { return {}; }
+
+// void from_binary(std::string_view bin) {}
+
+void
+FixMessage::clear()
+{
+  fix_message.clear();
+}
+
+void
+FixMessage::init(std::string_view url)
+{
+  boost::property_tree::ptree pt;
+  boost::property_tree::xml_parser::read_xml(std::string(url), pt);
+  detail::g_tags = detail::init_tags(pt);
+}
+
+void
+FixMessage::init(std::istream& is)
 {
   boost::property_tree::ptree pt;
   boost::property_tree::xml_parser::read_xml(is, pt);
-  tags_ = init_tags(pt);
-}
+  detail::g_tags = detail::init_tags(pt);
 }
 }

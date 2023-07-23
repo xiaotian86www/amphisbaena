@@ -22,7 +22,7 @@ public:
     , session(std::make_shared<MockSession>())
     , builder(std::unique_ptr<translator::Client>(service), 1)
   {
-    translator::detail::get_field_info::init(
+    translator::FixMessage::init(
       "/usr/local/share/quickfix/FIX42.xml");
   }
 
