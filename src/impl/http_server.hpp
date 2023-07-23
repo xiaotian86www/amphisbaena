@@ -31,9 +31,6 @@ public:
   void set_body(std::string_view value);
 
 private:
-  void handle_error(llhttp_status_t status);
-
-private:
   HttpServer* server_;
   ScheduleRef sch_;
   CoroutineRef co_;

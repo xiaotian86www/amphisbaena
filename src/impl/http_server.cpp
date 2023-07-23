@@ -1,5 +1,6 @@
 
 #include <boost/coroutine/exceptions.hpp>
+#include <llhttp.h>
 #include <memory>
 #include <rapidjson/document.h>
 
@@ -67,11 +68,12 @@ HttpSession::send(MessagePtr message)
   const auto& body_str = static_cast<JsonObject*>(body.get())->to_string();
   // const auto& body = message->get_body();
   response += "HTTP/";
-  response += head->get_value("version", "1.1");
+  response += head->get_string("version");
   response += " ";
-  response += std::to_string(HTTP_STATUS_OK);
+  response += std::to_string(head->get_int("code"));
   response += " ";
-  response += llhttp_status_name(HTTP_STATUS_OK);
+  response +=
+    llhttp_status_name(static_cast<llhttp_status_t>(head->get_int("code")));
   response += "\r\n";
   response += "Content-Type: application/json; charset=utf-8\r\n";
   response += "Content-Length: " + std::to_string(body_str.length()) + "\r\n";
@@ -100,31 +102,40 @@ HttpSession::do_recv()
   response_name += " ";
   response_name += request_head->get_string("url");
 
+  MessagePtr response;
+  ObjectPtr response_head;
+
+  Environment env;
+  env.sch = sch_;
+  env.co = co_;
+  env.down = shared_from_this();
+
   try {
-    Environment env;
-    env.sch = sch_;
-    env.co = co_;
-    env.down = shared_from_this();
+    response = server_->message_builder->create(env, response_name, request_);
 
-    auto request = request_;
-    
-    request_ = std::make_shared<JsonMessage>();
-    
-    auto response =
-      server_->message_builder->create(env, response_name, request);
+    response_head = response->get_head();
 
-    send(response);
+    response_head->set_value("code", HTTP_STATUS_OK);
 
   } catch (const boost::coroutines::detail::forced_unwind&) {
     throw;
   } catch (const NotFoundException& ec) {
+    response = std::make_shared<JsonMessage>();
+    response_head = response->get_head();
+
     if (ec.name() == response_name) {
-      handle_error(HTTP_STATUS_NOT_FOUND);
+      response_head->set_value("code", HTTP_STATUS_NOT_FOUND);
     } else {
-      handle_error(HTTP_STATUS_INTERNAL_SERVER_ERROR);
+      response_head->set_value("code", HTTP_STATUS_INTERNAL_SERVER_ERROR);
     }
   } catch (...) {
   }
+
+  response_head->set_value("version", request_head->get_string("version"));
+
+  send(response);
+
+  request_ = std::make_shared<JsonMessage>();
 }
 
 void
@@ -139,22 +150,6 @@ HttpSession::set_body(std::string_view value)
 {
   auto request_body = request_->get_body();
   static_cast<JsonObject*>(request_body.get())->from_string(value);
-}
-
-void
-HttpSession::handle_error(llhttp_status_t status)
-{
-  std::string response;
-  auto request_head = request_->get_head();
-  response += "HTTP/";
-  response += request_head->get_value("version", "1.1");
-  response += " ";
-  response += std::to_string(status);
-  response += " ";
-  response += llhttp_status_name(status);
-  response += "\r\n\r\n";
-
-  conn_.send(response);
 }
 
 HttpServer::HttpServer(std::unique_ptr<Server> server)
