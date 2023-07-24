@@ -73,6 +73,8 @@ public:
 
   void set_value(std::string_view name, double value) override;
 
+  std::size_t count() const override;
+
   ConstIteratorWrap begin() const override;
 
   ConstIteratorWrap end() const override;
@@ -107,6 +109,10 @@ public:
   FixMessage();
 
   FixMessage(const FIX::Message& message);
+
+  FixMessage(const FixMessage& right);
+
+  MessagePtr clone() const override;
 
 public:
   ObjectPtr get_head() override;

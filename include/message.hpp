@@ -1,6 +1,7 @@
 #pragma once
 
 #include "server.hpp"
+#include <cstddef>
 #include <cstdint>
 #include <exception>
 #include <functional>
@@ -25,6 +26,9 @@ typedef std::unique_ptr<const Object> ConstObjectPtr;
 
 class Group;
 typedef std::unique_ptr<Group> GroupPtr;
+
+class Message;
+typedef std::shared_ptr<Message> MessagePtr;
 
 class Object
 {
@@ -82,6 +86,8 @@ public:
   };
 
 public:
+  virtual void copy_from(ObjectPtr right);
+
   virtual ~Object() = default;
 
 public:
@@ -105,6 +111,8 @@ public:
   virtual void set_value(std::string_view name, std::string_view value) = 0;
 
   virtual void set_value(std::string_view name, double value) = 0;
+
+  virtual std::size_t count() const = 0;
 
   virtual ConstIteratorWrap begin() const = 0;
 
@@ -149,6 +157,8 @@ public:
 class Message
 {
 public:
+  virtual MessagePtr clone() const = 0;
+
   virtual ~Message() = default;
 
 public:
@@ -178,7 +188,6 @@ public:
   //   std::string name;
 };
 
-typedef std::shared_ptr<Message> MessagePtr;
 
 enum class MessageType
 {

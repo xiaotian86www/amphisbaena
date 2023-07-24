@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <memory>
 #include <string>
 #include <string_view>
 
@@ -317,6 +318,12 @@ FixObject::set_value(std::string_view name, double value)
   set_value<FIX::DoubleField, double>(name, value);
 }
 
+std::size_t
+FixObject::count() const
+{
+  return fields_.totalFields();
+}
+
 Object::ConstIteratorWrap
 FixObject::begin() const
 {
@@ -417,6 +424,17 @@ FixMessage::FixMessage() {}
 FixMessage::FixMessage(const FIX::Message& msg)
   : fix_message(msg)
 {
+}
+
+FixMessage::FixMessage(const FixMessage& right)
+  : fix_message(right.fix_message)
+{
+}
+
+MessagePtr
+FixMessage::clone() const
+{
+  return std::make_shared<FixMessage>(*this);
 }
 
 ObjectPtr

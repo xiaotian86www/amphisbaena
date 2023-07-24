@@ -67,6 +67,8 @@ public:
 
   void set_value(std::string_view name, double value) override;
 
+  std::size_t count() const override;
+
   ConstIteratorWrap begin() const override;
 
   ConstIteratorWrap end() const override;
@@ -104,6 +106,10 @@ class JsonMessage : public Message
 {
 public:
   JsonMessage();
+
+  JsonMessage(const JsonMessage& right);
+
+  MessagePtr clone() const override;
 
 public:
   ObjectPtr get_head() override;

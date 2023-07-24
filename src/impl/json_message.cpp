@@ -228,6 +228,12 @@ JsonObject::set_value(std::string_view name, double value)
   set_value<>(name, value);
 }
 
+std::size_t
+JsonObject::count() const
+{
+  return value_.MemberCount();
+}
+
 Object::ConstIteratorWrap
 JsonObject::begin() const
 {
@@ -381,6 +387,20 @@ JsonMessage::JsonMessage()
   doc_.AddMember("head", RapidValue(rapidjson::Type::kObjectType), g_allocator);
   doc_.AddMember("body", RapidValue(rapidjson::Type::kObjectType), g_allocator);
   doc_.AddMember("tail", RapidValue(rapidjson::Type::kObjectType), g_allocator);
+}
+
+JsonMessage::JsonMessage(const JsonMessage& right)
+  : JsonMessage()
+{
+  *get_head() = *right.get_head();
+  *get_body() = *right.get_body();
+  *get_tail() = *right.get_tail();
+}
+
+MessagePtr
+JsonMessage::clone() const
+{
+  return std::make_shared<JsonMessage>(*this);
 }
 
 ObjectPtr
