@@ -3,6 +3,7 @@
 #include <memory>
 #include <unordered_map>
 
+#include "builder.hpp"
 #include "message.hpp"
 #include "schedule.hpp"
 #include "session.hpp"
@@ -15,6 +16,6 @@ public:
   CoroutineRef co;
   SessionPtr up;
   SessionPtr down;
-  // MessagePool message_pool;
+  MessageBuilderPtr builder;
 };
 } // namespace translator

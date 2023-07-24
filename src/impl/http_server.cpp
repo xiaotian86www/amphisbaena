@@ -52,11 +52,19 @@ handle_on_message_complete(llhttp_t* http)
   return HPE_OK;
 }
 
-HttpSession::HttpSession(HttpServer* server, ConnectionRef conn)
+HttpSession::HttpSession(HttpServer* server,
+                         ScheduleRef sch,
+                         CoroutineRef co,
+                         ConnectionRef conn)
   : server_(server)
+  , sch_(sch)
+  , co_(co)
   , conn_(conn)
   , request_(std::make_shared<JsonMessage>())
 {
+  env_.sch = sch_;
+  env_.co = co_;
+  env_.builder = server_->message_builder;
 }
 
 void
@@ -84,7 +92,7 @@ HttpSession::send(MessagePtr message)
 }
 
 void
-HttpSession::on_recv(ScheduleRef sch, CoroutineRef co, std::string_view data)
+HttpSession::on_recv(std::string_view data)
 {
   enum llhttp_errno err = llhttp_execute(this, data.data(), data.length());
   if (err != HPE_OK) {
@@ -105,13 +113,10 @@ HttpSession::do_recv()
   MessagePtr response;
   ObjectPtr response_head;
 
-  Environment env;
-  env.sch = sch_;
-  env.co = co_;
-  env.down = shared_from_this();
+  env_.down = shared_from_this();
 
   try {
-    response = server_->message_builder->create(env, response_name, request_);
+    response = server_->message_builder->create(env_, response_name, request_);
 
     response_head = response->get_head();
 
@@ -190,13 +195,13 @@ HttpServer::on_recv(ScheduleRef sch,
 {
   HttpSessionPtr session;
   if (auto iter = sessions_.find(conn); iter == sessions_.end()) {
-    session = std::make_shared<HttpSession>(this, conn);
+    session = std::make_shared<HttpSession>(this, sch, co, conn);
     llhttp_init(session.get(), HTTP_REQUEST, &settings_);
     sessions_.insert_or_assign(conn, session);
   } else {
     session = iter->second;
   }
 
-  session->on_recv(sch, co, data);
+  session->on_recv(data);
 }
 }

@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "builder.hpp"
+#include "environment.hpp"
 #include "server.hpp"
 #include "session.hpp"
 
@@ -17,12 +18,15 @@ class HttpSession
   , public llhttp_t
 {
 public:
-  HttpSession(HttpServer* server, ConnectionRef conn);
+  HttpSession(HttpServer* server,
+              ScheduleRef sch,
+              CoroutineRef co,
+              ConnectionRef conn);
 
 public:
   void send(MessagePtr message) override;
 
-  void on_recv(ScheduleRef sch, CoroutineRef co, std::string_view data);
+  void on_recv(std::string_view data);
 
   void do_recv();
 
@@ -32,6 +36,7 @@ public:
 
 private:
   HttpServer* server_;
+  Environment env_;
   ScheduleRef sch_;
   CoroutineRef co_;
   ConnectionRef conn_;

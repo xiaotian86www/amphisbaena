@@ -113,7 +113,18 @@ public:
 
 typedef std::shared_ptr<Message> MessagePtr;
 
-class Environment;
+enum class MessageType
+{
+  // kUnknown = 0,
+  kJson = 1,
+  kFix = 2
+};
+
+class MessageFactory
+{
+public:
+  static MessagePtr create(MessageType type);
+};
 
 // class MessagePool
 // {
