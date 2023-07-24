@@ -23,6 +23,33 @@ namespace translator {
 class FixObject : public Object
 {
 public:
+  class ConstIterator : public Object::ConstIterator
+  {
+  public:
+    ConstIterator() = default;
+
+    ConstIterator(FIX::FieldMap::const_iterator it);
+
+  public:
+    std::string_view get_name() override;
+
+    FieldType get_type() override;
+
+    int32_t get_int() override;
+
+    std::string_view get_string() override;
+
+    double get_double() override;
+
+    bool operator!=(const Object::ConstIterator& right) override;
+
+    Object::ConstIterator& operator++() override;
+
+  private:
+    FIX::FieldMap::const_iterator it_;
+  };
+
+public:
   FixObject(FIX::FieldMap& fields);
 
 public:
@@ -45,6 +72,10 @@ public:
   void set_value(std::string_view name, std::string_view value) override;
 
   void set_value(std::string_view name, double value) override;
+
+  ConstIteratorWrap begin() const override;
+
+  ConstIteratorWrap end() const override;
 
   ObjectPtr get_object(std::string_view name) override;
 

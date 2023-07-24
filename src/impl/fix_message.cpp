@@ -5,6 +5,8 @@
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <string>
+#include <string_view>
 
 #include "fix_message.hpp"
 
@@ -12,7 +14,9 @@ namespace translator {
 namespace detail {
 
 static std::map<std::string, std::tuple<int, FIX::TYPE::Type>, std::less<>>
-  g_tags;
+  g_fields_by_name;
+
+static std::map<int, std::tuple<std::string, FIX::TYPE::Type>> g_fields_by_tag;
 
 template<typename Value_>
 constexpr bool
@@ -64,94 +68,119 @@ type_name(FIX::TYPE::Type type)
 std::tuple<int, FIX::TYPE::Type>
 get_field_info(std::string_view name)
 {
-  if (auto iter = g_tags.find(name); iter != g_tags.end()) {
+  if (auto iter = g_fields_by_name.find(name); iter != g_fields_by_name.end()) {
     return iter->second;
   } else {
     return { 0, FIX::TYPE::Type::Unknown };
   }
 }
 
-FIX::TYPE::Type
-get_field_type(boost::optional<std::string> type)
+std::tuple<std::string_view, FIX::TYPE::Type>
+get_field_info(int tag)
 {
-  if (!type)
-    return FIX::TYPE::Unknown;
-  if (*type == "STRING")
+  if (auto iter = g_fields_by_tag.find(tag); iter != g_fields_by_tag.end()) {
+    return { std::get<0>(iter->second), std::get<1>(iter->second) };
+  } else {
+    return { std::string_view(), FIX::TYPE::Type::Unknown };
+  }
+}
+
+constexpr FieldType
+get_type(FIX::TYPE::Type type)
+{
+  switch (type) {
+    case FIX::TYPE::Type::String:
+    case FIX::TYPE::Type::Char:
+    case FIX::TYPE::Type::UtcTimeStamp:
+      return FieldType::kString;
+    case FIX::TYPE::Type::Int:
+      return FieldType::kInt;
+    case FIX::TYPE::Type::Qty:
+    case FIX::TYPE::Type::Price:
+      return FieldType::kDouble;
+    default:
+      return FieldType::kUnknown;
+  }
+}
+
+FIX::TYPE::Type
+get_type(std::string_view type)
+{
+  if (type == "STRING")
     return FIX::TYPE::String;
-  if (*type == "CHAR")
+  if (type == "CHAR")
     return FIX::TYPE::Char;
-  if (*type == "PRICE")
+  if (type == "PRICE")
     return FIX::TYPE::Price;
-  if (*type == "INT")
+  if (type == "INT")
     return FIX::TYPE::Int;
-  if (*type == "AMT")
+  if (type == "AMT")
     return FIX::TYPE::Amt;
-  if (*type == "QTY")
+  if (type == "QTY")
     return FIX::TYPE::Qty;
-  if (*type == "CURRENCY")
+  if (type == "CURRENCY")
     return FIX::TYPE::Currency;
-  if (*type == "MULTIPLEVALUESTRING")
+  if (type == "MULTIPLEVALUESTRING")
     return FIX::TYPE::MultipleValueString;
-  if (*type == "MULTIPLESTRINGVALUE")
+  if (type == "MULTIPLESTRINGVALUE")
     return FIX::TYPE::MultipleStringValue;
-  if (*type == "MULTIPLECHARVALUE")
+  if (type == "MULTIPLECHARVALUE")
     return FIX::TYPE::MultipleCharValue;
-  if (*type == "EXCHANGE")
+  if (type == "EXCHANGE")
     return FIX::TYPE::Exchange;
-  if (*type == "UTCTIMESTAMP")
+  if (type == "UTCTIMESTAMP")
     return FIX::TYPE::UtcTimeStamp;
-  if (*type == "BOOLEAN")
+  if (type == "BOOLEAN")
     return FIX::TYPE::Boolean;
-  if (*type == "LOCALMKTDATE")
+  if (type == "LOCALMKTDATE")
     return FIX::TYPE::LocalMktDate;
-  if (*type == "DATA")
+  if (type == "DATA")
     return FIX::TYPE::Data;
-  if (*type == "FLOAT")
+  if (type == "FLOAT")
     return FIX::TYPE::Float;
-  if (*type == "PRICEOFFSET")
+  if (type == "PRICEOFFSET")
     return FIX::TYPE::PriceOffset;
-  if (*type == "MONTHYEAR")
+  if (type == "MONTHYEAR")
     return FIX::TYPE::MonthYear;
-  if (*type == "DAYOFMONTH")
+  if (type == "DAYOFMONTH")
     return FIX::TYPE::DayOfMonth;
-  if (*type == "UTCDATE")
+  if (type == "UTCDATE")
     return FIX::TYPE::UtcDate;
-  if (*type == "UTCDATEONLY")
+  if (type == "UTCDATEONLY")
     return FIX::TYPE::UtcDateOnly;
-  if (*type == "UTCTIMEONLY")
+  if (type == "UTCTIMEONLY")
     return FIX::TYPE::UtcTimeOnly;
-  if (*type == "NUMINGROUP")
+  if (type == "NUMINGROUP")
     return FIX::TYPE::NumInGroup;
-  if (*type == "PERCENTAGE")
+  if (type == "PERCENTAGE")
     return FIX::TYPE::Percentage;
-  if (*type == "SEQNUM")
+  if (type == "SEQNUM")
     return FIX::TYPE::SeqNum;
-  if (*type == "LENGTH")
+  if (type == "LENGTH")
     return FIX::TYPE::Length;
-  if (*type == "COUNTRY")
+  if (type == "COUNTRY")
     return FIX::TYPE::Country;
-  if (*type == "TIME")
+  if (type == "TIME")
     return FIX::TYPE::UtcTimeStamp;
   return FIX::TYPE::Unknown;
 }
 
-std::map<std::string, std::tuple<int, FIX::TYPE::Type>, std::less<>>
+void
 init_tags(boost::property_tree::ptree& pt)
 {
-  std::map<std::string, std::tuple<int, FIX::TYPE::Type>, std::less<>> tags;
   auto fields = pt.get_child_optional("fix.fields");
   if (fields) {
     for (auto& child : *fields) {
       auto attrs = child.second.get_child("<xmlattr>");
       auto name = attrs.get_optional<std::string>("name");
-      auto number = attrs.get_optional<int>("number");
-      auto type = get_field_type(attrs.get_optional<std::string>("type"));
-      if (name && number) {
-        tags[*name] = { *number, type };
+      auto tag = attrs.get_optional<int>("number");
+      auto type = attrs.get_optional<std::string>("type");
+      if (name && tag && type) {
+        g_fields_by_name[*name] = { *tag, get_type(*type) };
+        g_fields_by_tag[*tag] = { *name, get_type(*type) };
       }
     }
   }
-  return std::move(tags);
 }
 
 class UnknownKeyException : public std::exception
@@ -174,6 +203,58 @@ private:
   std::string what_;
 };
 
+}
+
+FixObject::ConstIterator::ConstIterator(FIX::FieldMap::const_iterator it)
+  : it_(it)
+{
+}
+
+std::string_view
+FixObject::ConstIterator::get_name()
+{
+  auto [name, type] = detail::get_field_info(it_->getTag());
+  return name;
+}
+
+FieldType
+FixObject::ConstIterator::get_type()
+{
+  auto [name, type] = detail::get_field_info(it_->getTag());
+  return detail::get_type(type);
+}
+
+int32_t
+FixObject::ConstIterator::get_int()
+{
+  return static_cast<const FIX::IntField&>(*it_).getValue();
+}
+
+std::string_view
+FixObject::ConstIterator::get_string()
+{
+  return static_cast<const FIX::StringField&>(*it_).getValue();
+}
+
+double
+FixObject::ConstIterator::get_double()
+{
+  return static_cast<const FIX::DoubleField&>(*it_).getValue();
+}
+
+bool
+FixObject::ConstIterator::operator!=(const Object::ConstIterator& right)
+{
+  assert(dynamic_cast<const ConstIterator*>(&right));
+  const auto& right_it = static_cast<const ConstIterator&>(right);
+  return it_ != right_it.it_;
+}
+
+Object::ConstIterator&
+FixObject::ConstIterator::operator++()
+{
+  ++it_;
+  return *this;
 }
 
 FixObject::FixObject(FIX::FieldMap& fields)
@@ -234,6 +315,20 @@ void
 FixObject::set_value(std::string_view name, double value)
 {
   set_value<FIX::DoubleField, double>(name, value);
+}
+
+Object::ConstIteratorWrap
+FixObject::begin() const
+{
+  return Object::ConstIteratorWrap(
+    std::make_unique<ConstIterator>(fields_.begin()));
+}
+
+Object::ConstIteratorWrap
+FixObject::end() const
+{
+  return Object::ConstIteratorWrap(
+    std::make_unique<ConstIterator>(fields_.end()));
 }
 
 ObjectPtr
@@ -381,7 +476,7 @@ FixMessage::init(std::string_view url)
 {
   boost::property_tree::ptree pt;
   boost::property_tree::xml_parser::read_xml(std::string(url), pt);
-  detail::g_tags = detail::init_tags(pt);
+  detail::init_tags(pt);
 }
 
 void
@@ -389,6 +484,6 @@ FixMessage::init(std::istream& is)
 {
   boost::property_tree::ptree pt;
   boost::property_tree::xml_parser::read_xml(is, pt);
-  detail::g_tags = detail::init_tags(pt);
+  detail::init_tags(pt);
 }
 }

@@ -1,4 +1,8 @@
+#include <gtest/gtest.h>
+#include <gmock/gmock.h>
+
 #include "fixture/fixture_message.hpp"
+#include "message.hpp"
 
 TEST_P(Message, get_int)
 {
@@ -80,4 +84,28 @@ TEST_P(Message, get_double)
 
   EXPECT_THROW(body->get_double("SenderCompID"), translator::TypeExecption);
   EXPECT_EQ(body->get_value("SenderCompID", 0.01), 0.01);
+}
+
+TEST_P(Message, iterator)
+{
+  auto body = message->get_body();
+  body->set_value("SenderCompID", "CLIENT1");
+  body->set_value("MsgSeqNum", 1);
+  body->set_value("LeavesQty", 1.01);
+
+  for (auto iter = body->begin(); iter != body->end(); ++iter)
+  {
+    if (iter.get_name() == "SenderCompID") {
+      EXPECT_EQ(iter.get_type(), translator::FieldType::kString);
+      EXPECT_EQ(iter.get_string(), "CLIENT1");
+    } else if (iter.get_name() == "MsgSeqNum") {
+      EXPECT_EQ(iter.get_type(), translator::FieldType::kInt);
+      EXPECT_EQ(iter.get_int(), 1);
+    } else if (iter.get_name() == "LeavesQty") {
+      EXPECT_EQ(iter.get_type(), translator::FieldType::kDouble);
+      EXPECT_EQ(iter.get_double(), 1.01);
+    } else {
+      FAIL();
+    }
+  }
 }

@@ -17,10 +17,38 @@ typedef rapidjson::MemoryPoolAllocator<> RapidAllocator;
 class JsonObject : public Object
 {
 public:
+  class ConstIterator : public Object::ConstIterator
+  {
+  public:
+    ConstIterator() = default;
+
+    ConstIterator(RapidValue::ConstMemberIterator it);
+
+  public:
+    std::string_view get_name() override;
+
+    FieldType get_type() override;
+
+    int32_t get_int() override;
+
+    std::string_view get_string() override;
+
+    double get_double() override;
+
+    bool operator!=(const Object::ConstIterator& right) override;
+
+    Object::ConstIterator& operator++() override;
+
+  private:
+    RapidValue::ConstMemberIterator it_;
+  };
+
+public:
   JsonObject(RapidDocument::AllocatorType& allocator, RapidValue& value);
 
 public:
-  int32_t get_value(std::string_view name, int32_t default_value) const override;
+  int32_t get_value(std::string_view name,
+                    int32_t default_value) const override;
 
   std::string_view get_value(std::string_view name,
                              std::string_view default_value) const override;
@@ -38,6 +66,10 @@ public:
   void set_value(std::string_view name, std::string_view value) override;
 
   void set_value(std::string_view name, double value) override;
+
+  ConstIteratorWrap begin() const override;
+
+  ConstIteratorWrap end() const override;
 
   ObjectPtr get_object(std::string_view name) override;
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "server.hpp"
 #include <cstdint>
 #include <exception>
 #include <functional>
@@ -9,6 +10,14 @@
 #include <unordered_map>
 
 namespace translator {
+
+enum class FieldType
+{
+  kUnknown,
+  kInt,
+  kString,
+  kDouble
+};
 
 class Object;
 typedef std::unique_ptr<Object> ObjectPtr;
@@ -20,6 +29,59 @@ typedef std::unique_ptr<Group> GroupPtr;
 class Object
 {
 public:
+  class ConstIterator
+  {
+  public:
+    virtual ~ConstIterator() = default;
+
+  public:
+    virtual std::string_view get_name() = 0;
+
+    virtual FieldType get_type() = 0;
+
+    virtual int32_t get_int() = 0;
+
+    virtual std::string_view get_string() = 0;
+
+    virtual double get_double() = 0;
+
+    virtual bool operator!=(const ConstIterator& right) = 0;
+
+    virtual ConstIterator& operator++() = 0;
+  };
+
+  class ConstIteratorWrap
+  {
+  public:
+    ConstIteratorWrap(std::unique_ptr<ConstIterator> it)
+      : it_(std::move(it))
+    {
+    }
+
+  public:
+    std::string_view get_name() { return it_->get_name(); }
+
+    FieldType get_type() { return it_->get_type(); }
+
+    int32_t get_int() { return it_->get_int(); }
+
+    std::string_view get_string() { return it_->get_string(); }
+
+    double get_double() { return it_->get_double(); }
+
+    bool operator!=(const ConstIteratorWrap& right) { return (*it_) != (*right.it_); }
+
+    ConstIteratorWrap& operator++()
+    {
+      ++(*it_);
+      return *this;
+    }
+
+  private:
+    std::unique_ptr<ConstIterator> it_;
+  };
+
+public:
   virtual ~Object() = default;
 
 public:
@@ -29,7 +91,8 @@ public:
   virtual std::string_view get_value(std::string_view name,
                                      std::string_view default_value) const = 0;
 
-  virtual double get_value(std::string_view name, double default_value) const = 0;
+  virtual double get_value(std::string_view name,
+                           double default_value) const = 0;
 
   virtual int32_t get_int(std::string_view name) const = 0;
 
@@ -42,6 +105,10 @@ public:
   virtual void set_value(std::string_view name, std::string_view value) = 0;
 
   virtual void set_value(std::string_view name, double value) = 0;
+
+  virtual ConstIteratorWrap begin() const = 0;
+
+  virtual ConstIteratorWrap end() const = 0;
 
   virtual ObjectPtr get_object(std::string_view name) = 0;
 
@@ -107,8 +174,8 @@ public:
 
   virtual void clear() = 0;
 
-// public:
-//   std::string name;
+  // public:
+  //   std::string name;
 };
 
 typedef std::shared_ptr<Message> MessagePtr;

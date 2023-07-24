@@ -1,10 +1,14 @@
 
+#include <cassert>
+#include <cstdint>
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
+#include <rapidjson/rapidjson.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
 #include "json_message.hpp"
+#include "message.hpp"
 
 namespace translator {
 
@@ -91,9 +95,77 @@ create_value<std::string_view>(RapidDocument::AllocatorType& allocator,
 {
   return RapidValue(value.data(), value.size(), allocator);
 }
+
+constexpr FieldType
+get_type(const RapidValue& value)
+{
+  switch (value.GetType()) {
+    case rapidjson::Type::kNumberType:
+      if (value.IsInt())
+        return FieldType::kInt;
+      else if (value.IsDouble())
+        return FieldType::kDouble;
+      else
+        return FieldType::kUnknown;
+    case rapidjson::Type::kStringType:
+      return FieldType::kString;
+    default:
+      return FieldType::kUnknown;
+  }
+}
 }
 
 RapidAllocator g_allocator;
+
+JsonObject::ConstIterator::ConstIterator(RapidValue::ConstMemberIterator it)
+  : it_(it)
+{
+}
+
+std::string_view
+JsonObject::ConstIterator::get_name()
+{
+  return detail::get_value<std::string_view>(it_->name);
+}
+
+FieldType
+JsonObject::ConstIterator::get_type()
+{
+  return detail::get_type(it_->value);
+}
+
+int32_t
+JsonObject::ConstIterator::get_int()
+{
+  return detail::get_value<int32_t>(it_->value);
+}
+
+std::string_view
+JsonObject::ConstIterator::get_string()
+{
+  return detail::get_value<std::string_view>(it_->value);
+}
+
+double
+JsonObject::ConstIterator::get_double()
+{
+  return detail::get_value<double>(it_->value);
+}
+
+bool
+JsonObject::ConstIterator::operator!=(const Object::ConstIterator& right)
+{
+  assert(dynamic_cast<const ConstIterator*>(&right));
+  const auto& right_it = static_cast<const ConstIterator&>(right);
+  return it_ != right_it.it_;
+}
+
+Object::ConstIterator&
+JsonObject::ConstIterator::operator++()
+{
+  ++it_;
+  return *this;
+}
 
 JsonObject::JsonObject(RapidDocument::AllocatorType& allocator,
                        RapidValue& value)
@@ -154,6 +226,20 @@ void
 JsonObject::set_value(std::string_view name, double value)
 {
   set_value<>(name, value);
+}
+
+Object::ConstIteratorWrap
+JsonObject::begin() const
+{
+  return Object::ConstIteratorWrap(
+    std::make_unique<ConstIterator>(value_.MemberBegin()));
+}
+
+Object::ConstIteratorWrap
+JsonObject::end() const
+{
+  return Object::ConstIteratorWrap(
+    std::make_unique<ConstIterator>(value_.MemberEnd()));
 }
 
 ObjectPtr
