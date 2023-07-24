@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -22,22 +23,22 @@ public:
   Future<Tp_>& operator=(const Future<Tp_>&) = delete;
 
 public:
-  Tp_&& get()
+  Tp_ get()
   {
     co_.yield();
     std::lock_guard<std::mutex> lg(mtx_);
-    return std::move(value_.value());
+    return value_.value();
   }
 
-  Tp_&& get_for(int milli, Tp_&& default_value)
+  Tp_ get_for(int milli, Tp_ default_value)
   {
     co_.yield_for(milli);
     std::lock_guard<std::mutex> lg(mtx_);
-    return std::move(value_.value_or(std::move(default_value)));
+    return value_.value_or(std::move(default_value));
   }
 
   template<typename ValueTp_>
-  void set(ValueTp_&& value)
+  void set(ValueTp_ value)
   {
     {
       std::lock_guard<std::mutex> lg(mtx_);
@@ -68,11 +69,11 @@ public:
   Future<Tp_>& operator=(const Future<Tp_>&) = delete;
 
 public:
-  Tp_&& get() { return std::move(ftr_->get()); }
+  Tp_ get() { return ftr_->get(); }
 
-  Tp_&& get_for(int milli, Tp_&& default_value)
+  Tp_ get_for(int milli, Tp_ default_value)
   {
-    return std::move(ftr_->get_for(milli, std::move(default_value)));
+    return ftr_->get_for(milli, std::move(default_value));
   }
 
 private:
@@ -108,7 +109,7 @@ public:
 
 public:
   template<typename ValueTp_>
-  void set(ValueTp_&& value)
+  void set(ValueTp_ value)
   {
     ftr_->set(std::move(value));
   }

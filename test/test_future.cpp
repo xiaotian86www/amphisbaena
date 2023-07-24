@@ -8,16 +8,6 @@
 #include "future.hpp"
 #include "schedule.hpp"
 
-static void
-foo3(translator::ScheduleRef sch,
-     translator::CoroutineRef co,
-     std::function<int()> func1,
-     std::function<void(int)> func2)
-{
-  translator::Promise<int> pms(sch, co);
-  func2(pms.future().get_for(1, 0));
-}
-
 class Future : public FixtureSchedule
 {
 protected:
@@ -58,10 +48,10 @@ TEST_F(Future, get_for_timeout)
 {
   auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     translator::Promise<int> pms(sch, co);
-    foo_mock2.Call(pms.future().get_for(1, 0));
+    foo_mock2.Call(pms.future().get_for(1, 10));
   };
 
-  EXPECT_CALL(foo_mock2, Call(0)).Times(2);
+  EXPECT_CALL(foo_mock2, Call(10)).Times(2);
 
   sch->spawn(foo);
   sch->spawn(foo);
