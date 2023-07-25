@@ -7,6 +7,7 @@
 
 TEST_P(Message, get_int)
 {
+  auto message = translator::MessageFactory::create(message_type);
   auto body = message->get_body();
   body->set_value("MsgSeqNum", 1);
 
@@ -24,6 +25,7 @@ TEST_P(Message, get_int)
 
 TEST_P(Message, get_string)
 {
+  auto message = translator::MessageFactory::create(message_type);
   auto body = message->get_body();
   body->set_value("SenderCompID", "value1");
   EXPECT_EQ(body->get_string("SenderCompID"), "value1");
@@ -40,6 +42,7 @@ TEST_P(Message, get_string)
 
 TEST_P(Message, get_string_char)
 {
+  auto message = translator::MessageFactory::create(message_type);
   auto body = message->get_body();
   body->set_value("OrdType", "1");
   EXPECT_EQ(body->get_string("OrdType"), "1");
@@ -56,6 +59,7 @@ TEST_P(Message, get_string_char)
 
 TEST_P(Message, get_string_timestamp)
 {
+  auto message = translator::MessageFactory::create(message_type);
   auto body = message->get_body();
   body->set_value("TransactTime", "20230718-04:57:20.922010000");
   EXPECT_EQ(body->get_string("TransactTime"), "20230718-04:57:20.922010000");
@@ -72,6 +76,7 @@ TEST_P(Message, get_string_timestamp)
 
 TEST_P(Message, get_double)
 {
+  auto message = translator::MessageFactory::create(message_type);
   auto body = message->get_body();
   body->set_value("LeavesQty", 1.01);
 
@@ -89,6 +94,7 @@ TEST_P(Message, get_double)
 
 TEST_P(Message, iterator)
 {
+  auto message = translator::MessageFactory::create(message_type);
   auto body = message->get_body();
   body->set_value("SenderCompID", "CLIENT1");
   body->set_value("MsgSeqNum", 1);
@@ -106,7 +112,8 @@ TEST_P(Message, iterator)
 
 TEST_P(Message, assignment)
 {
-  auto message2 = message->clone();
+  auto message = translator::MessageFactory::create(message_type);
+  auto message2 = translator::MessageFactory::create(message_type);
   auto body = message->get_body();
   body->set_value("SenderCompID", "CLIENT1");
   body->set_value("MsgSeqNum", 1);

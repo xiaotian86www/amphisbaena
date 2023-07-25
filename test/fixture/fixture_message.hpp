@@ -6,13 +6,13 @@
 
 using ctor_prototype = translator::MessagePtr();
 
-class Message : public testing::TestWithParam<std::function<ctor_prototype>>
+class Message : public testing::TestWithParam<translator::MessageType>
 {
 public:
-  void SetUp() { message = GetParam()(); }
+  void SetUp() { message_type = GetParam(); }
 
   void TearDown() {}
 
 protected:
-  translator::MessagePtr message;
+  translator::MessageType message_type;
 };
