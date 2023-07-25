@@ -1,9 +1,11 @@
 
 #include "fixture/fixture_message.hpp"
-#include "message.hpp"
+#include "impl/fix_message.hpp"
 
 // TODO FixMessage没有加载元数据
 
-INSTANTIATE_TEST_SUITE_P(Fix,
-                         Message,
-                         testing::Values(translator::MessageType::kFix));
+static auto ctor_func = [] {
+  return std::make_shared<translator::FixMessage>();
+};
+
+INSTANTIATE_TEST_SUITE_P(Fix, Message, testing::Values(ctor_func));

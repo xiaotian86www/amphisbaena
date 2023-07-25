@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -246,6 +247,18 @@ enum class MessageType
 class MessageFactory
 {
 public:
-  static MessagePtr create(MessageType type);
+  using ctor_prototype = MessagePtr();
+  using ctor_function = std::function<ctor_prototype>;
+
+public:
+  static void registe(std::string_view type, ctor_function ctor);
+
+  static MessagePtr create(std::string_view type);
+
+  // static MessagePtr create(MessageType type);
+
+private:
+  static std::shared_ptr<std::map<std::string, ctor_function, std::less<>>>
+    ctors_;
 };
 } // namespace translator

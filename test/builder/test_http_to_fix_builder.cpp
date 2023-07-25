@@ -1,12 +1,13 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <memory>
 
 #include "builder.hpp"
 #include "builder/http_to_fix/builder.hpp"
 #include "environment.hpp"
 #include "fixture/fixture_schedule.hpp"
-#include "impl/fix_message.hpp"
+#include "impl/json_message.hpp"
 #include "matcher/matcher_message.hpp"
 #include "message.hpp"
 #include "schedule.hpp"
@@ -17,7 +18,10 @@ public:
   HttpToFixBuilder()
     : builder(std::make_shared<translator::MessageBuilder>())
   {
-    translator::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
+    translator::MessageFactory::registe(
+      "Fix", [] { return std::make_shared<translator::JsonMessage>(); });
+    translator::MessageFactory::registe(
+      "Json", [] { return std::make_shared<translator::JsonMessage>(); });
   }
 
 protected:
@@ -48,7 +52,7 @@ TEST_F(HttpToFixBuilder, call)
                      })))
       .WillOnce(testing::Invoke([] {
         auto response =
-          translator::MessageFactory::create(translator::MessageType::kFix);
+          translator::MessageFactory::create("Fix");
 
         auto response_body = response->get_body();
         response_body->set_value("SenderCompID", "CLIENT2");
@@ -60,7 +64,7 @@ TEST_F(HttpToFixBuilder, call)
     builder->registe("fix", fix_builder.AsStdFunction());
 
     auto request =
-      translator::MessageFactory::create(translator::MessageType::kJson);
+      translator::MessageFactory::create("Json");
 
     auto request_body = request->get_body();
     request_body->set_value("SenderCompID", "CLIENT1");
