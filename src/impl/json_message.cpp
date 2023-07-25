@@ -13,43 +13,30 @@
 namespace translator {
 
 namespace detail {
-template<typename Type_>
-constexpr bool
-check_type(const RapidValue& value);
+// template<typename Type_>
+// constexpr bool
+// check_type(const RapidValue& value);
 
-template<>
-constexpr bool
-check_type<int32_t>(const RapidValue& value)
-{
-  return value.IsInt();
-}
+// template<>
+// constexpr bool
+// check_type<int32_t>(const RapidValue& value)
+// {
+//   return value.IsInt();
+// }
 
-template<>
-constexpr bool
-check_type<std::string_view>(const RapidValue& value)
-{
-  return value.IsString();
-}
+// template<>
+// constexpr bool
+// check_type<std::string_view>(const RapidValue& value)
+// {
+//   return value.IsString();
+// }
 
-template<>
-constexpr bool
-check_type<double>(const RapidValue& value)
-{
-  return value.IsDouble();
-}
-
-constexpr std::string_view
-type_name(const RapidValue& value)
-{
-  switch (value.GetType()) {
-    case rapidjson::Type::kStringType:
-      return "String";
-    case rapidjson::Type::kNumberType:
-      return "Number";
-    default:
-      return "Unknown";
-  }
-}
+// template<>
+// constexpr bool
+// check_type<double>(const RapidValue& value)
+// {
+//   return value.IsDouble();
+// }
 
 template<typename Type_>
 constexpr Type_
@@ -343,7 +330,8 @@ JsonObject::get_value(std::string_view name, Type_ default_value) const
 {
   if (auto iter =
         value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
-      iter != value_.MemberEnd() && detail::check_type<Type_>(iter->value)) {
+      iter != value_.MemberEnd() &&
+      check_field_type<Type_>(detail::get_type(iter->value))) {
     return detail::get_value<Type_>(iter->value);
   } else {
     return default_value;
@@ -357,10 +345,10 @@ JsonObject::get_value(std::string_view name) const
   if (auto iter =
         value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
       iter != value_.MemberEnd()) {
-    if (detail::check_type<Type_>(iter->value))
+    if (check_field_type<Type_>(detail::get_type(iter->value)))
       return detail::get_value<Type_>(iter->value);
     else
-      throw TypeExecption(name, detail::type_name(iter->value));
+      throw TypeExecption(name, field_type_name(detail::get_type(iter->value)));
   } else {
     throw NoKeyException(name);
   }

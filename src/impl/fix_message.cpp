@@ -19,53 +19,6 @@ static std::map<std::string, std::tuple<int, FIX::TYPE::Type>, std::less<>>
 
 static std::map<int, std::tuple<std::string, FIX::TYPE::Type>> g_fields_by_tag;
 
-template<typename Value_>
-constexpr bool
-check_type(FIX::TYPE::Type type)
-{
-  return false;
-}
-
-template<>
-constexpr bool
-check_type<std::string_view>(FIX::TYPE::Type type)
-{
-  return type == FIX::TYPE::Type::String || type == FIX::TYPE::Type::Char ||
-         type == FIX::TYPE::Type::UtcTimeStamp;
-}
-
-template<>
-constexpr bool
-check_type<int32_t>(FIX::TYPE::Type type)
-{
-  return type == FIX::TYPE::Type::Int;
-}
-
-template<>
-constexpr bool
-check_type<double>(FIX::TYPE::Type type)
-{
-  return type == FIX::TYPE::Type::Qty || type == FIX::TYPE::Type::Price;
-}
-
-constexpr std::string_view
-type_name(FIX::TYPE::Type type)
-{
-  switch (type) {
-    case FIX::TYPE::Type::String:
-    case FIX::TYPE::Type::Char:
-    case FIX::TYPE::Type::UtcTimeStamp:
-      return "String";
-    case FIX::TYPE::Type::Int:
-      return "Int";
-    case FIX::TYPE::Type::Qty:
-    case FIX::TYPE::Type::Price:
-      return "Double";
-    default:
-      return "Unknown";
-  }
-}
-
 std::tuple<int, FIX::TYPE::Type>
 get_field_info(std::string_view name)
 {
@@ -380,7 +333,7 @@ FixObject::get_value(std::string_view name, Value_ default_value) const
   if (!fields_.isSetField(tag))
     return default_value;
 
-  if (!detail::check_type<Value_>(type))
+  if (!check_field_type<Value_>(detail::get_type(type)))
     return default_value;
 
   // 不能使用getFieldIfSet方法，因为需要传入临时变量field，无法返回string_view类型数据
@@ -400,8 +353,8 @@ FixObject::get_value(std::string_view name) const
   if (!fields_.isSetField(tag))
     throw NoKeyException(name);
 
-  if (!detail::check_type<Value_>(type))
-    throw TypeExecption(name, detail::type_name(type));
+  if (!check_field_type<Value_>(detail::get_type(type)))
+    throw TypeExecption(name, field_type_name(detail::get_type(type)));
 
   return static_cast<const Field_&>(fields_.getFieldRef(tag)).getValue();
 }

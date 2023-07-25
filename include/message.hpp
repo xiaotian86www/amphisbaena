@@ -12,6 +12,7 @@
 
 namespace translator {
 
+// TODO 调整FieldType组织方式，简化field_type_name、check_field_type调用
 enum class FieldType
 {
   kUnknown,
@@ -19,6 +20,49 @@ enum class FieldType
   kString,
   kDouble
 };
+
+constexpr std::string_view
+field_type_name(FieldType type)
+{
+  switch (type) {
+    case FieldType::kUnknown:
+      return "unknown";
+    case FieldType::kInt:
+      return "integer";
+    case FieldType::kString:
+      return "string";
+    case FieldType::kDouble:
+      return "double";
+  }
+}
+
+template<typename T>
+constexpr bool
+check_field_type(FieldType type)
+{
+  return false;
+}
+
+template<>
+constexpr bool
+check_field_type<int32_t>(FieldType type)
+{
+  return type == FieldType::kInt;
+}
+
+template<>
+constexpr bool
+check_field_type<double>(FieldType type)
+{
+  return type == FieldType::kDouble;
+}
+
+template<>
+constexpr bool
+check_field_type<std::string_view>(FieldType type)
+{
+  return type == FieldType::kString;
+}
 
 class Object;
 typedef std::unique_ptr<Object> ObjectPtr;
@@ -73,7 +117,10 @@ public:
 
     double get_double() { return it_->get_double(); }
 
-    bool operator!=(const ConstIteratorWrap& right) { return (*it_) != (*right.it_); }
+    bool operator!=(const ConstIteratorWrap& right)
+    {
+      return (*it_) != (*right.it_);
+    }
 
     ConstIteratorWrap& operator++()
     {
@@ -187,7 +234,6 @@ public:
   // public:
   //   std::string name;
 };
-
 
 enum class MessageType
 {
