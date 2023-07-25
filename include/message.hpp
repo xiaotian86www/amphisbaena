@@ -255,8 +255,6 @@ public:
 
   static MessagePtr create(std::string_view type);
 
-  // static MessagePtr create(MessageType type);
-
 private:
   static std::shared_ptr<std::map<std::string, ctor_function, std::less<>>>
     ctors_;

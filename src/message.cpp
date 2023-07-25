@@ -55,17 +55,6 @@ MessageFactory::create(std::string_view type)
   return MessagePtr();
 }
 
-// MessagePtr
-// MessageFactory::create(MessageType type)
-// {
-//   switch (type) {
-//     case MessageType::kJson:
-//       return std::make_shared<JsonMessage>();
-//     case MessageType::kFix:
-//       return std::make_shared<FixMessage>();
-//   }
-// }
-
 std::shared_ptr<
   std::map<std::string, MessageFactory::ctor_function, std::less<>>>
   MessageFactory::ctors_;
