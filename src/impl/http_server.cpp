@@ -122,12 +122,12 @@ HttpSession::do_recv()
     response_head->set_value("version", request_head->get_string("version"));
 
   } catch (...) {
+    request_ = std::make_shared<JsonMessage>();
+    
     response = handle_error(request_head->get_string("version"));
   }
 
   send(response);
-
-  request_ = std::make_shared<JsonMessage>();
 }
 
 void
