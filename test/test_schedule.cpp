@@ -6,6 +6,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <memory>
+#include <stdexcept>
 #include <thread>
 
 #include "fixture/fixture_schedule.hpp"
@@ -80,14 +81,17 @@ TEST_F(Coroutine, stop)
 TEST_F(Coroutine, exception)
 {
   auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
-    sch.resume(co);
-    foo_mock.Call(0);
-    co.yield();
-    throw std::exception();
-    foo_mock.Call(1);
+    try {
+      sch.resume(co);
+      foo_mock.Call(0);
+      co.yield();
+      throw std::runtime_error("error");
+    } catch (const std::runtime_error& ex) {
+      foo_mock.Call(1);
+    }
   };
 
-  EXPECT_CALL(foo_mock, Call(testing::Lt(1))).Times(1);
+  EXPECT_CALL(foo_mock, Call(testing::Lt(2))).Times(2);
 
   sch->spawn(foo);
 }

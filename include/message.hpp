@@ -1,14 +1,15 @@
 #pragma once
 
-#include "server.hpp"
 #include <cstddef>
 #include <cstdint>
-#include <exception>
 #include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+
+#include "exception.hpp"
+#include "server.hpp"
 
 namespace translator {
 
@@ -248,18 +249,7 @@ public:
   static MessagePtr create(MessageType type);
 };
 
-// class MessagePool
-// {
-// public:
-//   void add(std::string_view name, MessagePtr message);
-
-//   MessagePtr get(std::string_view name, Environment& env) const;
-
-// private:
-//   mutable std::unordered_map<std::string_view, MessagePtr> messages_;
-// };
-
-class NoKeyException : public std::exception
+class NoKeyException : public Exception
 {
 public:
   NoKeyException(std::string_view name)
@@ -279,7 +269,7 @@ private:
   std::string what_;
 };
 
-class TypeExecption : public std::exception
+class TypeExecption : public Exception
 {
 public:
   TypeExecption(std::string_view name, std::string_view type)
@@ -302,7 +292,7 @@ private:
   std::string what_;
 };
 
-class NotFoundException : public std::exception
+class NotFoundException : public Exception
 {
 public:
   NotFoundException(std::string_view name)
@@ -310,6 +300,26 @@ public:
   {
     what_ += name;
     what_ += " not found";
+  }
+
+public:
+  const char* what() const noexcept override { return what_.c_str(); }
+
+  std::string_view name() const noexcept { return name_; }
+
+private:
+  std::string name_;
+  std::string what_;
+};
+
+class UnknownKeyException : public Exception
+{
+public:
+  UnknownKeyException(std::string_view name)
+    : name_(name)
+  {
+    what_ += "unknown field: ";
+    what_ += name;
   }
 
 public:

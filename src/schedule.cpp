@@ -52,11 +52,8 @@ public:
     boost::system::error_code ec;
     timer_.cancel(ec);
 
-    try {
-      assert(ps_);
-      ps_();
-    } catch (...) {
-    }
+    assert(ps_);
+    ps_();
 
     return !ps_;
   }

@@ -1,5 +1,4 @@
 
-#include <boost/coroutine/exceptions.hpp>
 #include <llhttp.h>
 #include <memory>
 #include <rapidjson/document.h>
@@ -111,32 +110,20 @@ HttpSession::do_recv()
   response_name += request_head->get_string("url");
 
   MessagePtr response;
-  ObjectPtr response_head;
 
   env_.down = shared_from_this();
 
   try {
     response = server_->message_builder->create(env_, response_name, request_);
 
-    response_head = response->get_head();
+    auto response_head = response->get_head();
 
     response_head->set_value("code", HTTP_STATUS_OK);
+    response_head->set_value("version", request_head->get_string("version"));
 
-  } catch (const boost::coroutines::detail::forced_unwind&) {
-    throw;
-  } catch (const NotFoundException& ec) {
-    response = std::make_shared<JsonMessage>();
-    response_head = response->get_head();
-
-    if (ec.name() == response_name) {
-      response_head->set_value("code", HTTP_STATUS_NOT_FOUND);
-    } else {
-      response_head->set_value("code", HTTP_STATUS_INTERNAL_SERVER_ERROR);
-    }
   } catch (...) {
+    response = handle_error(request_head->get_string("version"));
   }
-
-  response_head->set_value("version", request_head->get_string("version"));
 
   send(response);
 
@@ -155,6 +142,31 @@ HttpSession::set_body(std::string_view value)
 {
   auto request_body = request_->get_body();
   static_cast<JsonObject*>(request_body.get())->from_string(value);
+}
+
+MessagePtr
+HttpSession::handle_error(std::string_view version)
+{
+  auto response = std::make_shared<JsonMessage>();
+  auto response_head = response->get_head();
+
+  try {
+    throw;
+  } catch (const NotFoundException& ec) {
+    response_head->set_value("code", HTTP_STATUS_NOT_FOUND);
+  } catch (const NoKeyException& ec) {
+    response_head->set_value("code", HTTP_STATUS_BAD_REQUEST);
+  } catch (const TypeExecption& ec) {
+    response_head->set_value("code", HTTP_STATUS_BAD_REQUEST);
+  } catch (const UnknownKeyException& ec) {
+    response_head->set_value("code", HTTP_STATUS_BAD_REQUEST);
+  } catch (const Exception& ec) {
+    response_head->set_value("code", HTTP_STATUS_INTERNAL_SERVER_ERROR);
+  }
+
+  response_head->set_value("version", version);
+
+  return response;
 }
 
 HttpServer::HttpServer(std::unique_ptr<Server> server)

@@ -137,26 +137,6 @@ init_tags(boost::property_tree::ptree& pt)
   }
 }
 
-class UnknownKeyException : public std::exception
-{
-public:
-  UnknownKeyException(std::string_view name)
-    : name_(name)
-  {
-    what_ += "unknown field: ";
-    what_ += name;
-  }
-
-public:
-  const char* what() const noexcept override { return what_.c_str(); }
-
-  std::string_view name() const noexcept { return name_; }
-
-private:
-  std::string name_;
-  std::string what_;
-};
-
 }
 
 FixObject::ConstIterator::ConstIterator(FIX::FieldMap::const_iterator it)
@@ -348,7 +328,7 @@ FixObject::get_value(std::string_view name) const
   auto name_ = std::string(name);
   auto [tag, type] = detail::get_field_info(name_);
   if (!tag)
-    throw detail::UnknownKeyException(name);
+    throw UnknownKeyException(name);
 
   if (!fields_.isSetField(tag))
     throw NoKeyException(name);

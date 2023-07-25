@@ -6,6 +6,7 @@
 
 #include "builder.hpp"
 #include "environment.hpp"
+#include "message.hpp"
 #include "server.hpp"
 #include "session.hpp"
 
@@ -33,6 +34,9 @@ public:
   void set_head(std::string_view name, std::string_view value);
 
   void set_body(std::string_view value);
+
+private:
+  MessagePtr handle_error(std::string_view version);
 
 private:
   HttpServer* server_;
