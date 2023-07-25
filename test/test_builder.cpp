@@ -11,9 +11,9 @@
 class Builder : public testing::Test
 {
 public:
-  virtual void SetUp() {}
+  void SetUp() override {}
 
-  virtual void TearDown() {}
+  void TearDown() override {}
 
 protected:
 };

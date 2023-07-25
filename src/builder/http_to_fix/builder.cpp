@@ -4,21 +4,34 @@
 
 namespace translator {
 namespace builder {
-class HttpToFixBuilder
+MessagePtr
+HttpToFixBuilder::operator()(Environment& env, MessagePtr request)
 {
-public:
-  MessagePtr operator()(Environment& env, MessagePtr request)
-  {
-    auto fix_request = MessageFactory::create(MessageType::kFix);
-    fix_request->get_body()->copy_from(request->get_body());
+  auto fix_request = MessageFactory::create(MessageType::kFix);
+  fix_request->get_body()->copy_from(request->get_body());
 
-    auto fix_response = env.builder->create(env, "fix", fix_request);
+  fix_request->get_body()->get_string("SenderCompID");
 
-    auto json_response = MessageFactory::create(MessageType::kJson);
-    json_response->get_body()->copy_from(fix_response->get_body());
+  auto fix_response = env.builder->create(env, "fix", fix_request);
 
-    return json_response;
-  }
-};
+  auto json_response = MessageFactory::create(MessageType::kJson);
+  json_response->get_body()->copy_from(fix_response->get_body());
+
+  return json_response;
 }
+}
+}
+
+extern "C"
+{
+  void* get_func()
+  {
+    return new translator::MessageBuilder::ctor_function(
+      translator::builder::HttpToFixBuilder());
+  }
+
+  const char* get_name()
+  {
+    return "GET /";
+  }
 }
