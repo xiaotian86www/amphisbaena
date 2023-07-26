@@ -89,4 +89,20 @@ private:
   std::string what_;
 };
 
+class CouldnotLoadException : public Exception
+{
+public:
+  CouldnotLoadException(std::string_view name, std::string_view desc)
+    : name_(name)
+  {
+    what_ += "could not load ";
+    what_ += name_;
+    what_ += ": ";
+    what_ += desc;
+  }
+
+private:
+  std::string name_;
+  std::string what_;
+};
 }

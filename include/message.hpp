@@ -253,6 +253,8 @@ public:
 public:
   static void registe(std::string_view type, ctor_function ctor);
 
+  static void unregiste();
+
   static MessagePtr create(std::string_view type);
 
 private:

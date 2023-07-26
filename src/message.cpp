@@ -43,6 +43,12 @@ MessageFactory::registe(std::string_view type, ctor_function ctor)
   ctors_ = ctors;
 }
 
+void
+MessageFactory::unregiste()
+{
+  ctors_.reset();
+}
+
 MessagePtr
 MessageFactory::create(std::string_view type)
 {

@@ -27,6 +27,11 @@ public:
       { { "GET /", message_ctor.AsStdFunction() } });
   }
 
+  ~HttpServer()
+  {
+    translator::MessageBuilder::unregiste();
+  }
+
 protected:
   MockServer* server;
   translator::HttpServer http_server;

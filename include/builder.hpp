@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <map>
 #include <memory>
 #include <string_view>
@@ -20,12 +21,20 @@ public:
 public:
   static void registe(std::map<std::string_view, ctor_function> ctors);
 
+  static void unregiste();
+
   static MessagePtr create(Environment& env,
-                            std::string_view name,
-                            MessagePtr request);
+                           std::string_view name,
+                           MessagePtr request);
 
 private:
   static std::shared_ptr<std::map<std::string, ctor_function, std::less<>>>
     ctors_;
+};
+
+class Plugin
+{
+public:
+  static void load(const std::vector<std::filesystem::path>& paths);
 };
 }

@@ -28,6 +28,13 @@ public:
       { { "fix", fix_builder.AsStdFunction() } });
   }
 
+  ~HttpToFixBuilder()
+  {
+    translator::MessageBuilder::unregiste();
+
+    translator::MessageFactory::unregiste();
+  }
+
 protected:
   translator::builder::HttpToFixBuilder http_to_fix_builder;
   testing::MockFunction<translator::MessagePtr(translator::Environment&,
