@@ -3,6 +3,7 @@
 #include <memory>
 #include <rapidjson/document.h>
 
+#include "builder.hpp"
 #include "environment.hpp"
 #include "http_server.hpp"
 #include "json_message.hpp"
@@ -63,7 +64,6 @@ HttpSession::HttpSession(HttpServer* server,
 {
   env_.sch = sch_;
   env_.co = co_;
-  env_.builder = server_->message_builder;
 }
 
 void
@@ -114,7 +114,7 @@ HttpSession::do_recv()
   env_.down = shared_from_this();
 
   try {
-    response = server_->message_builder->create(env_, response_name, request_);
+    response = MessageBuilder::create(env_, response_name, request_);
 
     auto response_head = response->get_head();
 

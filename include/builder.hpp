@@ -1,5 +1,6 @@
 #pragma once
 
+#include <map>
 #include <memory>
 #include <string_view>
 
@@ -17,15 +18,14 @@ public:
   using ctor_function = std::function<ctor_prototype>;
 
 public:
-  void registe(std::string_view name, ctor_function&& func);
+  static void registe(std::map<std::string_view, ctor_function> ctors);
 
-  MessagePtr create(Environment& env,
-                    std::string_view name,
-                    MessagePtr request) const;
+  static MessagePtr create(Environment& env,
+                            std::string_view name,
+                            MessagePtr request);
 
 private:
-  std::unordered_map<std::string_view, ctor_function> ctors_;
+  static std::shared_ptr<std::map<std::string, ctor_function, std::less<>>>
+    ctors_;
 };
-
-typedef std::shared_ptr<MessageBuilder> MessageBuilderPtr;
 }

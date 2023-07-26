@@ -66,9 +66,6 @@ public:
                ConnectionPtr conn,
                std::string_view data) override;
 
-public:
-  MessageBuilderPtr message_builder;
-
 private:
   llhttp_settings_t settings_;
   std::unique_ptr<Server> server_;

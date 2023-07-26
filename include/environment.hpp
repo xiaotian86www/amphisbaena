@@ -16,6 +16,5 @@ public:
   CoroutineRef co;
   SessionPtr up;
   SessionPtr down;
-  MessageBuilderPtr builder;
 };
 } // namespace translator

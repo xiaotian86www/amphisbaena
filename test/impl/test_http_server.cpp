@@ -22,16 +22,14 @@ public:
   HttpServer()
     : server(new MockServer())
     , http_server(std::unique_ptr<MockServer>(server))
-    , message_builder(std::make_shared<translator::MessageBuilder>())
   {
-    http_server.message_builder = message_builder;
-    message_builder->registe("GET /", message_ctor.AsStdFunction());
+    translator::MessageBuilder::registe(
+      { { "GET /", message_ctor.AsStdFunction() } });
   }
 
 protected:
   MockServer* server;
   translator::HttpServer http_server;
-  std::shared_ptr<translator::MessageBuilder> message_builder;
   testing::MockFunction<translator::MessageBuilder::ctor_prototype>
     message_ctor;
 };

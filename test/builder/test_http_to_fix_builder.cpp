@@ -1,7 +1,9 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <map>
 #include <memory>
+#include <string_view>
 
 #include "builder.hpp"
 #include "builder/http_to_fix/builder.hpp"
@@ -16,30 +18,29 @@ class HttpToFixBuilder : public FixtureSchedule
 {
 public:
   HttpToFixBuilder()
-    : builder(std::make_shared<translator::MessageBuilder>())
   {
     translator::MessageFactory::registe(
       "Fix", [] { return std::make_shared<translator::JsonMessage>(); });
     translator::MessageFactory::registe(
       "Json", [] { return std::make_shared<translator::JsonMessage>(); });
+
+    translator::MessageBuilder::registe(
+      { { "fix", fix_builder.AsStdFunction() } });
   }
 
 protected:
-  translator::MessageBuilderPtr builder;
   translator::builder::HttpToFixBuilder http_to_fix_builder;
+  testing::MockFunction<translator::MessagePtr(translator::Environment&,
+                                               translator::MessagePtr)>
+    fix_builder;
 };
 
 TEST_F(HttpToFixBuilder, call)
 {
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     translator::Environment env;
-    env.builder = builder;
     env.sch = sch;
     env.co = co;
-
-    testing::MockFunction<translator::MessagePtr(translator::Environment&,
-                                                 translator::MessagePtr)>
-      fix_builder;
 
     EXPECT_CALL(fix_builder,
                 Call(testing::Ref(env),
@@ -51,8 +52,7 @@ TEST_F(HttpToFixBuilder, call)
                               request_body->get_double("LeavesQty") == 1.01;
                      })))
       .WillOnce(testing::Invoke([] {
-        auto response =
-          translator::MessageFactory::create("Fix");
+        auto response = translator::MessageFactory::create("Fix");
 
         auto response_body = response->get_body();
         response_body->set_value("SenderCompID", "CLIENT2");
@@ -61,10 +61,7 @@ TEST_F(HttpToFixBuilder, call)
         return response;
       }));
 
-    builder->registe("fix", fix_builder.AsStdFunction());
-
-    auto request =
-      translator::MessageFactory::create("Json");
+    auto request = translator::MessageFactory::create("Json");
 
     auto request_body = request->get_body();
     request_body->set_value("SenderCompID", "CLIENT1");
