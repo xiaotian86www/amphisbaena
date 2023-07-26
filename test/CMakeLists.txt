@@ -7,6 +7,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/../src)
 
 add_subdirectory(tool)
+add_subdirectory(mock/builder)
 
 aux_source_directory(${PROJECT_SOURCE_DIR} SRC_LIST)
 aux_source_directory(${PROJECT_SOURCE_DIR}/impl SRC_LIST)
