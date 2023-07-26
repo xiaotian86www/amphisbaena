@@ -4,6 +4,7 @@
 #include <map>
 #include <memory>
 #include <string_view>
+#include <vector>
 
 #include "message.hpp"
 #include "schedule.hpp"
@@ -22,6 +23,8 @@ public:
   static void registe(std::map<std::string_view, ctor_function> ctors);
 
   static void unregiste();
+
+  static void unregiste(const std::vector<std::string_view>& names);
 
   static MessagePtr create(Environment& env,
                            std::string_view name,

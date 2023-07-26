@@ -46,7 +46,8 @@ MessageFactory::registe(std::string_view type, ctor_function ctor)
 void
 MessageFactory::unregiste()
 {
-  ctors_.reset();
+  ctors_ =
+    std::make_shared<std::map<std::string, ctor_function, std::less<>>>();
 }
 
 MessagePtr

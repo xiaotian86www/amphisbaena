@@ -3,6 +3,7 @@
 #include <dlfcn.h>
 #include <memory>
 #include <sstream>
+#include <string_view>
 
 #include "environment.hpp"
 #include "message.hpp"
@@ -55,7 +56,26 @@ MessageBuilder::registe(std::map<std::string_view, ctor_function> ctors)
 void
 MessageBuilder::unregiste()
 {
-  ctors_.reset();
+  ctors_ = std::make_shared<
+    std::map<std::string, MessageBuilder::ctor_function, std::less<>>>();
+}
+
+void
+MessageBuilder::unregiste(const std::vector<std::string_view>& names)
+{
+  auto new_ctors =
+    ctors_
+      ? std::make_shared<
+          std::map<std::string, MessageBuilder::ctor_function, std::less<>>>(
+          *ctors_)
+      : std::make_shared<
+          std::map<std::string, MessageBuilder::ctor_function, std::less<>>>();
+
+  for (auto it = names.begin(); it != names.end(); ++it) {
+    new_ctors->erase(std::string(*it));
+  }
+
+  ctors_ = new_ctors;
 }
 
 MessagePtr
