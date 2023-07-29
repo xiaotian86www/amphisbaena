@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(translator VERSION 0.1.0)
+project(translator_core VERSION 0.1.0)
 
 add_subdirectory(builder)
 
@@ -10,7 +10,7 @@ aux_source_directory(${PROJECT_SOURCE_DIR}/impl SRC_LIST)
 
 add_library(${PROJECT_NAME} SHARED ${SRC_LIST})
 
-target_link_libraries(${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} PRIVATE
     boost_context
     boost_coroutine
     llhttp

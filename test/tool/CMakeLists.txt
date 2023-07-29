@@ -5,7 +5,6 @@ aux_source_directory(${PROJECT_SOURCE_DIR} SRC_LIST)
 
 add_library(${PROJECT_NAME} STATIC ${SRC_LIST})
 
-target_link_libraries(
-    ${PROJECT_NAME}
+target_link_libraries(${PROJECT_NAME} PRIVATE
     quickfix
 )
