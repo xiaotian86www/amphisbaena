@@ -40,8 +40,6 @@ TEST_F(UDSServer, on_recv)
                                  translator::ConnectionRef conn,
                                  std::string_view data) { conn.send(data); }));
 
-  server->start();
-
   sock.connect("server.socket");
   sock.write_some(boost::asio::buffer(data));
 

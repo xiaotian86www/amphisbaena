@@ -57,11 +57,6 @@ TEST_F(HttpServer, on_data)
       return response;
     }));
 
-  EXPECT_CALL(*server, start).Times(1);
-  EXPECT_CALL(*server, stop).Times(1);
-
-  http_server.start();
-
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);
 
@@ -96,11 +91,6 @@ TEST_F(HttpServer, on_data)
 
 TEST_F(HttpServer, on_data_not_found)
 {
-  EXPECT_CALL(*server, start).Times(1);
-  EXPECT_CALL(*server, stop).Times(1);
-
-  http_server.start();
-
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);
     EXPECT_CALL(
@@ -128,11 +118,6 @@ TEST_F(HttpServer, on_data_fail)
                   head->get_value("url", "") == "/";
          })))
     .WillOnce(testing::Return(std::make_shared<translator::JsonMessage>()));
-
-  EXPECT_CALL(*server, start).Times(1);
-  EXPECT_CALL(*server, stop).Times(1);
-
-  http_server.start();
 
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);

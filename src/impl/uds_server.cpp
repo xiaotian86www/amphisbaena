@@ -1,4 +1,3 @@
-#include "uds_server.hpp"
 
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/io_service.hpp>
@@ -7,7 +6,9 @@
 #include <memory>
 #include <unistd.h>
 
+#include "log.hpp"
 #include "schedule.hpp"
+#include "uds_server.hpp"
 
 namespace translator {
 UDSConnection::UDSConnection(ScheduleRef sch,
@@ -87,16 +88,7 @@ UDSServer::UDSServer(boost::asio::io_service& ios,
   , endpoint_(file)
   , acceptor_(ios)
 {
-}
-
-UDSServer::~UDSServer() {}
-
-void
-UDSServer::start()
-{
-  if (acceptor_.is_open())
-    return;
-
+  LOG_INFO("UDSServer create");
   acceptor_.open(endpoint_.protocol());
 
   acceptor_.set_option(stream_protocol::acceptor::reuse_address(true));
@@ -104,17 +96,19 @@ UDSServer::start()
   unlink(endpoint_.path().c_str());
   acceptor_.bind(endpoint_);
 
+  LOG_INFO("Listen: {}", file.string());
   acceptor_.listen();
 
   sch_->spawn(std::bind(
     &UDSServer::handle, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-void
-UDSServer::stop()
+UDSServer::~UDSServer()
 {
+  LOG_INFO("UDSServer destroy");
   boost::system::error_code ec;
   acceptor_.close(ec);
+  unlink(endpoint_.path().c_str());
 }
 
 stream_protocol::socket
@@ -131,8 +125,12 @@ UDSServer::accept(ScheduleRef sch, CoroutineRef co)
 
     co.yield();
 
-    if (!ec)
+    if (!ec) {
+      LOG_INFO("Accept: {}", sock.remote_endpoint().path());
       return std::move(sock);
+    } else {
+      LOG_INFO("Accept failed. what: {}", ec.what());
+    }
   }
 }
 
@@ -150,11 +148,11 @@ UDSServer::handle(ScheduleRef sch, CoroutineRef co)
   // 接受消息
   std::shared_ptr<UDSConnection> conn =
     std::make_shared<UDSConnection>(sch, co, std::move(sock));
-  // auto parser = Context::get_instance().parser_factory->create(
-  //   sch, co, std::static_pointer_cast<Connection>(conn));
   for (;;) {
     boost::system::error_code ec;
     std::size_t size = conn->recv(data.data(), data.size());
+    LOG_DEBUG("Recv size: {}", size);
+    
     if (size == -1) {
       break;
     }
@@ -164,8 +162,6 @@ UDSServer::handle(ScheduleRef sch, CoroutineRef co)
                              co,
                              std::static_pointer_cast<Connection>(conn),
                              { data.data(), size });
-
-    // parser->on_data({ data.data(), size });
   }
 }
 

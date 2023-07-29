@@ -16,9 +16,7 @@ add_executable(${PROJECT_NAME} ${SRC_LIST})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     gtest
-    gtest_main
     gmock
-    gmock_main
     test_tool
     translator_core
     http_to_fix

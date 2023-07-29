@@ -43,11 +43,6 @@ public:
 
   virtual ~UDSServer();
 
-public:
-  void start() override;
-
-  void stop() override;
-
 private:
   stream_protocol::socket accept(ScheduleRef sch, CoroutineRef co);
 

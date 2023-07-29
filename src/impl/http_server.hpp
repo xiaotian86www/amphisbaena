@@ -57,10 +57,6 @@ public:
   ~HttpServer() override;
 
 public:
-  void start();
-
-  void stop();
-
   void on_recv(ScheduleRef sch,
                CoroutineRef co,
                ConnectionPtr conn,

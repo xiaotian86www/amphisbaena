@@ -7,6 +7,7 @@
 #include "environment.hpp"
 #include "http_server.hpp"
 #include "json_message.hpp"
+#include "log.hpp"
 #include "message.hpp"
 #include "session.hpp"
 
@@ -123,7 +124,7 @@ HttpSession::do_recv()
 
   } catch (...) {
     request_ = std::make_shared<JsonMessage>();
-    
+
     response = handle_error(request_head->get_string("version"));
   }
 
@@ -172,6 +173,8 @@ HttpSession::handle_error(std::string_view version)
 HttpServer::HttpServer(std::unique_ptr<Server> server)
   : server_(std::move(server))
 {
+  LOG_INFO("HttpServer create");
+
   server_->message_handler = this;
 
   llhttp_settings_init(&settings_);
@@ -184,19 +187,7 @@ HttpServer::HttpServer(std::unique_ptr<Server> server)
 
 HttpServer::~HttpServer()
 {
-  stop();
-}
-
-void
-HttpServer::start()
-{
-  server_->start();
-}
-
-void
-HttpServer::stop()
-{
-  server_->stop();
+  LOG_INFO("HttpServer destroy");
 }
 
 void

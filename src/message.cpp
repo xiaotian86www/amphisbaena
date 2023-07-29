@@ -4,6 +4,7 @@
 #include "impl/fix_message.hpp"
 #include "impl/json_message.hpp"
 #include "message.hpp"
+#include "log.hpp"
 
 namespace translator {
 
@@ -33,6 +34,7 @@ Object::copy_from(ObjectPtr right)
 void
 MessageFactory::registe(std::string_view type, ctor_function ctor)
 {
+  LOG_INFO("Registe message type: {}", type);
   auto ctors =
     ctors_
       ? std::make_shared<std::map<std::string, ctor_function, std::less<>>>(
@@ -46,6 +48,7 @@ MessageFactory::registe(std::string_view type, ctor_function ctor)
 void
 MessageFactory::unregiste()
 {
+  LOG_INFO("Unregiste message");
   ctors_ =
     std::make_shared<std::map<std::string, ctor_function, std::less<>>>();
 }
