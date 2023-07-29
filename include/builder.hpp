@@ -16,11 +16,16 @@ class Environment;
 class MessageBuilder
 {
 public:
-  using ctor_prototype = MessagePtr(Environment&, MessagePtr);
-  using ctor_function = std::function<ctor_prototype>;
+  virtual ~MessageBuilder() = default;
 
 public:
-  static void registe(std::map<std::string_view, ctor_function> ctors);
+  virtual MessagePtr create(Environment& env, MessagePtr request) = 0;
+
+  virtual std::string_view name() const = 0;
+
+public:
+  static void registe(
+    std::map<std::string_view, std::shared_ptr<MessageBuilder>> builders);
 
   static void unregiste();
 
@@ -31,8 +36,9 @@ public:
                            MessagePtr request);
 
 private:
-  static std::shared_ptr<std::map<std::string, ctor_function, std::less<>>>
-    ctors_;
+  static std::shared_ptr<
+    std::map<std::string, std::shared_ptr<MessageBuilder>, std::less<>>>
+    builders_;
 };
 
 class Plugin

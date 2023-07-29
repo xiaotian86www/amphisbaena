@@ -1,6 +1,7 @@
 #include "builder.hpp"
 
 #include <dlfcn.h>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <string_view>
@@ -9,73 +10,51 @@
 #include "message.hpp"
 
 namespace translator {
-namespace detail {
-class Plugin
-{
-public:
-  template<typename Deleter_>
-  Plugin(void* handle, Deleter_ d, MessageBuilder::ctor_function* ctor)
-    : handle_(handle, std::move(d))
-    , ctor_(ctor)
-  {
-  }
-
-  ~Plugin() {}
-
-public:
-  MessagePtr operator()(Environment& env, MessagePtr request)
-  {
-    return (*ctor_)(env, request);
-  }
-
-private:
-  std::shared_ptr<void> handle_;
-  std::shared_ptr<MessageBuilder::ctor_function> ctor_;
-};
-}
-
 void
-MessageBuilder::registe(std::map<std::string_view, ctor_function> ctors)
+MessageBuilder::registe(
+  std::map<std::string_view, std::shared_ptr<MessageBuilder>> builders)
 {
-  auto new_ctors =
-    ctors_
+  auto new_builders =
+    builders_
       ? std::make_shared<
-          std::map<std::string, MessageBuilder::ctor_function, std::less<>>>(
-          *ctors_)
-      : std::make_shared<
-          std::map<std::string, MessageBuilder::ctor_function, std::less<>>>();
+          std::map<std::string, std::shared_ptr<MessageBuilder>, std::less<>>>(
+          *builders_)
+      : std::make_shared<std::map<std::string,
+                                  std::shared_ptr<MessageBuilder>,
+                                  std::less<>>>();
 
-  for (auto iter = ctors.begin(); iter != ctors.end(); ++iter) {
-    new_ctors->insert_or_assign(std::string(iter->first),
-                                std::move(iter->second));
+  for (auto iter = builders.begin(); iter != builders.end(); ++iter) {
+    new_builders->insert_or_assign(std::string(iter->first),
+                                   std::move(iter->second));
   }
 
-  ctors_ = new_ctors;
+  builders_ = new_builders;
 }
 
 void
 MessageBuilder::unregiste()
 {
-  ctors_ = std::make_shared<
-    std::map<std::string, MessageBuilder::ctor_function, std::less<>>>();
+  builders_ = std::make_shared<
+    std::map<std::string, std::shared_ptr<MessageBuilder>, std::less<>>>();
 }
 
 void
 MessageBuilder::unregiste(const std::vector<std::string_view>& names)
 {
   auto new_ctors =
-    ctors_
+    builders_
       ? std::make_shared<
-          std::map<std::string, MessageBuilder::ctor_function, std::less<>>>(
-          *ctors_)
-      : std::make_shared<
-          std::map<std::string, MessageBuilder::ctor_function, std::less<>>>();
+          std::map<std::string, std::shared_ptr<MessageBuilder>, std::less<>>>(
+          *builders_)
+      : std::make_shared<std::map<std::string,
+                                  std::shared_ptr<MessageBuilder>,
+                                  std::less<>>>();
 
   for (auto it = names.begin(); it != names.end(); ++it) {
     new_ctors->erase(std::string(*it));
   }
 
-  ctors_ = new_ctors;
+  builders_ = new_ctors;
 }
 
 MessagePtr
@@ -83,49 +62,45 @@ MessageBuilder::create(Environment& env,
                        std::string_view name,
                        MessagePtr request)
 {
-  if (auto ctors = ctors_) {
-    if (auto it = ctors->find(name); it != ctors->end()) {
-      return it->second(env, request);
+  if (auto builders = builders_) {
+    if (auto it = builders->find(name); it != builders->end()) {
+      return it->second->create(env, request);
     }
   }
 
   throw NotFoundException(name);
 }
 
-// std::unordered_map<std::string_view, MessageBuilder::ctor_function>
+// std::unordered_map<std::string_view, std::shared_ptr<MessageBuilder>>
 //   MessageBuilder::ctors_;
 std::shared_ptr<
-  std::map<std::string, MessageBuilder::ctor_function, std::less<>>>
-  MessageBuilder::ctors_;
+  std::map<std::string, std::shared_ptr<MessageBuilder>, std::less<>>>
+  MessageBuilder::builders_;
 
 void
 Plugin::load(const std::vector<std::filesystem::path>& paths)
 {
-  std::map<std::string_view, MessageBuilder::ctor_function> ctors;
+  std::map<std::string_view, std::shared_ptr<MessageBuilder>> builders;
   for (const auto& path : paths) {
     auto handle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
     if (!handle)
       throw CouldnotLoadException(path.string(), dlerror());
 
-    void* (*get_func)() = nullptr;
+    MessageBuilder* (*get_builder)() = nullptr;
     const char* (*get_name)() = nullptr;
 
-    *(void**)(&get_func) = dlsym(handle, "get_func");
-    if (!get_func)
+    *(void**)(&get_builder) = dlsym(handle, "get_builder");
+    if (!get_builder)
       throw CouldnotLoadException(path.string(), dlerror());
 
     *(void**)(&get_name) = dlsym(handle, "get_name");
     if (!get_name)
       throw CouldnotLoadException(path.string(), dlerror());
 
-    ctors.insert_or_assign(
-      (*get_name)(),
-      detail::Plugin(
-        handle,
-        [](void* h) { dlclose(h); },
-        static_cast<MessageBuilder::ctor_function*>((*get_func)())));
+    builders.insert_or_assign(
+      (*get_name)(), std::shared_ptr<MessageBuilder>((*get_builder)()));
   }
 
-  MessageBuilder::registe(std::move(ctors));
+  MessageBuilder::registe(std::move(builders));
 }
 }

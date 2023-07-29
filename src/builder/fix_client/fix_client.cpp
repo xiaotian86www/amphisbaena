@@ -21,10 +21,10 @@
 #include <quickfix/SocketInitiator.h>
 #pragma GCC diagnostic pop
 
-#include "fix_client.hpp"
-#include "fix_message.hpp"
-#include "schedule.hpp"
+#include "../../impl/fix_message.hpp"
 #include "client.hpp"
+#include "fix_client.hpp"
+#include "schedule.hpp"
 
 namespace translator {
 
@@ -36,7 +36,17 @@ FixSession::send(MessagePtr data)
 }
 
 FixClient::FixClient(std::istream& is)
-  : settings_(is)
+  : FixClient(FIX::SessionSettings(is))
+{
+}
+
+FixClient::FixClient(const std::filesystem::path& pt)
+  : FixClient(FIX::SessionSettings(pt.string()))
+{
+}
+
+FixClient::FixClient(FIX::SessionSettings settings)
+  : settings_(std::move(settings))
 {
   if (settings_.get().has(FIX::FILE_STORE_PATH))
     store_factory_ = std::make_unique<FIX::FileStoreFactory>(settings_);
@@ -74,10 +84,9 @@ SessionPtr
 FixClient::create(MessagePtr message)
 {
   auto head = message->get_head();
-  FIX::SessionID session_id(
-    std::string(head->get_string("BeginString")),
-    std::string(head->get_string("SenderCompID")),
-    std::string(head->get_string("TargetCompID")));
+  FIX::SessionID session_id(std::string(head->get_string("BeginString")),
+                            std::string(head->get_string("SenderCompID")),
+                            std::string(head->get_string("TargetCompID")));
 
   if (auto iter = sessions_.find(session_id); iter != sessions_.end()) {
     return iter->second;

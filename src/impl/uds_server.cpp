@@ -81,7 +81,7 @@ UDSConnection::close()
 
 UDSServer::UDSServer(boost::asio::io_service& ios,
                      std::shared_ptr<Schedule> sch,
-                     std::string_view file)
+                     const std::filesystem::path& file)
   : ios_(ios)
   , sch_(sch)
   , endpoint_(file)

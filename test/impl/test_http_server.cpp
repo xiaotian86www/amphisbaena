@@ -22,28 +22,25 @@ public:
   HttpServer()
     : server(new MockServer())
     , http_server(std::unique_ptr<MockServer>(server))
+    , message_builder(std::make_shared<MockMessageBuilder>("GET /"))
   {
     translator::MessageBuilder::registe(
-      { { "GET /", message_ctor.AsStdFunction() } });
+      { { message_builder->name(), message_builder } });
   }
 
-  ~HttpServer()
-  {
-    translator::MessageBuilder::unregiste();
-  }
+  ~HttpServer() { translator::MessageBuilder::unregiste(); }
 
 protected:
   MockServer* server;
   translator::HttpServer http_server;
-  testing::MockFunction<translator::MessageBuilder::ctor_prototype>
-    message_ctor;
+  std::shared_ptr<MockMessageBuilder> message_builder;
 };
 
 TEST_F(HttpServer, on_data)
 {
   EXPECT_CALL(
-    message_ctor,
-    Call(testing::_, testing::Truly([](translator::MessagePtr message) {
+    *message_builder,
+    create(testing::_, testing::Truly([](translator::MessagePtr message) {
            auto head = message->get_head();
            auto body = message->get_body();
            return head->get_string("method") == "GET" &&
@@ -124,8 +121,8 @@ TEST_F(HttpServer, on_data_not_found)
 TEST_F(HttpServer, on_data_fail)
 {
   EXPECT_CALL(
-    message_ctor,
-    Call(testing::_, testing::Truly([](translator::MessagePtr message) {
+    *message_builder,
+    create(testing::_, testing::Truly([](translator::MessagePtr message) {
            auto head = message->get_head();
            return head->get_value("method", "") == "GET" &&
                   head->get_value("url", "") == "/";

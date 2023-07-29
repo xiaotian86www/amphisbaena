@@ -3,13 +3,15 @@
 #include <mutex>
 #include <quickfix/FixValues.h>
 
+#include "builder.hpp"
+#include "builder/fix_client/fix_client.hpp"
 #include "environment.hpp"
 #include "fix_builder.hpp"
 #include "future.hpp"
 #include "message.hpp"
 
 namespace translator {
-FixMessageBuilder::FixMessageBuilder(std::unique_ptr<Client> service,
+FixBuilder::FixBuilder(std::unique_ptr<Client> service,
                                      int timeout_milli)
   : service_(std::move(service))
   , timeout_milli_(timeout_milli)
@@ -18,13 +20,13 @@ FixMessageBuilder::FixMessageBuilder(std::unique_ptr<Client> service,
   service_->start();
 }
 
-FixMessageBuilder::~FixMessageBuilder()
+FixBuilder::~FixBuilder()
 {
   service_->stop();
 }
 
 MessagePtr
-FixMessageBuilder::operator()(Environment& env, MessagePtr request)
+FixBuilder::create(Environment& env, MessagePtr request)
 {
   if (!env.up) {
     env.up = service_->create(request);
@@ -62,15 +64,20 @@ FixMessageBuilder::operator()(Environment& env, MessagePtr request)
     if (auto request_head = request->get_head();
         request_head->get_string("MsgType") == FIX::MsgType_NewOrderSingle) {
       if (auto response_head = response->get_head();
-          response_head->get_string("MsgType") ==
-          FIX::MsgType_ExecutionReport)
+          response_head->get_string("MsgType") == FIX::MsgType_ExecutionReport)
         return response;
     }
   }
 }
 
+std::string_view
+FixBuilder::name() const
+{
+  return "Fix";
+}
+
 void
-FixMessageBuilder::on_recv(ScheduleRef sch,
+FixBuilder::on_recv(ScheduleRef sch,
                            CoroutineRef co,
                            SessionPtr session,
                            MessagePtr response)
@@ -83,4 +90,19 @@ FixMessageBuilder::on_recv(ScheduleRef sch,
   }
 }
 
+}
+
+extern "C"
+{
+  translator::MessageBuilder* get_builder()
+  {
+    return new translator::FixBuilder(
+      std::make_unique<translator::FixClient>(
+        "/usr/local/share/quickfix/FIX42.xml"));
+  }
+
+  const char* get_name()
+  {
+    return "Fix";
+  }
 }

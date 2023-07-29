@@ -4,7 +4,6 @@ project(test_translator VERSION 0.1.0)
 find_package(GTest REQUIRED)
 
 include_directories(${PROJECT_SOURCE_DIR})
-include_directories(${PROJECT_SOURCE_DIR}/../src)
 
 add_subdirectory(tool)
 add_subdirectory(mock/builder)
@@ -24,6 +23,7 @@ target_link_libraries(
     test_tool
     translator
     http_to_fix
+    fix_client
 )
 
 gtest_discover_tests(${PROJECT_NAME})

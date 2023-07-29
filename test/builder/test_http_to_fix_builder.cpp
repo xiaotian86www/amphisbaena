@@ -6,18 +6,20 @@
 #include <string_view>
 
 #include "builder.hpp"
-#include "builder/http_to_fix/builder.hpp"
+#include "builder/http_to_fix/http_to_fix_builder.hpp"
 #include "environment.hpp"
 #include "fixture/fixture_schedule.hpp"
 #include "impl/json_message.hpp"
 #include "matcher/matcher_message.hpp"
 #include "message.hpp"
+#include "mock/mock_builder.hpp"
 #include "schedule.hpp"
 
 class HttpToFixBuilder : public FixtureSchedule
 {
 public:
   HttpToFixBuilder()
+    : fix_builder(std::make_shared<MockMessageBuilder>("fix"))
   {
     translator::MessageFactory::registe(
       "Fix", [] { return std::make_shared<translator::JsonMessage>(); });
@@ -25,7 +27,7 @@ public:
       "Json", [] { return std::make_shared<translator::JsonMessage>(); });
 
     translator::MessageBuilder::registe(
-      { { "fix", fix_builder.AsStdFunction() } });
+      { { fix_builder->name(), fix_builder } });
   }
 
   ~HttpToFixBuilder()
@@ -37,9 +39,7 @@ public:
 
 protected:
   translator::builder::HttpToFixBuilder http_to_fix_builder;
-  testing::MockFunction<translator::MessagePtr(translator::Environment&,
-                                               translator::MessagePtr)>
-    fix_builder;
+  std::shared_ptr<MockMessageBuilder> fix_builder;
 };
 
 TEST_F(HttpToFixBuilder, call)
@@ -49,8 +49,8 @@ TEST_F(HttpToFixBuilder, call)
     env.sch = sch;
     env.co = co;
 
-    EXPECT_CALL(fix_builder,
-                Call(testing::Ref(env),
+    EXPECT_CALL(*fix_builder,
+                create(testing::Ref(env),
                      testing::Truly([](translator::MessagePtr request) {
                        auto request_body = request->get_body();
                        return request_body->get_string("SenderCompID") ==
@@ -75,7 +75,7 @@ TEST_F(HttpToFixBuilder, call)
     request_body->set_value("MsgSeqNum", 1);
     request_body->set_value("LeavesQty", 1.01);
 
-    auto response = http_to_fix_builder(env, request);
+    auto response = http_to_fix_builder.create(env, request);
 
     auto response_body = response->get_body();
 

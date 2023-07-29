@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <istream>
 #include <map>
 #include <memory>
@@ -17,9 +18,9 @@
 #include <quickfix/SessionSettings.h>
 #pragma GCC diagnostic pop
 
-#include "fix_message.hpp"
-#include "message.hpp"
 #include "client.hpp"
+#include "impl/fix_message.hpp"
+#include "message.hpp"
 
 namespace translator {
 
@@ -45,7 +46,12 @@ class FixClient
 public:
   FixClient(std::istream& is);
 
+  FixClient(const std::filesystem::path& pt);
+
   ~FixClient();
+
+private:
+  FixClient(FIX::SessionSettings settings);
 
 public:
   void start() override;

@@ -1,3 +1,4 @@
+#include "http_to_fix_builder.hpp"
 #include "builder.hpp"
 #include "environment.hpp"
 #include "message.hpp"
@@ -5,7 +6,7 @@
 namespace translator {
 namespace builder {
 MessagePtr
-HttpToFixBuilder::operator()(Environment& env, MessagePtr request)
+HttpToFixBuilder::create(Environment& env, MessagePtr request)
 {
   auto fix_request = MessageFactory::create("Fix");
   fix_request->get_body()->copy_from(request->get_body());
@@ -19,15 +20,21 @@ HttpToFixBuilder::operator()(Environment& env, MessagePtr request)
 
   return json_response;
 }
+
+std::string_view
+HttpToFixBuilder::name() const
+{
+  return "GET /";
+}
+
 }
 }
 
 extern "C"
 {
-  void* get_func()
+  translator::MessageBuilder* get_func()
   {
-    return new translator::MessageBuilder::ctor_function(
-      translator::builder::HttpToFixBuilder());
+    return new translator::builder::HttpToFixBuilder();
   }
 
   const char* get_name()

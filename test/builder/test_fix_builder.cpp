@@ -6,12 +6,13 @@
 #include <quickfix/FixValues.h>
 #include <thread>
 
+#include "builder/fix_client/fix_builder.hpp"
 #include "environment.hpp"
 #include "fixture/fixture_schedule.hpp"
-#include "impl/fix_builder.hpp"
 #include "impl/fix_message.hpp"
 #include "mock/mock_builder.hpp"
 #include "mock/mock_client.hpp"
+#include "mock/mock_session.hpp"
 #include "schedule.hpp"
 
 class FixBuilder : public FixtureSchedule
@@ -22,14 +23,13 @@ public:
     , session(std::make_shared<MockSession>())
     , builder(std::unique_ptr<translator::Client>(service), 1)
   {
-    translator::FixMessage::init(
-      "/usr/local/share/quickfix/FIX42.xml");
+    translator::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
   }
 
 protected:
   testing::NiceMock<MockClient>* service;
   std::shared_ptr<MockSession> session;
-  translator::FixMessageBuilder builder;
+  translator::FixBuilder builder;
 };
 
 TEST_F(FixBuilder, call)
@@ -65,10 +65,11 @@ TEST_F(FixBuilder, call)
     .WillOnce(testing::Invoke([this, response](translator::MessagePtr) {
       sch->spawn([this, response](translator::ScheduleRef sch,
                                   translator::CoroutineRef co) {
-        EXPECT_NO_THROW(service->message_handler->on_recv(translator::ScheduleRef(),
-                                                  translator::CoroutineRef(),
-                                                  session,
-                                                  response));
+        EXPECT_NO_THROW(
+          service->message_handler->on_recv(translator::ScheduleRef(),
+                                            translator::CoroutineRef(),
+                                            session,
+                                            response));
       });
     }));
 
@@ -78,7 +79,7 @@ TEST_F(FixBuilder, call)
     env.sch = sch_;
     env.co = co_;
 
-    auto response_ = builder(env, request);
+    auto response_ = builder.create(env, request);
     EXPECT_EQ(response, response_);
   });
 }
@@ -110,7 +111,7 @@ TEST_F(FixBuilder, timeout)
     env.sch = sch_;
     env.co = co_;
 
-    auto response = builder(env, request);
+    auto response = builder.create(env, request);
     EXPECT_EQ(response, nullptr);
   });
 }
