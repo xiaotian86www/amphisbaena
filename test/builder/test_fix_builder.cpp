@@ -19,15 +19,14 @@ class FixBuilder : public FixtureSchedule
 {
 public:
   FixBuilder()
-    : service(new testing::NiceMock<MockClient>())
-    , session(std::make_shared<MockSession>())
-    , builder(std::unique_ptr<translator::Client>(service), 1)
+    : session(std::make_shared<MockSession>())
+    , builder(client_factory, 1)
   {
     translator::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
   }
 
 protected:
-  testing::NiceMock<MockClient>* service;
+  MockClientFactory client_factory;
   std::shared_ptr<MockSession> session;
   translator::FixBuilder builder;
 };
@@ -59,14 +58,14 @@ TEST_F(FixBuilder, call)
   auto rsp_body = response->get_body();
   rsp_body->set_value("ClOrdID", "100001");
 
-  EXPECT_CALL(*service, create(testing::_)).WillOnce(testing::Return(session));
+  EXPECT_CALL(*client_factory.client, create(testing::_)).WillOnce(testing::Return(session));
 
   EXPECT_CALL(*session, send(testing::_))
     .WillOnce(testing::Invoke([this, response](translator::MessagePtr) {
       sch->spawn([this, response](translator::ScheduleRef sch,
                                   translator::CoroutineRef co) {
         EXPECT_NO_THROW(
-          service->message_handler->on_recv(translator::ScheduleRef(),
+          client_factory.client->send(translator::ScheduleRef(),
                                             translator::CoroutineRef(),
                                             session,
                                             response));
@@ -101,7 +100,7 @@ TEST_F(FixBuilder, timeout)
   req_body->set_value("Side", "1");
   req_body->set_value("TransactTime", "20230718-04:57:20.922010000");
 
-  EXPECT_CALL(*service, create(testing::_)).WillOnce(testing::Return(session));
+  EXPECT_CALL(*client_factory.client, create(testing::_)).WillOnce(testing::Return(session));
 
   EXPECT_CALL(*session, send(testing::_)).Times(1);
 

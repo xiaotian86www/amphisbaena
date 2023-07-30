@@ -55,4 +55,22 @@ private:
   stream_protocol::endpoint endpoint_;
   stream_protocol::acceptor acceptor_;
 };
+
+class UDSServerFactory : public ServerFactory
+{
+public:
+  UDSServerFactory(boost::asio::io_service& ios,
+                   std::shared_ptr<Schedule> sch,
+                   const std::filesystem::path& file);
+
+public:
+  std::unique_ptr<Server> create(
+    Server::MessageHandler* message_handler) override;
+
+private:
+  boost::asio::io_service& ios_;
+  std::shared_ptr<Schedule> sch_;
+  std::filesystem::path file_;
+};
+
 }

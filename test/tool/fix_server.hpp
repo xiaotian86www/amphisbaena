@@ -15,7 +15,7 @@
 class FixServer : public FIX::Application
 {
 public:
-  FixServer(std::istream& is);
+  FixServer(const FIX::SessionSettings& settings);
 
   ~FixServer() override;
 
@@ -58,7 +58,6 @@ public:
     FIX::UnsupportedMessageType) override;
 #pragma GCC diagnostic pop
 private:
-  FIX::SessionSettings settings_;
   std::unique_ptr<FIX::MessageStoreFactory> store_factory_;
   std::unique_ptr<FIX::LogFactory> log_factory_;
   std::unique_ptr<FIX::Acceptor> acceptor_;

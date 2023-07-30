@@ -13,12 +13,11 @@
 #include "message.hpp"
 
 namespace translator {
-FixBuilder::FixBuilder(std::unique_ptr<Client> service, int timeout_milli)
-  : service_(std::move(service))
+FixBuilder::FixBuilder(ClientFactory& client_factory, int timeout_milli)
+  : service_(std::move(client_factory.create(this)))
   , timeout_milli_(timeout_milli)
 {
   LOG_INFO("FixBuilder create");
-  service_->message_handler = this;
 }
 
 FixBuilder::~FixBuilder()
@@ -98,9 +97,9 @@ extern "C"
     if (argc < 2)
       throw std::invalid_argument("Usage: " + std::string(argv[0]));
 
+    translator::FixClientFactory client_factory(argv[1]);
+
     translator::MessageBuilder::registe(
-      "Fix",
-      std::make_shared<translator::FixBuilder>(
-        std::make_unique<translator::FixClient>(argv[1])));
+      "Fix", std::make_shared<translator::FixBuilder>(client_factory));
   }
 }

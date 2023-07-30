@@ -14,21 +14,20 @@
 
 #include "fix_server.hpp"
 
-FixServer::FixServer(std::istream& is)
-  : settings_(is)
+FixServer::FixServer(const FIX::SessionSettings& settings)
 {
-  if (settings_.get().has(FIX::FILE_STORE_PATH))
-    store_factory_ = std::make_unique<FIX::FileStoreFactory>(settings_);
+  if (settings.get().has(FIX::FILE_STORE_PATH))
+    store_factory_ = std::make_unique<FIX::FileStoreFactory>(settings);
   else
     store_factory_ = std::make_unique<FIX::MemoryStoreFactory>();
 
-  if (settings_.get().has(FIX::FILE_LOG_PATH))
-    log_factory_ = std::make_unique<FIX::FileLogFactory>(settings_);
+  if (settings.get().has(FIX::FILE_LOG_PATH))
+    log_factory_ = std::make_unique<FIX::FileLogFactory>(settings);
   else
-    log_factory_ = std::make_unique<FIX::ScreenLogFactory>(settings_);
+    log_factory_ = std::make_unique<FIX::ScreenLogFactory>(settings);
 
   acceptor_ = std::make_unique<FIX::SocketAcceptor>(
-    *this, *store_factory_, settings_, *log_factory_);
+    *this, *store_factory_, settings, *log_factory_);
 }
 
 FixServer::~FixServer()

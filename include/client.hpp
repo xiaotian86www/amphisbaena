@@ -3,6 +3,7 @@
 #include "message.hpp"
 #include "schedule.hpp"
 #include "session.hpp"
+#include <memory>
 
 namespace translator {
 class Client
@@ -20,12 +21,29 @@ public:
                          MessagePtr message) = 0;
   };
 
-  MessageHandler* message_handler = nullptr;
-
 public:
+  Client(MessageHandler* message_handler)
+    : message_handler_(message_handler)
+  {
+  }
+
   virtual ~Client() = default;
 
 public:
   virtual SessionPtr create(MessagePtr message) = 0;
+
+protected:
+  MessageHandler* message_handler_ = nullptr;
 };
+
+class ClientFactory
+{
+public:
+  virtual ~ClientFactory() = default;
+
+public:
+  virtual std::unique_ptr<Client> create(
+    Client::MessageHandler* message_handler) = 0;
+};
+
 }

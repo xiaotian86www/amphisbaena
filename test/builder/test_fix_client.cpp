@@ -91,7 +91,7 @@ SocketConnectHost=127.0.0.1
 SocketConnectPort=10000
 HeartBtInt=30 
 )")
-    , server(server_settings)
+    , server(FIX::SessionSettings(server_settings))
   {
     translator::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
   }
@@ -146,8 +146,8 @@ TEST_F(FixClient, send)
   body->set_value("Side", "1");
   body->set_value("TransactTime", "20230718-04:57:20.922010000");
 
-  translator::FixClient client(client_settings);
-  client.message_handler = &message_handler;
+  translator::FixClient client(FIX::SessionSettings(client_settings),
+                               &message_handler);
 
   auto session = client.create(msg);
 
@@ -203,8 +203,9 @@ TEST_F(FixClient, recv)
   body->set_value("CumQty", 88.88);
   body->set_value("AvgPx", 10.01);
 
-  translator::FixClient client(client_settings);
-  client.message_handler = &message_handler;
+  translator::FixClient client(FIX::SessionSettings(client_settings),
+                               &message_handler);
+                               
   server.send(msg->fix_message);
 
   pms2.get_future().wait_for(std::chrono::milliseconds(1));

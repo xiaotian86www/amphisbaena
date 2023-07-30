@@ -21,9 +21,7 @@ class HttpServer : public FixtureSchedule
 {
 public:
   HttpServer()
-    : http_server([](translator::Server::MessageHandler* handler) {
-      return std::make_unique<MockServer>(handler);
-    })
+    : http_server(server_factory)
     , message_builder(std::make_shared<MockMessageBuilder>("GET /"))
   {
     translator::MessageBuilder::registe(message_builder->name(),
@@ -33,6 +31,7 @@ public:
   ~HttpServer() { translator::MessageBuilder::unregiste(); }
 
 protected:
+  MockServerFactory server_factory;
   translator::HttpServer http_server;
   std::shared_ptr<MockMessageBuilder> message_builder;
 };

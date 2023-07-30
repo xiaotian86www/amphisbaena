@@ -29,3 +29,13 @@ public:
 public:
   using translator::Server::Server;
 };
+
+class MockServerFactory : public translator::ServerFactory
+{
+public:
+  std::unique_ptr<translator::Server> create(
+    translator::Server::MessageHandler* handler) override
+  {
+    return std::make_unique<MockServer>(handler);
+  }
+};

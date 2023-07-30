@@ -44,14 +44,11 @@ class FixClient
   , public FIX::Application
 {
 public:
-  FixClient(std::istream& is);
+  FixClient(const FIX::SessionSettings& settings, MessageHandler* handler);
 
-  FixClient(const std::filesystem::path& pt);
-
-  ~FixClient();
+  ~FixClient() override;
 
 private:
-  FixClient(FIX::SessionSettings settings);
 
 public:
   SessionPtr create(MessagePtr message) override;
@@ -93,5 +90,19 @@ private:
   std::unique_ptr<FIX::LogFactory> log_factory_;
   std::unique_ptr<FIX::Initiator> initiator_;
   std::map<FIX::SessionID, std::shared_ptr<FixSession>> sessions_;
+};
+
+class FixClientFactory : public ClientFactory
+{
+public:
+  FixClientFactory(std::istream& is);
+
+  FixClientFactory(const std::filesystem::path& pt);
+
+public:
+  std::unique_ptr<Client> create(Client::MessageHandler* handler) override;
+
+private:
+  FIX::SessionSettings settings_;
 };
 }

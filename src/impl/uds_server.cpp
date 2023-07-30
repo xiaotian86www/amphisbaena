@@ -167,4 +167,19 @@ UDSServer::handle(ScheduleRef sch, CoroutineRef co)
   }
 }
 
+UDSServerFactory::UDSServerFactory(boost::asio::io_service& ios,
+                                   std::shared_ptr<Schedule> sch,
+                                   const std::filesystem::path& file)
+  : ios_(ios)
+  , sch_(sch)
+  , file_(file)
+{
+}
+
+std::unique_ptr<Server>
+UDSServerFactory::create(Server::MessageHandler* message_handler)
+{
+  return std::make_unique<UDSServer>(ios_, sch_, file_, message_handler);
+}
+
 }

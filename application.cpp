@@ -40,11 +40,8 @@ main(int argc, char** argv)
 
   LOG_INFO("Translator begin");
   auto sch = std::make_shared<translator::Schedule>(ios);
-  translator::HttpServer http_server(
-    [sch](translator::Server::MessageHandler* handler) {
-      return std::make_unique<translator::UDSServer>(
-        ios, sch, "server.sock", handler);
-    });
+  translator::UDSServerFactory server_factory(ios, sch, "server.sock");
+  translator::HttpServer http_server(server_factory);
   translator::MessageFactory::registe(
     "Fix", [] { return std::make_shared<translator::FixMessage>(); });
   translator::MessageFactory::registe(

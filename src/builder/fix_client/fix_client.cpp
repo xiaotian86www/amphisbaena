@@ -36,18 +36,9 @@ FixSession::send(MessagePtr data)
   session_->send(std::static_pointer_cast<FixMessage>(data)->fix_message);
 }
 
-FixClient::FixClient(std::istream& is)
-  : FixClient(FIX::SessionSettings(is))
-{
-}
-
-FixClient::FixClient(const std::filesystem::path& pt)
-  : FixClient(FIX::SessionSettings(pt.string()))
-{
-}
-
-FixClient::FixClient(FIX::SessionSettings settings)
-  : settings_(std::move(settings))
+FixClient::FixClient(const FIX::SessionSettings& settings, MessageHandler* handler)
+  : Client(handler)
+  , settings_(std::move(settings))
 {
   LOG_INFO("FixClient create");
   if (settings_.get().has(FIX::FILE_STORE_PATH))
@@ -147,8 +138,8 @@ FixClient::fromApp(
   SessionPtr session = iter->second;
 
   auto response = std::make_shared<FixMessage>(message);
-  if (message_handler)
-    message_handler->on_recv(
+  if (message_handler_)
+    message_handler_->on_recv(
       translator::ScheduleRef(), translator::CoroutineRef(), session, response);
 }
 #pragma GCC diagnostic pop
@@ -163,4 +154,20 @@ FixClient::init_sessions()
     sessions_.insert_or_assign(session_id, fix_session);
   }
 }
+
+FixClientFactory::FixClientFactory(std::istream& is)
+  : settings_(is)
+{
+}
+
+FixClientFactory::FixClientFactory(const std::filesystem::path& pt)
+  : settings_(pt)
+{
+}
+
+std::unique_ptr<Client> FixClientFactory::create(Client::MessageHandler* handler)
+{
+  return std::make_unique<FixClient>(settings_, handler);
+}
+
 }

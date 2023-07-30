@@ -170,10 +170,8 @@ HttpSession::handle_error(std::string_view version)
   return response;
 }
 
-HttpServer::HttpServer(
-  std::function<std::unique_ptr<Server>(Server::MessageHandler*)>
-    server_factory)
-  : server_(std::move(server_factory(this)))
+HttpServer::HttpServer(ServerFactory& server_factory)
+  : server_(std::move(server_factory.create(this)))
 {
   LOG_INFO("HttpServer create");
 

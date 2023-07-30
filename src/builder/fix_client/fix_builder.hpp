@@ -14,7 +14,7 @@ class FixBuilder
   , public MessageBuilder
 {
 public:
-  explicit FixBuilder(std::unique_ptr<Client> service,
+  explicit FixBuilder(ClientFactory& client_factory,
                              int timeout_milli = 1000);
 
   ~FixBuilder() override;

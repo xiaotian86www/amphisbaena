@@ -73,7 +73,7 @@ public:
 
 public:
   using ctor_prototype = std::unique_ptr<Server>(MessageHandler*);
-  
+
 public:
   Server(MessageHandler* message_handler)
     : message_handler_(message_handler)
@@ -84,6 +84,16 @@ public:
 
 protected:
   MessageHandler* message_handler_;
+};
+
+class ServerFactory
+{
+public:
+  virtual ~ServerFactory() = default;
+
+public:
+  virtual std::unique_ptr<Server> create(
+    Server::MessageHandler* message_handler) = 0;
 };
 
 }
