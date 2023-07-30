@@ -15,23 +15,24 @@
 #include "mock/mock_builder.hpp"
 #include "mock/mock_server.hpp"
 #include "schedule.hpp"
+#include "server.hpp"
 
 class HttpServer : public FixtureSchedule
 {
 public:
   HttpServer()
-    : server(new MockServer())
-    , http_server(std::unique_ptr<MockServer>(server))
+    : http_server([](translator::Server::MessageHandler* handler) {
+      return std::make_unique<MockServer>(handler);
+    })
     , message_builder(std::make_shared<MockMessageBuilder>("GET /"))
   {
-    translator::MessageBuilder::registe(
-      { { message_builder->name(), message_builder } });
+    translator::MessageBuilder::registe(message_builder->name(),
+                                        message_builder);
   }
 
   ~HttpServer() { translator::MessageBuilder::unregiste(); }
 
 protected:
-  MockServer* server;
   translator::HttpServer http_server;
   std::shared_ptr<MockMessageBuilder> message_builder;
 };
@@ -41,12 +42,12 @@ TEST_F(HttpServer, on_data)
   EXPECT_CALL(
     *message_builder,
     create(testing::_, testing::Truly([](translator::MessagePtr message) {
-           auto head = message->get_head();
-           auto body = message->get_body();
-           return head->get_string("method") == "GET" &&
-                  head->get_string("url") == "/" &&
-                  body->get_string("SenderCompID") == "CLIENT1";
-         })))
+             auto head = message->get_head();
+             auto body = message->get_body();
+             return head->get_string("method") == "GET" &&
+                    head->get_string("url") == "/" &&
+                    body->get_string("SenderCompID") == "CLIENT1";
+           })))
     .Times(2)
     .WillRepeatedly(testing::Invoke([] {
       auto response = std::make_shared<translator::JsonMessage>();
@@ -113,10 +114,10 @@ TEST_F(HttpServer, on_data_fail)
   EXPECT_CALL(
     *message_builder,
     create(testing::_, testing::Truly([](translator::MessagePtr message) {
-           auto head = message->get_head();
-           return head->get_value("method", "") == "GET" &&
-                  head->get_value("url", "") == "/";
-         })))
+             auto head = message->get_head();
+             return head->get_value("method", "") == "GET" &&
+                    head->get_value("url", "") == "/";
+           })))
     .WillOnce(testing::Return(std::make_shared<translator::JsonMessage>()));
 
   sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {

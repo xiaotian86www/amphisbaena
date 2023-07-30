@@ -1,19 +1,23 @@
-#include "builder.hpp"
 
 #include <dlfcn.h>
 #include <map>
 #include <memory>
 #include <sstream>
 #include <string_view>
+#include <tuple>
+#include <utility>
 
+#include "builder.hpp"
 #include "environment.hpp"
+#include "log.hpp"
 #include "message.hpp"
 
 namespace translator {
 void
-MessageBuilder::registe(
-  std::map<std::string_view, std::shared_ptr<MessageBuilder>> builders)
+MessageBuilder::registe(std::string_view name,
+                        std::shared_ptr<MessageBuilder> builder)
 {
+  LOG_INFO("Registe pattern: {}", name);
   auto new_builders =
     builders_
       ? std::make_shared<
@@ -23,10 +27,7 @@ MessageBuilder::registe(
                                   std::shared_ptr<MessageBuilder>,
                                   std::less<>>>();
 
-  for (auto iter = builders.begin(); iter != builders.end(); ++iter) {
-    new_builders->insert_or_assign(std::string(iter->first),
-                                   std::move(iter->second));
-  }
+  new_builders->insert_or_assign(std::string(name), builder);
 
   builders_ = new_builders;
 }
@@ -34,13 +35,15 @@ MessageBuilder::registe(
 void
 MessageBuilder::unregiste()
 {
+  LOG_INFO("Unregiste pattern");
   builders_ = std::make_shared<
     std::map<std::string, std::shared_ptr<MessageBuilder>, std::less<>>>();
 }
 
 void
-MessageBuilder::unregiste(const std::vector<std::string_view>& names)
+MessageBuilder::unregiste(std::string_view name)
 {
+  LOG_INFO("Registe pattern: {}", name);
   auto new_ctors =
     builders_
       ? std::make_shared<
@@ -50,9 +53,7 @@ MessageBuilder::unregiste(const std::vector<std::string_view>& names)
                                   std::shared_ptr<MessageBuilder>,
                                   std::less<>>>();
 
-  for (auto it = names.begin(); it != names.end(); ++it) {
-    new_ctors->erase(std::string(*it));
-  }
+  new_ctors->erase(std::string(name));
 
   builders_ = new_ctors;
 }
@@ -78,29 +79,33 @@ std::shared_ptr<
   MessageBuilder::builders_;
 
 void
-Plugin::load(const std::vector<std::filesystem::path>& paths)
+Plugin::load(
+  const std::map<std::filesystem::path, std::vector<std::string>>& infos)
 {
-  std::map<std::string_view, std::shared_ptr<MessageBuilder>> builders;
-  for (const auto& path : paths) {
-    auto handle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
-    if (!handle)
-      throw CouldnotLoadException(path.string(), dlerror());
+  for (const auto& info : infos) {
+    load(info.first, info.second);
+  }
+}
 
-    MessageBuilder* (*get_builder)() = nullptr;
-    const char* (*get_name)() = nullptr;
+void
+Plugin::load(const std::filesystem::path& path,
+             const std::vector<std::string>& args)
+{
+  auto handle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+  if (!handle)
+    throw CouldnotLoadException(path.string(), dlerror());
 
-    *(void**)(&get_builder) = dlsym(handle, "get_builder");
-    if (!get_builder)
-      throw CouldnotLoadException(path.string(), dlerror());
+  void (*init)(int, const char**) = nullptr;
+  *(void**)(&init) = dlsym(handle, "init");
+  if (!init)
+    throw CouldnotLoadException(path.string(), dlerror());
 
-    *(void**)(&get_name) = dlsym(handle, "get_name");
-    if (!get_name)
-      throw CouldnotLoadException(path.string(), dlerror());
-
-    builders.insert_or_assign(
-      (*get_name)(), std::shared_ptr<MessageBuilder>((*get_builder)()));
+  std::vector<const char*> args_;
+  args_.push_back(path.c_str());
+  for (const auto& arg : args) {
+    args_.push_back(arg.c_str());
   }
 
-  MessageBuilder::registe(std::move(builders));
+  init(args_.size(), args_.data());
 }
 }

@@ -71,10 +71,19 @@ public:
                          std::string_view data) = 0;
   };
 
-  MessageHandler* message_handler;
-
 public:
+  using ctor_prototype = std::unique_ptr<Server>(MessageHandler*);
+  
+public:
+  Server(MessageHandler* message_handler)
+    : message_handler_(message_handler)
+  {
+  }
+
   virtual ~Server() = default;
+
+protected:
+  MessageHandler* message_handler_;
 };
 
 }

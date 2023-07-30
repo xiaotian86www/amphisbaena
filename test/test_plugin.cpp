@@ -15,7 +15,7 @@ TEST_F(Plugin, load)
 {
   translator::Environment env;
 
-  translator::Plugin::load({ "mock/builder/libbuilder1.so" });
+  translator::Plugin::load("mock/builder/libbuilder1.so", {});
   {
     auto message = translator::MessageBuilder::create(
       env, "Message", translator::MessagePtr());
@@ -23,7 +23,7 @@ TEST_F(Plugin, load)
     EXPECT_EQ(message->get_body()->get_int("Field"), 1);
   }
 
-  translator::Plugin::load({ "mock/builder/libbuilder13.so" });
+  translator::Plugin::load("mock/builder/libbuilder13.so", {});
   {
     auto message = translator::MessageBuilder::create(
       env, "Message", translator::MessagePtr());
@@ -36,8 +36,8 @@ TEST_F(Plugin, load_fail)
 {
   translator::Environment env;
 
-  EXPECT_THROW(translator::Plugin::load({ "mock/builder/libbuilder11.so" }),
+  EXPECT_THROW(translator::Plugin::load("mock/builder/libbuilder11.so", {}),
                translator::CouldnotLoadException);
-  EXPECT_THROW(translator::Plugin::load({ "mock/builder/libbuilder12.so" }),
-               translator::CouldnotLoadException);
+  EXPECT_THROW(translator::Plugin::load("mock/builder/libbuilder12.so", {}),
+               std::invalid_argument);
 }

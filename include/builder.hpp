@@ -24,12 +24,12 @@ public:
   virtual std::string_view name() const = 0;
 
 public:
-  static void registe(
-    std::map<std::string_view, std::shared_ptr<MessageBuilder>> builders);
+  static void registe(std::string_view,
+                      std::shared_ptr<MessageBuilder> builder);
 
   static void unregiste();
 
-  static void unregiste(const std::vector<std::string_view>& names);
+  static void unregiste(std::string_view name);
 
   static MessagePtr create(Environment& env,
                            std::string_view name,
@@ -44,6 +44,10 @@ private:
 class Plugin
 {
 public:
-  static void load(const std::vector<std::filesystem::path>& paths);
+  static void load(
+    const std::map<std::filesystem::path, std::vector<std::string>>& infos);
+
+  static void load(const std::filesystem::path& path,
+                   const std::vector<std::string>& args);
 };
 }

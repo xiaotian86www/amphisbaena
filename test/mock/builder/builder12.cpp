@@ -1,5 +1,6 @@
 
 #include <memory>
+#include <stdexcept>
 
 #include "builder.hpp"
 #include "environment.hpp"
@@ -22,13 +23,8 @@ public:
 
 extern "C"
 {
-  translator::MessageBuilder* get_builder()
+  void init(int argc, const char** argv)
   {
-    return new MessageBuilder1();
-  }
-
-  const char* get_name2()
-  {
-    return "Message";
+    throw std::invalid_argument("Usage: " + std::string(argv[0]));
   }
 }

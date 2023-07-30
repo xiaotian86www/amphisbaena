@@ -82,8 +82,10 @@ UDSConnection::close()
 
 UDSServer::UDSServer(boost::asio::io_service& ios,
                      std::shared_ptr<Schedule> sch,
-                     const std::filesystem::path& file)
-  : ios_(ios)
+                     const std::filesystem::path& file,
+                     MessageHandler* message_handler)
+  : Server(message_handler)
+  , ios_(ios)
   , sch_(sch)
   , endpoint_(file)
   , acceptor_(ios)
@@ -152,16 +154,16 @@ UDSServer::handle(ScheduleRef sch, CoroutineRef co)
     boost::system::error_code ec;
     std::size_t size = conn->recv(data.data(), data.size());
     LOG_DEBUG("Recv size: {}", size);
-    
+
     if (size == -1) {
       break;
     }
 
-    assert(message_handler);
-    message_handler->on_recv(sch,
-                             co,
-                             std::static_pointer_cast<Connection>(conn),
-                             { data.data(), size });
+    assert(message_handler_);
+    message_handler_->on_recv(sch,
+                              co,
+                              std::static_pointer_cast<Connection>(conn),
+                              { data.data(), size });
   }
 }
 

@@ -16,14 +16,16 @@ class UDSServer : public FixtureSchedule
 {
 public:
   UDSServer()
-    : server(std::make_shared<translator::UDSServer>(ios, sch, "server.socket"))
+    : server(std::make_shared<translator::UDSServer>(ios,
+                                                     sch,
+                                                     "server.socket",
+                                                     &message_handler))
   {
-    server->message_handler = &message_handler;
   }
 
 protected:
-  std::shared_ptr<translator::UDSServer> server;
   MockServer::MockMessageHandler message_handler;
+  std::shared_ptr<translator::UDSServer> server;
 };
 
 TEST_F(UDSServer, on_recv)

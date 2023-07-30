@@ -21,9 +21,10 @@
 #include <quickfix/SocketInitiator.h>
 #pragma GCC diagnostic pop
 
-#include "../../impl/fix_message.hpp"
 #include "client.hpp"
 #include "fix_client.hpp"
+#include "impl/fix_message.hpp"
+#include "log.hpp"
 #include "schedule.hpp"
 
 namespace translator {
@@ -48,6 +49,7 @@ FixClient::FixClient(const std::filesystem::path& pt)
 FixClient::FixClient(FIX::SessionSettings settings)
   : settings_(std::move(settings))
 {
+  LOG_INFO("FixClient create");
   if (settings_.get().has(FIX::FILE_STORE_PATH))
     store_factory_ = std::make_unique<FIX::FileStoreFactory>(settings_);
   else
@@ -60,13 +62,14 @@ FixClient::FixClient(FIX::SessionSettings settings)
 
   initiator_ = std::make_unique<FIX::SocketInitiator>(
     *this, *store_factory_, settings_, *log_factory_);
-    
+
   init_sessions();
   initiator_->start();
 }
 
 FixClient::~FixClient()
 {
+  LOG_INFO("FixClient destroy");
   initiator_->stop();
 }
 
@@ -93,13 +96,21 @@ FixClient::onCreate(const FIX::SessionID&)
 }
 
 void
-FixClient::onLogon(const FIX::SessionID&)
+FixClient::onLogon(const FIX::SessionID& session_id)
 {
+  LOG_INFO("Logon begin_string: {}, sender_comp_id: {}, target_comp_id: {}",
+           session_id.getBeginString().getString(),
+           session_id.getSenderCompID().getString(),
+           session_id.getTargetCompID().getString());
 }
 
 void
-FixClient::onLogout(const FIX::SessionID&)
+FixClient::onLogout(const FIX::SessionID& session_id)
 {
+  LOG_INFO("Logout begin_string: {}, sender_comp_id: {}, target_comp_id: {}",
+           session_id.getBeginString().getString(),
+           session_id.getSenderCompID().getString(),
+           session_id.getTargetCompID().getString());
 }
 
 void

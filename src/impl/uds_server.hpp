@@ -3,9 +3,9 @@
 #include <array>
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/local/stream_protocol.hpp>
+#include <filesystem>
 #include <memory>
 #include <string_view>
-#include <filesystem>
 
 #include "schedule.hpp"
 #include "server.hpp"
@@ -39,7 +39,8 @@ class UDSServer
 public:
   UDSServer(boost::asio::io_service& ios,
             std::shared_ptr<Schedule> sch,
-            const std::filesystem::path& file);
+            const std::filesystem::path& file,
+            MessageHandler* message_handler);
 
   virtual ~UDSServer();
 

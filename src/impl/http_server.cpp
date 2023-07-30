@@ -170,12 +170,12 @@ HttpSession::handle_error(std::string_view version)
   return response;
 }
 
-HttpServer::HttpServer(std::unique_ptr<Server> server)
-  : server_(std::move(server))
+HttpServer::HttpServer(
+  std::function<std::unique_ptr<Server>(Server::MessageHandler*)>
+    server_factory)
+  : server_(std::move(server_factory(this)))
 {
   LOG_INFO("HttpServer create");
-
-  server_->message_handler = this;
 
   llhttp_settings_init(&settings_);
   settings_.on_method = handle_on_method;

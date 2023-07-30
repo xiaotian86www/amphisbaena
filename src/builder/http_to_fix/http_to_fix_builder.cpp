@@ -2,9 +2,21 @@
 #include "builder.hpp"
 #include "environment.hpp"
 #include "message.hpp"
+#include "log.hpp"
 
 namespace translator {
 namespace builder {
+
+HttpToFixBuilder::HttpToFixBuilder()
+{
+  LOG_INFO("HttpToFixBuilder create");
+}
+
+HttpToFixBuilder::~HttpToFixBuilder()
+{
+  LOG_INFO("HttpToFixBuilder destroy");
+}
+
 MessagePtr
 HttpToFixBuilder::create(Environment& env, MessagePtr request)
 {
@@ -32,13 +44,9 @@ HttpToFixBuilder::name() const
 
 extern "C"
 {
-  translator::MessageBuilder* get_func()
+  void init(int argc, const char** argv)
   {
-    return new translator::builder::HttpToFixBuilder();
-  }
-
-  const char* get_name()
-  {
-    return "GET /";
+    translator::MessageBuilder::registe(
+      "GET /", std::make_shared<translator::builder::HttpToFixBuilder>());
   }
 }

@@ -52,7 +52,8 @@ typedef std::shared_ptr<HttpSession> HttpSessionPtr;
 class HttpServer : public Server::MessageHandler
 {
 public:
-  HttpServer(std::unique_ptr<Server> server);
+  HttpServer(std::function<Server::ctor_prototype>
+               server_factory);
 
   ~HttpServer() override;
 

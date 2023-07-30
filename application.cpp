@@ -27,6 +27,9 @@ sigint_handler(int sig)
 void
 exit_handler()
 {
+  translator::MessageBuilder::unregiste();
+  translator::MessageFactory::unregiste();
+
   LOG_INFO("Translator end");
 }
 
@@ -38,11 +41,18 @@ main(int argc, char** argv)
   LOG_INFO("Translator begin");
   auto sch = std::make_shared<translator::Schedule>(ios);
   translator::HttpServer http_server(
-    std::make_unique<translator::UDSServer>(ios, sch, "server.sock"));
+    [sch](translator::Server::MessageHandler* handler) {
+      return std::make_unique<translator::UDSServer>(
+        ios, sch, "server.sock", handler);
+    });
   translator::MessageFactory::registe(
     "Fix", [] { return std::make_shared<translator::FixMessage>(); });
   translator::MessageFactory::registe(
     "Json", [] { return std::make_shared<translator::JsonMessage>(); });
+
+  translator::Plugin::load("src/builder/fix_client/libfix_client.so",
+                           { "../cfg/fix_client/tradeclient.cfg" });
+  translator::Plugin::load("src/builder/http_to_fix/libhttp_to_fix.so", {});
 
   signal(SIGINT, sigint_handler);
   atexit(exit_handler);

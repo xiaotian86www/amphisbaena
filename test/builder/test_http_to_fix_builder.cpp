@@ -27,7 +27,7 @@ public:
       "Json", [] { return std::make_shared<translator::JsonMessage>(); });
 
     translator::MessageBuilder::registe(
-      { { fix_builder->name(), fix_builder } });
+      fix_builder->name(), fix_builder );
   }
 
   ~HttpToFixBuilder()

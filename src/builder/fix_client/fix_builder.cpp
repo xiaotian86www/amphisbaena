@@ -2,25 +2,28 @@
 #include <memory>
 #include <mutex>
 #include <quickfix/FixValues.h>
+#include <stdexcept>
 
 #include "builder.hpp"
 #include "builder/fix_client/fix_client.hpp"
 #include "environment.hpp"
 #include "fix_builder.hpp"
 #include "future.hpp"
+#include "log.hpp"
 #include "message.hpp"
 
 namespace translator {
-FixBuilder::FixBuilder(std::unique_ptr<Client> service,
-                                     int timeout_milli)
+FixBuilder::FixBuilder(std::unique_ptr<Client> service, int timeout_milli)
   : service_(std::move(service))
   , timeout_milli_(timeout_milli)
 {
+  LOG_INFO("FixBuilder create");
   service_->message_handler = this;
 }
 
 FixBuilder::~FixBuilder()
 {
+  LOG_INFO("FixBuilder destroy");
 }
 
 MessagePtr
@@ -76,9 +79,9 @@ FixBuilder::name() const
 
 void
 FixBuilder::on_recv(ScheduleRef sch,
-                           CoroutineRef co,
-                           SessionPtr session,
-                           MessagePtr response)
+                    CoroutineRef co,
+                    SessionPtr session,
+                    MessagePtr response)
 {
   std::lock_guard<std::mutex> lg(pmss_mtx_);
   if (auto iter = pmss_.find(session); iter != pmss_.end()) {
@@ -90,15 +93,14 @@ FixBuilder::on_recv(ScheduleRef sch,
 
 extern "C"
 {
-  translator::MessageBuilder* get_builder()
+  void init(int argc, const char** argv)
   {
-    return new translator::FixBuilder(
-      std::make_unique<translator::FixClient>(
-        "/usr/local/share/quickfix/FIX42.xml"));
-  }
+    if (argc < 2)
+      throw std::invalid_argument("Usage: " + std::string(argv[0]));
 
-  const char* get_name()
-  {
-    return "Fix";
+    translator::MessageBuilder::registe(
+      "Fix",
+      std::make_shared<translator::FixBuilder>(
+        std::make_unique<translator::FixClient>(argv[1])));
   }
 }

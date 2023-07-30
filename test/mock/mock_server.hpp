@@ -25,4 +25,7 @@ public:
                  std::string_view data),
                 (override));
   };
+
+public:
+  using translator::Server::Server;
 };

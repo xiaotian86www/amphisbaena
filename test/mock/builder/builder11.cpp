@@ -22,13 +22,7 @@ public:
 
 extern "C"
 {
-  translator::MessageBuilder* get_builder2()
+  void init2(int argc, const char** argv)
   {
-    return new MessageBuilder1();
-  }
-
-  const char* get_name2()
-  {
-    return "Message";
   }
 }
