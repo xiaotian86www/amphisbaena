@@ -60,22 +60,12 @@ FixClient::FixClient(FIX::SessionSettings settings)
 
   initiator_ = std::make_unique<FIX::SocketInitiator>(
     *this, *store_factory_, settings_, *log_factory_);
-}
-
-FixClient::~FixClient()
-{
-  stop();
-}
-
-void
-FixClient::start()
-{
+    
   init_sessions();
   initiator_->start();
 }
 
-void
-FixClient::stop()
+FixClient::~FixClient()
 {
   initiator_->stop();
 }
@@ -94,13 +84,6 @@ FixClient::create(MessagePtr message)
     return SessionPtr();
   }
 }
-
-// void
-// FixClient::send(MessagePtr message)
-// {
-//   FIX::Session::sendToTarget(
-//     std::static_pointer_cast<FixMessage>(message)->message());
-// }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
@@ -153,9 +136,9 @@ FixClient::fromApp(
   SessionPtr session = iter->second;
 
   auto response = std::make_shared<FixMessage>(message);
-  assert(message_handler);
-  message_handler->on_recv(
-    translator::ScheduleRef(), translator::CoroutineRef(), session, response);
+  if (message_handler)
+    message_handler->on_recv(
+      translator::ScheduleRef(), translator::CoroutineRef(), session, response);
 }
 #pragma GCC diagnostic pop
 

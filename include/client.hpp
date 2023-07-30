@@ -26,10 +26,6 @@ public:
   virtual ~Client() = default;
 
 public:
-  virtual void start() = 0;
-
-  virtual void stop() = 0;
-
   virtual SessionPtr create(MessagePtr message) = 0;
 };
 }

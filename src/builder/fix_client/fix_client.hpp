@@ -54,10 +54,6 @@ private:
   FixClient(FIX::SessionSettings settings);
 
 public:
-  void start() override;
-
-  void stop() override;
-
   SessionPtr create(MessagePtr message) override;
 
 public:

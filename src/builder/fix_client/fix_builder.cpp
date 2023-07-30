@@ -17,12 +17,10 @@ FixBuilder::FixBuilder(std::unique_ptr<Client> service,
   , timeout_milli_(timeout_milli)
 {
   service_->message_handler = this;
-  service_->start();
 }
 
 FixBuilder::~FixBuilder()
 {
-  service_->stop();
 }
 
 MessagePtr
@@ -82,8 +80,6 @@ FixBuilder::on_recv(ScheduleRef sch,
                            SessionPtr session,
                            MessagePtr response)
 {
-  // auto cl_ord_id = response->get_body().get_string("ClOrdID");
-
   std::lock_guard<std::mutex> lg(pmss_mtx_);
   if (auto iter = pmss_.find(session); iter != pmss_.end()) {
     iter->second.set(std::move(response));

@@ -92,22 +92,15 @@ SocketConnectPort=10000
 HeartBtInt=30 
 )")
     , server(server_settings)
-    , client(client_settings)
   {
-    translator::FixMessage::init(
-      "/usr/local/share/quickfix/FIX42.xml");
-
-    client.message_handler = &message_handler;
+    translator::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
   }
 
-private:
+protected:
   std::stringstream server_settings;
   std::stringstream client_settings;
-
-protected:
   MockClient::MockMessageHandler message_handler;
   FixServer server;
-  translator::FixClient client;
 };
 
 TEST_F(FixClient, send)
@@ -135,7 +128,6 @@ TEST_F(FixClient, send)
   EXPECT_CALL(server, onLogout(testing::_)).WillOnce(testing::Return());
 
   server.start();
-  client.start();
 
   pms1.get_future().wait_for(std::chrono::milliseconds(1));
 
@@ -153,6 +145,9 @@ TEST_F(FixClient, send)
   body->set_value("Symbol", "AAPL");
   body->set_value("Side", "1");
   body->set_value("TransactTime", "20230718-04:57:20.922010000");
+
+  translator::FixClient client(client_settings);
+  client.message_handler = &message_handler;
 
   auto session = client.create(msg);
 
@@ -185,7 +180,6 @@ TEST_F(FixClient, recv)
   EXPECT_CALL(server, onLogout(testing::_)).WillOnce(testing::Return());
 
   server.start();
-  client.start();
 
   pms1.get_future().wait_for(std::chrono::milliseconds(1));
 
@@ -209,6 +203,8 @@ TEST_F(FixClient, recv)
   body->set_value("CumQty", 88.88);
   body->set_value("AvgPx", 10.01);
 
+  translator::FixClient client(client_settings);
+  client.message_handler = &message_handler;
   server.send(msg->fix_message);
 
   pms2.get_future().wait_for(std::chrono::milliseconds(1));
