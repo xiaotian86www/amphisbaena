@@ -17,8 +17,8 @@ protected:
 
 TEST_F(Future, get)
 {
-  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
-    translator::Promise<int> pms(sch, co);
+  auto foo = [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
+    amphisbaena::Promise<int> pms(sch, co);
     pms.set(foo_mock1.Call());
     foo_mock2.Call(pms.future().get());
   };
@@ -32,7 +32,7 @@ TEST_F(Future, get)
 
 TEST_F(Future, get_for)
 {
-  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+  auto foo = [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
     co.yield_for(0);
     foo_mock2.Call(foo_mock1.Call());
   };
@@ -46,8 +46,8 @@ TEST_F(Future, get_for)
 
 TEST_F(Future, get_for_timeout)
 {
-  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
-    translator::Promise<int> pms(sch, co);
+  auto foo = [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
+    amphisbaena::Promise<int> pms(sch, co);
     foo_mock2.Call(pms.future().get_for(1, 10));
   };
 

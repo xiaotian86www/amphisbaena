@@ -7,7 +7,7 @@
 #include "future.hpp"
 #include "message.hpp"
 
-namespace translator {
+namespace amphisbaena {
 
 class FixBuilder
   : public Client::MessageHandler

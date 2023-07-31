@@ -8,25 +8,25 @@ class Plugin : public testing::Test
 {
 public:
   Plugin() {}
-  ~Plugin() { translator::MessageBuilder::unregiste(); }
+  ~Plugin() { amphisbaena::MessageBuilder::unregiste(); }
 };
 
 TEST_F(Plugin, load)
 {
-  translator::Environment env;
+  amphisbaena::Environment env;
 
-  translator::Plugin::load("mock/builder/libbuilder1.so", {});
+  amphisbaena::Plugin::load("mock/builder/libbuilder1.so", {});
   {
-    auto message = translator::MessageBuilder::create(
-      env, "Message", translator::MessagePtr());
+    auto message = amphisbaena::MessageBuilder::create(
+      env, "Message", amphisbaena::MessagePtr());
 
     EXPECT_EQ(message->get_body()->get_int("Field"), 1);
   }
 
-  translator::Plugin::load("mock/builder/libbuilder13.so", {});
+  amphisbaena::Plugin::load("mock/builder/libbuilder13.so", {});
   {
-    auto message = translator::MessageBuilder::create(
-      env, "Message", translator::MessagePtr());
+    auto message = amphisbaena::MessageBuilder::create(
+      env, "Message", amphisbaena::MessagePtr());
 
     EXPECT_EQ(message->get_body()->get_int("Field"), 2);
   }
@@ -34,10 +34,10 @@ TEST_F(Plugin, load)
 
 TEST_F(Plugin, load_fail)
 {
-  translator::Environment env;
+  amphisbaena::Environment env;
 
-  EXPECT_THROW(translator::Plugin::load("mock/builder/libbuilder11.so", {}),
-               translator::CouldnotLoadException);
-  EXPECT_THROW(translator::Plugin::load("mock/builder/libbuilder12.so", {}),
+  EXPECT_THROW(amphisbaena::Plugin::load("mock/builder/libbuilder11.so", {}),
+               amphisbaena::CouldnotLoadException);
+  EXPECT_THROW(amphisbaena::Plugin::load("mock/builder/libbuilder12.so", {}),
                std::invalid_argument);
 }

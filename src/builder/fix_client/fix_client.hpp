@@ -22,7 +22,7 @@
 #include "impl/fix_message.hpp"
 #include "message.hpp"
 
-namespace translator {
+namespace amphisbaena {
 
 class FixSession : public Session
 {

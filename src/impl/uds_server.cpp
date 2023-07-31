@@ -10,7 +10,7 @@
 #include "schedule.hpp"
 #include "uds_server.hpp"
 
-namespace translator {
+namespace amphisbaena {
 UDSConnection::UDSConnection(ScheduleRef sch,
                              CoroutineRef co,
                              stream_protocol::socket sock)

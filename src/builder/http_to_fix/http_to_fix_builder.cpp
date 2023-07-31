@@ -4,7 +4,7 @@
 #include "message.hpp"
 #include "log.hpp"
 
-namespace translator {
+namespace amphisbaena {
 namespace builder {
 
 HttpToFixBuilder::HttpToFixBuilder()
@@ -22,8 +22,6 @@ HttpToFixBuilder::create(Environment& env, MessagePtr request)
 {
   auto fix_request = MessageFactory::create("Fix");
   fix_request->get_body()->copy_from(request->get_body());
-
-  fix_request->get_body()->get_string("SenderCompID");
 
   auto fix_response = MessageBuilder::create(env, "fix", fix_request);
 
@@ -46,7 +44,7 @@ extern "C"
 {
   void init(int argc, const char** argv)
   {
-    translator::MessageBuilder::registe(
-      "GET /", std::make_shared<translator::builder::HttpToFixBuilder>());
+    amphisbaena::MessageBuilder::registe(
+      "GET /", std::make_shared<amphisbaena::builder::HttpToFixBuilder>());
   }
 }

@@ -18,7 +18,7 @@
 
 #include "message.hpp"
 
-namespace translator {
+namespace amphisbaena {
 
 class FixObject : public Object
 {

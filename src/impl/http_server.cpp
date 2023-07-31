@@ -11,7 +11,7 @@
 #include "message.hpp"
 #include "session.hpp"
 
-namespace translator {
+namespace amphisbaena {
 
 static int
 handle_on_method(llhttp_t* http, const char* at, size_t length)

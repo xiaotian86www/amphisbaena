@@ -93,7 +93,7 @@ HeartBtInt=30
 )")
     , server(FIX::SessionSettings(server_settings))
   {
-    translator::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
+    amphisbaena::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
   }
 
 protected:
@@ -131,7 +131,7 @@ TEST_F(FixClient, send)
 
   pms1.get_future().wait_for(std::chrono::milliseconds(1));
 
-  auto msg = std::make_shared<translator::FixMessage>();
+  auto msg = std::make_shared<amphisbaena::FixMessage>();
   auto head = msg->get_head();
   head->set_value("MsgType", FIX::MsgType_NewOrderSingle);
   head->set_value("BeginString", "FIX.4.2");
@@ -146,7 +146,7 @@ TEST_F(FixClient, send)
   body->set_value("Side", "1");
   body->set_value("TransactTime", "20230718-04:57:20.922010000");
 
-  translator::FixClient client(FIX::SessionSettings(client_settings),
+  amphisbaena::FixClient client(FIX::SessionSettings(client_settings),
                                &message_handler);
 
   auto session = client.create(msg);
@@ -173,17 +173,17 @@ TEST_F(FixClient, recv)
   EXPECT_CALL(message_handler,
               on_recv(testing::_, testing::_, testing::_, testing::_))
     .WillOnce(
-      testing::Invoke([&pms2](translator::ScheduleRef,
-                              translator::CoroutineRef,
-                              translator::SessionPtr,
-                              translator::MessagePtr) { pms2.set_value(); }));
+      testing::Invoke([&pms2](amphisbaena::ScheduleRef,
+                              amphisbaena::CoroutineRef,
+                              amphisbaena::SessionPtr,
+                              amphisbaena::MessagePtr) { pms2.set_value(); }));
   EXPECT_CALL(server, onLogout(testing::_)).WillOnce(testing::Return());
 
   server.start();
 
   pms1.get_future().wait_for(std::chrono::milliseconds(1));
 
-  auto msg = std::make_shared<translator::FixMessage>();
+  auto msg = std::make_shared<amphisbaena::FixMessage>();
   auto head = msg->get_head();
   head->set_value("MsgType", FIX::MsgType_ExecutionReport);
   head->set_value("BeginString", "FIX.4.2");
@@ -203,7 +203,7 @@ TEST_F(FixClient, recv)
   body->set_value("CumQty", 88.88);
   body->set_value("AvgPx", 10.01);
 
-  translator::FixClient client(FIX::SessionSettings(client_settings),
+  amphisbaena::FixClient client(FIX::SessionSettings(client_settings),
                                &message_handler);
                                
   server.send(msg->fix_message);

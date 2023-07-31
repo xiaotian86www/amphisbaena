@@ -3,15 +3,15 @@
 
 #include "server.hpp"
 
-class MockConnection : public translator::Connection
+class MockConnection : public amphisbaena::Connection
 {
 public:
-  using translator::Connection::Connection;
+  using amphisbaena::Connection::Connection;
   MOCK_METHOD(void, send, (std::string_view), (override));
   MOCK_METHOD(void, close, (), (override));
 };
 
-class MockServer : public translator::Server
+class MockServer : public amphisbaena::Server
 {
 public:
   class MockMessageHandler : public MessageHandler
@@ -19,22 +19,22 @@ public:
   public:
     MOCK_METHOD(void,
                 on_recv,
-                (translator::ScheduleRef sch,
-                 translator::CoroutineRef co,
-                 translator::ConnectionPtr conn,
+                (amphisbaena::ScheduleRef sch,
+                 amphisbaena::CoroutineRef co,
+                 amphisbaena::ConnectionPtr conn,
                  std::string_view data),
                 (override));
   };
 
 public:
-  using translator::Server::Server;
+  using amphisbaena::Server::Server;
 };
 
-class MockServerFactory : public translator::ServerFactory
+class MockServerFactory : public amphisbaena::ServerFactory
 {
 public:
-  std::unique_ptr<translator::Server> create(
-    translator::Server::MessageHandler* handler) override
+  std::unique_ptr<amphisbaena::Server> create(
+    amphisbaena::Server::MessageHandler* handler) override
   {
     return std::make_unique<MockServer>(handler);
   }

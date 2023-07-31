@@ -13,7 +13,7 @@
 
 using namespace boost::asio::local;
 
-namespace translator {
+namespace amphisbaena {
 class UDSConnection
   : public std::enable_shared_from_this<Connection>
   , public Connection

@@ -2,7 +2,7 @@
 #include <string>
 #include <string_view>
 
-namespace translator {
+namespace amphisbaena {
 class Exception : public std::exception
 {};
 

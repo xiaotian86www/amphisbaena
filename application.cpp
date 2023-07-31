@@ -27,10 +27,10 @@ sigint_handler(int sig)
 void
 exit_handler()
 {
-  translator::MessageBuilder::unregiste();
-  translator::MessageFactory::unregiste();
+  amphisbaena::MessageBuilder::unregiste();
+  amphisbaena::MessageFactory::unregiste();
 
-  LOG_INFO("Translator end");
+  LOG_INFO("amphisbaena end");
 }
 
 int
@@ -38,18 +38,18 @@ main(int argc, char** argv)
 {
   spdlog::set_level(spdlog::level::debug);
 
-  LOG_INFO("Translator begin");
-  auto sch = std::make_shared<translator::Schedule>(ios);
-  translator::UDSServerFactory server_factory(ios, sch, "server.sock");
-  translator::HttpServer http_server(server_factory);
-  translator::MessageFactory::registe(
-    "Fix", [] { return std::make_shared<translator::FixMessage>(); });
-  translator::MessageFactory::registe(
-    "Json", [] { return std::make_shared<translator::JsonMessage>(); });
+  LOG_INFO("amphisbaena begin");
+  auto sch = std::make_shared<amphisbaena::Schedule>(ios);
+  amphisbaena::UDSServerFactory server_factory(ios, sch, "server.sock");
+  amphisbaena::HttpServer http_server(server_factory);
+  amphisbaena::MessageFactory::registe(
+    "Fix", [] { return std::make_shared<amphisbaena::FixMessage>(); });
+  amphisbaena::MessageFactory::registe(
+    "Json", [] { return std::make_shared<amphisbaena::JsonMessage>(); });
 
-  translator::Plugin::load("src/builder/fix_client/libfix_client.so",
+  amphisbaena::Plugin::load("src/builder/fix_client/libfix_client.so",
                            { "../cfg/fix_client/tradeclient.cfg" });
-  translator::Plugin::load("src/builder/http_to_fix/libhttp_to_fix.so", {});
+  amphisbaena::Plugin::load("src/builder/http_to_fix/libhttp_to_fix.so", {});
 
   signal(SIGINT, sigint_handler);
   atexit(exit_handler);

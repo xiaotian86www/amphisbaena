@@ -10,7 +10,7 @@
 #include "json_message.hpp"
 #include "message.hpp"
 
-namespace translator {
+namespace amphisbaena {
 
 namespace detail {
 // template<typename Type_>

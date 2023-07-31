@@ -11,7 +11,7 @@
 
 #include "fix_message.hpp"
 
-namespace translator {
+namespace amphisbaena {
 namespace detail {
 
 static std::map<std::string, std::tuple<int, FIX::TYPE::Type>, std::less<>>

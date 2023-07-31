@@ -2,7 +2,7 @@
 
 #include "message.hpp"
 
-namespace translator {
+namespace amphisbaena {
 class Session
 {
 public:

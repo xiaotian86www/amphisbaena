@@ -5,11 +5,11 @@
 #include "message.hpp"
 #include "session.hpp"
 
-class MockSession : public translator::Session
+class MockSession : public amphisbaena::Session
 {
 public:
   MOCK_METHOD(void,
               send,
-              (translator::MessagePtr data),
+              (amphisbaena::MessagePtr data),
               (override));
 };

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(test_translator VERSION 0.1.0)
+project(test_amphisbaena VERSION 0.1.0)
 
 find_package(GTest REQUIRED)
 
@@ -18,7 +18,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     gtest
     gmock
     test_tool
-    translator_core
+    amphisbaena_core
     http_to_fix
     fix_client
 )

@@ -5,7 +5,7 @@
 #include "session.hpp"
 #include <memory>
 
-namespace translator {
+namespace amphisbaena {
 class Client
 {
 public:

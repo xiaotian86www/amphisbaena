@@ -4,7 +4,7 @@
 
 #include "schedule.hpp"
 
-namespace translator {
+namespace amphisbaena {
 
 class Connection
 {

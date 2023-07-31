@@ -12,7 +12,7 @@
 #include "exception.hpp"
 #include "server.hpp"
 
-namespace translator {
+namespace amphisbaena {
 
 // TODO 调整FieldType组织方式，简化field_type_name、check_field_type调用
 enum class FieldType
@@ -261,4 +261,4 @@ private:
   static std::shared_ptr<std::map<std::string, ctor_function, std::less<>>>
     ctors_;
 };
-} // namespace translator
+} // namespace amphisbaena

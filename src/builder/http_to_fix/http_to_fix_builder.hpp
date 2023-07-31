@@ -3,7 +3,7 @@
 #include "environment.hpp"
 #include "message.hpp"
 
-namespace translator {
+namespace amphisbaena {
 namespace builder {
 class HttpToFixBuilder : public MessageBuilder
 {

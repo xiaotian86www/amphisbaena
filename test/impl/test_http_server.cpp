@@ -24,15 +24,15 @@ public:
     : http_server(server_factory)
     , message_builder(std::make_shared<MockMessageBuilder>("GET /"))
   {
-    translator::MessageBuilder::registe(message_builder->name(),
+    amphisbaena::MessageBuilder::registe(message_builder->name(),
                                         message_builder);
   }
 
-  ~HttpServer() { translator::MessageBuilder::unregiste(); }
+  ~HttpServer() { amphisbaena::MessageBuilder::unregiste(); }
 
 protected:
   MockServerFactory server_factory;
-  translator::HttpServer http_server;
+  amphisbaena::HttpServer http_server;
   std::shared_ptr<MockMessageBuilder> message_builder;
 };
 
@@ -40,7 +40,7 @@ TEST_F(HttpServer, on_data)
 {
   EXPECT_CALL(
     *message_builder,
-    create(testing::_, testing::Truly([](translator::MessagePtr message) {
+    create(testing::_, testing::Truly([](amphisbaena::MessagePtr message) {
              auto head = message->get_head();
              auto body = message->get_body();
              return head->get_string("method") == "GET" &&
@@ -49,7 +49,7 @@ TEST_F(HttpServer, on_data)
            })))
     .Times(2)
     .WillRepeatedly(testing::Invoke([] {
-      auto response = std::make_shared<translator::JsonMessage>();
+      auto response = std::make_shared<amphisbaena::JsonMessage>();
       auto response_body = response->get_body();
 
       response_body->set_value("SenderCompID", "CLIENT1");
@@ -57,7 +57,7 @@ TEST_F(HttpServer, on_data)
       return response;
     }));
 
-  sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+  sch->spawn([this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);
 
     EXPECT_CALL(
@@ -91,7 +91,7 @@ TEST_F(HttpServer, on_data)
 
 TEST_F(HttpServer, on_data_not_found)
 {
-  sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+  sch->spawn([this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);
     EXPECT_CALL(
       *conn,
@@ -112,14 +112,14 @@ TEST_F(HttpServer, on_data_fail)
 {
   EXPECT_CALL(
     *message_builder,
-    create(testing::_, testing::Truly([](translator::MessagePtr message) {
+    create(testing::_, testing::Truly([](amphisbaena::MessagePtr message) {
              auto head = message->get_head();
              return head->get_value("method", "") == "GET" &&
                     head->get_value("url", "") == "/";
            })))
-    .WillOnce(testing::Return(std::make_shared<translator::JsonMessage>()));
+    .WillOnce(testing::Return(std::make_shared<amphisbaena::JsonMessage>()));
 
-  sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+  sch->spawn([this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
     auto conn = std::make_shared<MockConnection>(sch, co);
     EXPECT_CALL(
       *conn,

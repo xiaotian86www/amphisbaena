@@ -27,7 +27,7 @@
 #include "log.hpp"
 #include "schedule.hpp"
 
-namespace translator {
+namespace amphisbaena {
 
 void
 FixSession::send(MessagePtr data)
@@ -140,7 +140,7 @@ FixClient::fromApp(
   auto response = std::make_shared<FixMessage>(message);
   if (message_handler_)
     message_handler_->on_recv(
-      translator::ScheduleRef(), translator::CoroutineRef(), session, response);
+      amphisbaena::ScheduleRef(), amphisbaena::CoroutineRef(), session, response);
 }
 #pragma GCC diagnostic pop
 

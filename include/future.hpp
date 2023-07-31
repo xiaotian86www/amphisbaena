@@ -7,7 +7,7 @@
 
 #include "schedule.hpp"
 
-namespace translator {
+namespace amphisbaena {
 namespace detail {
 template<typename Tp_>
 class Future
@@ -120,4 +120,4 @@ private:
   std::shared_ptr<detail::Future<Tp_>> ftr_;
 };
 
-} // namespace translator
+} // namespace amphisbaena

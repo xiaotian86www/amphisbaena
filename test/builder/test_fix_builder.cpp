@@ -22,18 +22,18 @@ public:
     : session(std::make_shared<MockSession>())
     , builder(client_factory, 1)
   {
-    translator::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
+    amphisbaena::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
   }
 
 protected:
   MockClientFactory client_factory;
   std::shared_ptr<MockSession> session;
-  translator::FixBuilder builder;
+  amphisbaena::FixBuilder builder;
 };
 
 TEST_F(FixBuilder, call)
 {
-  auto request = std::make_shared<translator::FixMessage>();
+  auto request = std::make_shared<amphisbaena::FixMessage>();
   auto req_head = request->get_head();
   req_head->set_value("MsgType", FIX::MsgType_NewOrderSingle);
   req_head->set_value("BeginString", "FIX.4.2");
@@ -48,7 +48,7 @@ TEST_F(FixBuilder, call)
   req_body->set_value("Side", "1");
   req_body->set_value("TransactTime", "20230718-04:57:20.922010000");
 
-  auto response = std::make_shared<translator::FixMessage>();
+  auto response = std::make_shared<amphisbaena::FixMessage>();
   auto rsp_head = response->get_head();
   rsp_head->set_value("MsgType", FIX::MsgType_ExecutionReport);
   rsp_head->set_value("BeginString", "FIX.4.2");
@@ -61,20 +61,20 @@ TEST_F(FixBuilder, call)
   EXPECT_CALL(*client_factory.client, create(testing::_)).WillOnce(testing::Return(session));
 
   EXPECT_CALL(*session, send(testing::_))
-    .WillOnce(testing::Invoke([this, response](translator::MessagePtr) {
-      sch->spawn([this, response](translator::ScheduleRef sch,
-                                  translator::CoroutineRef co) {
+    .WillOnce(testing::Invoke([this, response](amphisbaena::MessagePtr) {
+      sch->spawn([this, response](amphisbaena::ScheduleRef sch,
+                                  amphisbaena::CoroutineRef co) {
         EXPECT_NO_THROW(
-          client_factory.client->send(translator::ScheduleRef(),
-                                            translator::CoroutineRef(),
+          client_factory.client->send(amphisbaena::ScheduleRef(),
+                                            amphisbaena::CoroutineRef(),
                                             session,
                                             response));
       });
     }));
 
-  sch->spawn([request, response, this](translator::ScheduleRef sch_,
-                                       translator::CoroutineRef co_) {
-    translator::Environment env;
+  sch->spawn([request, response, this](amphisbaena::ScheduleRef sch_,
+                                       amphisbaena::CoroutineRef co_) {
+    amphisbaena::Environment env;
     env.sch = sch_;
     env.co = co_;
 
@@ -85,7 +85,7 @@ TEST_F(FixBuilder, call)
 
 TEST_F(FixBuilder, timeout)
 {
-  auto request = std::make_shared<translator::FixMessage>();
+  auto request = std::make_shared<amphisbaena::FixMessage>();
   auto req_head = request->get_head();
   req_head->set_value("MsgType", FIX::MsgType_NewOrderSingle);
   req_head->set_value("BeginString", "FIX.4.2");
@@ -104,9 +104,9 @@ TEST_F(FixBuilder, timeout)
 
   EXPECT_CALL(*session, send(testing::_)).Times(1);
 
-  sch->spawn([request, this](translator::ScheduleRef sch_,
-                             translator::CoroutineRef co_) {
-    translator::Environment env;
+  sch->spawn([request, this](amphisbaena::ScheduleRef sch_,
+                             amphisbaena::CoroutineRef co_) {
+    amphisbaena::Environment env;
     env.sch = sch_;
     env.co = co_;
 

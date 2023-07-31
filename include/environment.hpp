@@ -5,7 +5,7 @@
 #include "schedule.hpp"
 #include "session.hpp"
 
-namespace translator {
+namespace amphisbaena {
 class Environment
 {
 public:
@@ -14,4 +14,4 @@ public:
   SessionPtr up;
   SessionPtr down;
 };
-} // namespace translator
+} // namespace amphisbaena

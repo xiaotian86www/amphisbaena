@@ -8,7 +8,7 @@
 #include <rapidjson/encodings.h>
 #include <rapidjson/rapidjson.h>
 
-namespace translator {
+namespace amphisbaena {
 
 typedef rapidjson::Document RapidDocument;
 typedef rapidjson::Value RapidValue;

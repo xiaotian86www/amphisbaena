@@ -6,7 +6,7 @@
 #include <memory>
 #include <unordered_set>
 
-namespace translator {
+namespace amphisbaena {
 
 class CoroutineRef;
 class ScheduleRef;
@@ -77,4 +77,4 @@ private:
   std::weak_ptr<Schedule> sch_;
 };
 
-} // namespace translator
+} // namespace amphisbaena

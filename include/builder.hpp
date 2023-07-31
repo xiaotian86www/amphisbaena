@@ -9,7 +9,7 @@
 #include "message.hpp"
 #include "schedule.hpp"
 
-namespace translator {
+namespace amphisbaena {
 
 class Environment;
 

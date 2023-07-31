@@ -3,7 +3,7 @@
 #include "impl/json_message.hpp"
 
 static auto ctor_func = [] {
-  return std::make_shared<translator::JsonMessage>();
+  return std::make_shared<amphisbaena::JsonMessage>();
 };
 
 INSTANTIATE_TEST_SUITE_P(Json, Message, testing::Values(ctor_func));

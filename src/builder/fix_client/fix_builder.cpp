@@ -12,7 +12,7 @@
 #include "log.hpp"
 #include "message.hpp"
 
-namespace translator {
+namespace amphisbaena {
 FixBuilder::FixBuilder(ClientFactory& client_factory, int timeout_milli)
   : service_(std::move(client_factory.create(this)))
   , timeout_milli_(timeout_milli)
@@ -97,9 +97,9 @@ extern "C"
     if (argc < 2)
       throw std::invalid_argument("Usage: " + std::string(argv[0]));
 
-    translator::FixClientFactory client_factory(argv[1]);
+    amphisbaena::FixClientFactory client_factory(argv[1]);
 
-    translator::MessageBuilder::registe(
-      "Fix", std::make_shared<translator::FixBuilder>(client_factory));
+    amphisbaena::MessageBuilder::registe(
+      "Fix", std::make_shared<amphisbaena::FixBuilder>(client_factory));
   }
 }

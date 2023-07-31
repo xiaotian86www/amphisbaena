@@ -21,37 +21,37 @@ public:
   HttpToFixBuilder()
     : fix_builder(std::make_shared<MockMessageBuilder>("fix"))
   {
-    translator::MessageFactory::registe(
-      "Fix", [] { return std::make_shared<translator::JsonMessage>(); });
-    translator::MessageFactory::registe(
-      "Json", [] { return std::make_shared<translator::JsonMessage>(); });
+    amphisbaena::MessageFactory::registe(
+      "Fix", [] { return std::make_shared<amphisbaena::JsonMessage>(); });
+    amphisbaena::MessageFactory::registe(
+      "Json", [] { return std::make_shared<amphisbaena::JsonMessage>(); });
 
-    translator::MessageBuilder::registe(
+    amphisbaena::MessageBuilder::registe(
       fix_builder->name(), fix_builder );
   }
 
   ~HttpToFixBuilder()
   {
-    translator::MessageBuilder::unregiste();
+    amphisbaena::MessageBuilder::unregiste();
 
-    translator::MessageFactory::unregiste();
+    amphisbaena::MessageFactory::unregiste();
   }
 
 protected:
-  translator::builder::HttpToFixBuilder http_to_fix_builder;
+  amphisbaena::builder::HttpToFixBuilder http_to_fix_builder;
   std::shared_ptr<MockMessageBuilder> fix_builder;
 };
 
 TEST_F(HttpToFixBuilder, call)
 {
-  sch->spawn([this](translator::ScheduleRef sch, translator::CoroutineRef co) {
-    translator::Environment env;
+  sch->spawn([this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
+    amphisbaena::Environment env;
     env.sch = sch;
     env.co = co;
 
     EXPECT_CALL(*fix_builder,
                 create(testing::Ref(env),
-                     testing::Truly([](translator::MessagePtr request) {
+                     testing::Truly([](amphisbaena::MessagePtr request) {
                        auto request_body = request->get_body();
                        return request_body->get_string("SenderCompID") ==
                                 "CLIENT1" &&
@@ -59,7 +59,7 @@ TEST_F(HttpToFixBuilder, call)
                               request_body->get_double("LeavesQty") == 1.01;
                      })))
       .WillOnce(testing::Invoke([] {
-        auto response = translator::MessageFactory::create("Fix");
+        auto response = amphisbaena::MessageFactory::create("Fix");
 
         auto response_body = response->get_body();
         response_body->set_value("SenderCompID", "CLIENT2");
@@ -68,7 +68,7 @@ TEST_F(HttpToFixBuilder, call)
         return response;
       }));
 
-    auto request = translator::MessageFactory::create("Json");
+    auto request = amphisbaena::MessageFactory::create("Json");
 
     auto request_body = request->get_body();
     request_body->set_value("SenderCompID", "CLIENT1");

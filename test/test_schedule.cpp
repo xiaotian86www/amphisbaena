@@ -21,7 +21,7 @@ protected:
 
 TEST_F(Coroutine, resume)
 {
-  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+  auto foo = [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
     for (int i = 0; i < 2; i++) {
       sch.resume(co);
       co.yield();
@@ -39,7 +39,7 @@ TEST_F(Coroutine, resume)
 
 TEST_F(Coroutine, multi_resume)
 {
-  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+  auto foo = [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
     sch.resume(co);
     sch.resume(co);
     sch.resume(co);
@@ -60,7 +60,7 @@ TEST_F(Coroutine, multi_resume)
  */
 TEST_F(Coroutine, stop)
 {
-  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+  auto foo = [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
     stop();
     foo_mock.Call(0);
     sch.resume(co);
@@ -80,7 +80,7 @@ TEST_F(Coroutine, stop)
  */
 TEST_F(Coroutine, exception)
 {
-  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+  auto foo = [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
     try {
       sch.resume(co);
       foo_mock.Call(0);
@@ -102,7 +102,7 @@ TEST_F(Coroutine, exception)
  */
 TEST_F(Coroutine, yield_for_timeout)
 {
-  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+  auto foo = [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
     EXPECT_SPEND_GT(co.yield_for(1), 1000000);
     foo_mock.Call(0);
   };
@@ -118,7 +118,7 @@ TEST_F(Coroutine, yield_for_timeout)
  */
 TEST_F(Coroutine, resume_yield_for)
 {
-  auto foo = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+  auto foo = [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
     sch.resume(co);
     EXPECT_SPEND_LT(co.yield_for(1), 1000000);
     foo_mock.Call(0);
@@ -135,13 +135,13 @@ TEST_F(Coroutine, resume_yield_for)
  */
 TEST_F(Coroutine, stop_yield_for)
 {
-  auto foo1 = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+  auto foo1 = [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
     foo_mock.Call(0);
     co.yield_for(10);
     foo_mock.Call(2);
   };
 
-  auto foo2 = [this](translator::ScheduleRef sch, translator::CoroutineRef co) {
+  auto foo2 = [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
     foo_mock.Call(1);
     stop();
     co.yield();

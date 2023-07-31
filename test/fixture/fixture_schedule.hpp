@@ -7,7 +7,7 @@ class FixtureSchedule : public testing::Test
 {
 public:
   FixtureSchedule()
-    : sch(std::make_shared<translator::Schedule>(ios))
+    : sch(std::make_shared<amphisbaena::Schedule>(ios))
   {
   }
 
@@ -33,5 +33,5 @@ private:
 
 protected:
   boost::asio::io_service ios;
-  std::shared_ptr<translator::Schedule> sch;
+  std::shared_ptr<amphisbaena::Schedule> sch;
 };

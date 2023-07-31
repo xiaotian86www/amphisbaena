@@ -6,7 +6,7 @@
 
 // TEST(server, get_server)
 // {
-//   auto server_pool = std::make_shared<translator::ServerPool>();
+//   auto server_pool = std::make_shared<amphisbaena::ServerPool>();
 
 //   auto server = std::make_shared<MockServer>();
 

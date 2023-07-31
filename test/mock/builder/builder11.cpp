@@ -6,13 +6,13 @@
 #include "impl/json_message.hpp"
 #include "message.hpp"
 
-class MessageBuilder1 : public translator::MessageBuilder
+class MessageBuilder1 : public amphisbaena::MessageBuilder
 {
 public:
-  translator::MessagePtr create(translator::Environment&,
-                                translator::MessagePtr) override
+  amphisbaena::MessagePtr create(amphisbaena::Environment&,
+                                amphisbaena::MessagePtr) override
   {
-    auto message = std::make_shared<translator::JsonMessage>();
+    auto message = std::make_shared<amphisbaena::JsonMessage>();
     message->get_body()->set_value("Field", 1);
     return message;
   }

@@ -4,9 +4,9 @@
 
 #include "message.hpp"
 
-using ctor_prototype = translator::MessagePtr();
+using ctor_prototype = amphisbaena::MessagePtr();
 
-class Message : public testing::TestWithParam<translator::MessageFactory::ctor_function>
+class Message : public testing::TestWithParam<amphisbaena::MessageFactory::ctor_function>
 {
 public:
   void SetUp() { ctor_func = GetParam(); }
@@ -14,5 +14,5 @@ public:
   void TearDown() {}
 
 protected:
-  translator::MessageFactory::ctor_function ctor_func;
+  amphisbaena::MessageFactory::ctor_function ctor_func;
 };

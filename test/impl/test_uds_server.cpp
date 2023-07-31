@@ -16,7 +16,7 @@ class UDSServer : public FixtureSchedule
 {
 public:
   UDSServer()
-    : server(std::make_shared<translator::UDSServer>(ios,
+    : server(std::make_shared<amphisbaena::UDSServer>(ios,
                                                      sch,
                                                      "server.socket",
                                                      &message_handler))
@@ -25,7 +25,7 @@ public:
 
 protected:
   MockServer::MockMessageHandler message_handler;
-  std::shared_ptr<translator::UDSServer> server;
+  std::shared_ptr<amphisbaena::UDSServer> server;
 };
 
 TEST_F(UDSServer, on_recv)
@@ -37,9 +37,9 @@ TEST_F(UDSServer, on_recv)
 
   EXPECT_CALL(message_handler,
               on_recv(testing::_, testing::_, testing::_, testing::_))
-    .WillOnce(testing::Invoke([](translator::ScheduleRef sch,
-                                 translator::CoroutineRef co,
-                                 translator::ConnectionRef conn,
+    .WillOnce(testing::Invoke([](amphisbaena::ScheduleRef sch,
+                                 amphisbaena::CoroutineRef co,
+                                 amphisbaena::ConnectionRef conn,
                                  std::string_view data) { conn.send(data); }));
 
   sock.connect("server.socket");

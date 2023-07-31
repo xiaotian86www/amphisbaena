@@ -6,7 +6,7 @@
 #include "message.hpp"
 #include "log.hpp"
 
-namespace translator {
+namespace amphisbaena {
 
 void
 Object::copy_from(ObjectPtr right)
@@ -68,4 +68,4 @@ MessageFactory::create(std::string_view type)
 std::shared_ptr<
   std::map<std::string, MessageFactory::ctor_function, std::less<>>>
   MessageFactory::ctors_;
-} // namespace translator
+} // namespace amphisbaena

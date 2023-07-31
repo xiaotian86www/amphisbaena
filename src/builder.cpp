@@ -12,7 +12,7 @@
 #include "log.hpp"
 #include "message.hpp"
 
-namespace translator {
+namespace amphisbaena {
 void
 MessageBuilder::registe(std::string_view name,
                         std::shared_ptr<MessageBuilder> builder)

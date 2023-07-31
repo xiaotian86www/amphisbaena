@@ -7,19 +7,19 @@
 
 MATCHER_P2(field_iter_string_eq, n, v, "")
 {
-  return arg.get_type() == translator::FieldType::kString &&
+  return arg.get_type() == amphisbaena::FieldType::kString &&
          arg.get_name() == n && arg.get_string() == v;
 }
 
 MATCHER_P2(field_iter_int_eq, n, v, "")
 {
-  return arg.get_type() == translator::FieldType::kInt && arg.get_name() == n &&
+  return arg.get_type() == amphisbaena::FieldType::kInt && arg.get_name() == n &&
          arg.get_int() == v;
 }
 
 MATCHER_P2(field_iter_double_eq, n, v, "")
 {
-  return arg.get_type() == translator::FieldType::kDouble &&
+  return arg.get_type() == amphisbaena::FieldType::kDouble &&
          arg.get_name() == n && arg.get_double() == v;
 }
 

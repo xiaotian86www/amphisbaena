@@ -6,7 +6,7 @@
 #include "environment.hpp"
 #include "message.hpp"
 
-class MockMessageBuilder : public translator::MessageBuilder
+class MockMessageBuilder : public amphisbaena::MessageBuilder
 {
 public:
   MockMessageBuilder(std::string name)
@@ -15,9 +15,9 @@ public:
   }
 
 public:
-  MOCK_METHOD(translator::MessagePtr,
+  MOCK_METHOD(amphisbaena::MessagePtr,
               create,
-              (translator::Environment&, translator::MessagePtr),
+              (amphisbaena::Environment&, amphisbaena::MessagePtr),
               (override));
 
   std::string_view name() const override { return name_; }

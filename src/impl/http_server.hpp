@@ -10,7 +10,7 @@
 #include "server.hpp"
 #include "session.hpp"
 
-namespace translator {
+namespace amphisbaena {
 class HttpServer;
 
 class HttpSession
