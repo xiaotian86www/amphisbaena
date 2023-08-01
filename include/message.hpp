@@ -255,6 +255,8 @@ public:
 
   static void unregiste();
 
+  static void unregiste(std::string_view type);
+
   static MessagePtr create(std::string_view type);
 
 private:

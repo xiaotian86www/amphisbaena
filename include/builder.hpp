@@ -44,12 +44,29 @@ private:
 class Plugin
 {
 public:
-  static void load(
-    const std::map<std::filesystem::path, std::vector<std::string>>& infos);
+  Plugin(const std::filesystem::path& path);
 
-  static void load(const std::filesystem::path& path);
+  Plugin(const std::filesystem::path& path,
+         const std::vector<std::string>& args);
 
-  static void load(const std::filesystem::path& path,
-                   const std::vector<std::string>& args);
+  ~Plugin();
+
+private:
+  void init(const std::vector<const char*>& args);
+
+  void deinit();
+
+private:
+  std::filesystem::path path_;
+  void* handle_;
+
+// public:
+//   static void load(
+//     const std::map<std::filesystem::path, std::vector<std::string>>& infos);
+
+//   static void load(const std::filesystem::path& path);
+
+//   static void load(const std::filesystem::path& path,
+//                    const std::vector<std::string>& args);
 };
 }

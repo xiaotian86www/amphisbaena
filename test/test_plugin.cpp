@@ -15,7 +15,7 @@ TEST_F(Plugin, load)
 {
   amphisbaena::Environment env;
 
-  amphisbaena::Plugin::load("mock/plugin/libplugin1.so", {});
+  amphisbaena::Plugin plugin1("mock/plugin/libplugin1.so");
   {
     auto message = amphisbaena::MessageBuilder::create(
       env, "Message", amphisbaena::MessagePtr());
@@ -23,7 +23,7 @@ TEST_F(Plugin, load)
     EXPECT_EQ(message->get_body()->get_int("Field"), 1);
   }
 
-  amphisbaena::Plugin::load("mock/plugin/libplugin13.so", {});
+  amphisbaena::Plugin plugin13("mock/plugin/libplugin13.so");
   {
     auto message = amphisbaena::MessageBuilder::create(
       env, "Message", amphisbaena::MessagePtr());
@@ -36,8 +36,8 @@ TEST_F(Plugin, load_fail)
 {
   amphisbaena::Environment env;
 
-  EXPECT_THROW(amphisbaena::Plugin::load("mock/plugin/libplugin11.so", {}),
+  EXPECT_THROW(amphisbaena::Plugin plugin11("mock/plugin/libplugin11.so"),
                amphisbaena::CouldnotLoadException);
-  EXPECT_THROW(amphisbaena::Plugin::load("mock/plugin/libplugin12.so", {}),
+  EXPECT_THROW(amphisbaena::Plugin plugin12("mock/plugin/libplugin12.so"),
                std::invalid_argument);
 }

@@ -44,9 +44,11 @@ main(int argc, char** argv)
   amphisbaena::MessageFactory::registe(
     "Json", [] { return std::make_shared<amphisbaena::JsonMessage>(); });
 
-  amphisbaena::Plugin::load("src/plugin/fix_client/libfix_client.so",
-                           { "../cfg/fix_client/tradeclient.cfg" });
-  amphisbaena::Plugin::load("src/plugin/http_to_fix/libhttp_to_fix.so");
+  amphisbaena::Plugin fix_client_plugin(
+    "src/plugin/fix_client/libfix_client.so",
+    { "../cfg/fix_client/tradeclient.cfg" });
+  amphisbaena::Plugin http_to_fix_plugin(
+    "src/plugin/http_to_fix/libhttp_to_fix.so");
 
   signal(SIGINT, sigint_handler);
   atexit(exit_handler);

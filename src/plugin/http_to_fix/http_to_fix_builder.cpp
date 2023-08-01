@@ -39,12 +39,3 @@ HttpToFixBuilder::name() const
 
 }
 }
-
-extern "C"
-{
-  void init(int argc, const char** argv)
-  {
-    amphisbaena::MessageBuilder::registe(
-      "GET /", std::make_shared<amphisbaena::builder::HttpToFixBuilder>());
-  }
-}

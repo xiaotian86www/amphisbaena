@@ -1,8 +1,8 @@
 
 #include <memory>
 
-#include "message.hpp"
 #include "log.hpp"
+#include "message.hpp"
 
 namespace amphisbaena {
 
@@ -49,6 +49,20 @@ MessageFactory::unregiste()
   LOG_INFO("Unregiste message");
   ctors_ =
     std::make_shared<std::map<std::string, ctor_function, std::less<>>>();
+}
+
+void
+MessageFactory::unregiste(std::string_view type)
+{
+  LOG_INFO("Unregiste message type: {}", type);
+  auto ctors =
+    ctors_
+      ? std::make_shared<std::map<std::string, ctor_function, std::less<>>>(
+          *ctors_)
+      : std::make_shared<std::map<std::string, ctor_function, std::less<>>>();
+  ctors->erase(std::string(type));
+
+  ctors_ = ctors;
 }
 
 MessagePtr

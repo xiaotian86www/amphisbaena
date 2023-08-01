@@ -44,7 +44,7 @@ void
 MessageBuilder::unregiste(std::string_view name)
 {
   LOG_INFO("Registe pattern: {}", name);
-  auto new_ctors =
+  auto new_builders =
     builders_
       ? std::make_shared<
           std::map<std::string, std::shared_ptr<MessageBuilder>, std::less<>>>(
@@ -53,9 +53,9 @@ MessageBuilder::unregiste(std::string_view name)
                                   std::shared_ptr<MessageBuilder>,
                                   std::less<>>>();
 
-  new_ctors->erase(std::string(name));
+  new_builders->erase(std::string(name));
 
-  builders_ = new_ctors;
+  builders_ = new_builders;
 }
 
 MessagePtr
@@ -78,40 +78,111 @@ std::shared_ptr<
   std::map<std::string, std::shared_ptr<MessageBuilder>, std::less<>>>
   MessageBuilder::builders_;
 
-void
-Plugin::load(
-  const std::map<std::filesystem::path, std::vector<std::string>>& infos)
+Plugin::Plugin(const std::filesystem::path& path)
+  : path_(path)
 {
-  for (const auto& info : infos) {
-    load(info.first, info.second);
+  LOG_INFO("Load plugin path: {}", path_.string());
+  handle_ = dlopen(path_.c_str(), RTLD_NOW | RTLD_LOCAL);
+  if (!handle_)
+    throw CouldnotLoadException(path_.string(), dlerror());
+
+  try {
+    std::vector<const char*> args_;
+    args_.push_back(path_.c_str());
+    init(args_);
+  } catch (...) {
+    dlclose(handle_);
+    throw;
   }
 }
 
-void
-Plugin::load(const std::filesystem::path& path)
+Plugin::Plugin(const std::filesystem::path& path,
+               const std::vector<std::string>& args)
+  : path_(path)
 {
-  load(path, {});
+  LOG_INFO("Load plugin path: {}", path_.string());
+  handle_ = dlopen(path_.c_str(), RTLD_NOW | RTLD_LOCAL);
+  if (!handle_)
+    throw CouldnotLoadException(path_.string(), dlerror());
+
+  try {
+    std::vector<const char*> args_;
+    args_.push_back(path_.c_str());
+    for (const auto& arg : args) {
+      args_.push_back(arg.c_str());
+    }
+
+    init(args_);
+  } catch (...) {
+    dlclose(handle_);
+    throw;
+  }
+}
+
+Plugin::~Plugin()
+{
+  LOG_INFO("Unload plugin path: {}", path_.string());
+  deinit();
+
+  dlclose(handle_);
 }
 
 void
-Plugin::load(const std::filesystem::path& path,
-             const std::vector<std::string>& args)
+Plugin::init(const std::vector<const char*>& args)
 {
-  auto handle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
-  if (!handle)
-    throw CouldnotLoadException(path.string(), dlerror());
+  assert(!args.empty());
 
-  void (*init)(int, const char**) = nullptr;
-  *(void**)(&init) = dlsym(handle, "init");
+  void (*init)(int, const char* const*) = nullptr;
+  *(void**)(&init) = dlsym(handle_, "init");
   if (!init)
-    throw CouldnotLoadException(path.string(), dlerror());
+    throw CouldnotLoadException(args[0], dlerror());
 
-  std::vector<const char*> args_;
-  args_.push_back(path.c_str());
-  for (const auto& arg : args) {
-    args_.push_back(arg.c_str());
-  }
-
-  init(args_.size(), args_.data());
+  init(args.size(), args.data());
 }
+
+void
+Plugin::deinit()
+{
+  void (*deinit)() = nullptr;
+  *(void**)(&deinit) = dlsym(handle_, "deinit");
+  if (deinit)
+    deinit();
+}
+
+// void
+// Plugin::load(
+//   const std::map<std::filesystem::path, std::vector<std::string>>& infos)
+// {
+//   for (const auto& info : infos) {
+//     load(info.first, info.second);
+//   }
+// }
+
+// void
+// Plugin::load(const std::filesystem::path& path)
+// {
+//   load(path, {});
+// }
+
+// void
+// Plugin::load(const std::filesystem::path& path,
+//              const std::vector<std::string>& args)
+// {
+//   auto handle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL);
+//   if (!handle)
+//     throw CouldnotLoadException(path.string(), dlerror());
+
+//   void (*init)(int, const char**) = nullptr;
+//   *(void**)(&init) = dlsym(handle, "init");
+//   if (!init)
+//     throw CouldnotLoadException(path.string(), dlerror());
+
+//   std::vector<const char*> args_;
+//   args_.push_back(path.c_str());
+//   for (const auto& arg : args) {
+//     args_.push_back(arg.c_str());
+//   }
+
+//   init(args_.size(), args_.data());
+// }
 }
