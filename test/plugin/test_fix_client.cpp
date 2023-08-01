@@ -10,7 +10,7 @@
 #include <sstream>
 #include <thread>
 
-#include "builder/fix_client/fix_client.hpp"
+#include "plugin/fix_client/fix_client.hpp"
 #include "impl/fix_message.hpp"
 #include "message.hpp"
 #include "mock/mock_client.hpp"

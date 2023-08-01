@@ -88,6 +88,12 @@ Plugin::load(
 }
 
 void
+Plugin::load(const std::filesystem::path& path)
+{
+  load(path, {});
+}
+
+void
 Plugin::load(const std::filesystem::path& path,
              const std::vector<std::string>& args)
 {

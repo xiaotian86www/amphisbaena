@@ -6,11 +6,11 @@ find_package(GTest REQUIRED)
 include_directories(${PROJECT_SOURCE_DIR})
 
 add_subdirectory(tool)
-add_subdirectory(mock/builder)
+add_subdirectory(mock/plugin)
 
 aux_source_directory(${PROJECT_SOURCE_DIR} SRC_LIST)
 aux_source_directory(${PROJECT_SOURCE_DIR}/impl SRC_LIST)
-aux_source_directory(${PROJECT_SOURCE_DIR}/builder SRC_LIST)
+aux_source_directory(${PROJECT_SOURCE_DIR}/plugin SRC_LIST)
 
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 

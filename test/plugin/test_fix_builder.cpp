@@ -6,7 +6,7 @@
 #include <quickfix/FixValues.h>
 #include <thread>
 
-#include "builder/fix_client/fix_builder.hpp"
+#include "plugin/fix_client/fix_builder.hpp"
 #include "environment.hpp"
 #include "fixture/fixture_schedule.hpp"
 #include "impl/fix_message.hpp"

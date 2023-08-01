@@ -49,7 +49,7 @@ main(int argc, char** argv)
 
   amphisbaena::Plugin::load("src/builder/fix_client/libfix_client.so",
                            { "../cfg/fix_client/tradeclient.cfg" });
-  amphisbaena::Plugin::load("src/builder/http_to_fix/libhttp_to_fix.so", {});
+  amphisbaena::Plugin::load("src/builder/http_to_fix/libhttp_to_fix.so");
 
   signal(SIGINT, sigint_handler);
   atexit(exit_handler);

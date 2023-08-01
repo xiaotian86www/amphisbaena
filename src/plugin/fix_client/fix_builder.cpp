@@ -5,9 +5,9 @@
 #include <stdexcept>
 
 #include "builder.hpp"
-#include "builder/fix_client/fix_client.hpp"
 #include "environment.hpp"
 #include "fix_builder.hpp"
+#include "fix_client.hpp"
 #include "future.hpp"
 #include "log.hpp"
 #include "message.hpp"

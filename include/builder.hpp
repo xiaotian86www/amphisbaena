@@ -47,6 +47,8 @@ public:
   static void load(
     const std::map<std::filesystem::path, std::vector<std::string>>& infos);
 
+  static void load(const std::filesystem::path& path);
+
   static void load(const std::filesystem::path& path,
                    const std::vector<std::string>& args);
 };
