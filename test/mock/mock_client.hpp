@@ -3,7 +3,7 @@
 #include <gmock/gmock.h>
 #include <memory>
 
-#include "client.hpp"
+#include "plugin/fix_client/client.hpp"
 
 class MockClient : public amphisbaena::Client
 {

@@ -6,13 +6,13 @@
 #include <quickfix/FixValues.h>
 #include <thread>
 
-#include "plugin/fix_client/fix_builder.hpp"
 #include "environment.hpp"
 #include "fixture/fixture_schedule.hpp"
-#include "impl/fix_message.hpp"
 #include "mock/mock_builder.hpp"
 #include "mock/mock_client.hpp"
 #include "mock/mock_session.hpp"
+#include "plugin/fix_client/fix_builder.hpp"
+#include "plugin/fix_client/fix_message.hpp"
 #include "schedule.hpp"
 
 class FixBuilder : public FixtureSchedule
@@ -58,17 +58,17 @@ TEST_F(FixBuilder, call)
   auto rsp_body = response->get_body();
   rsp_body->set_value("ClOrdID", "100001");
 
-  EXPECT_CALL(*client_factory.client, create(testing::_)).WillOnce(testing::Return(session));
+  EXPECT_CALL(*client_factory.client, create(testing::_))
+    .WillOnce(testing::Return(session));
 
   EXPECT_CALL(*session, send(testing::_))
     .WillOnce(testing::Invoke([this, response](amphisbaena::MessagePtr) {
       sch->spawn([this, response](amphisbaena::ScheduleRef sch,
                                   amphisbaena::CoroutineRef co) {
-        EXPECT_NO_THROW(
-          client_factory.client->send(amphisbaena::ScheduleRef(),
-                                            amphisbaena::CoroutineRef(),
-                                            session,
-                                            response));
+        EXPECT_NO_THROW(client_factory.client->send(amphisbaena::ScheduleRef(),
+                                                    amphisbaena::CoroutineRef(),
+                                                    session,
+                                                    response));
       });
     }));
 
@@ -100,7 +100,8 @@ TEST_F(FixBuilder, timeout)
   req_body->set_value("Side", "1");
   req_body->set_value("TransactTime", "20230718-04:57:20.922010000");
 
-  EXPECT_CALL(*client_factory.client, create(testing::_)).WillOnce(testing::Return(session));
+  EXPECT_CALL(*client_factory.client, create(testing::_))
+    .WillOnce(testing::Return(session));
 
   EXPECT_CALL(*session, send(testing::_)).Times(1);
 

@@ -19,7 +19,7 @@
 #pragma GCC diagnostic pop
 
 #include "client.hpp"
-#include "impl/fix_message.hpp"
+#include "fix_message.hpp"
 #include "message.hpp"
 
 namespace amphisbaena {
@@ -47,8 +47,6 @@ public:
   FixClient(const FIX::SessionSettings& settings, MessageHandler* handler);
 
   ~FixClient() override;
-
-private:
 
 public:
   SessionPtr create(MessagePtr message) override;

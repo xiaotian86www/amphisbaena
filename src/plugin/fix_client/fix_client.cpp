@@ -23,7 +23,7 @@
 
 #include "client.hpp"
 #include "fix_client.hpp"
-#include "impl/fix_message.hpp"
+#include "fix_message.hpp"
 #include "log.hpp"
 #include "schedule.hpp"
 
@@ -36,7 +36,8 @@ FixSession::send(MessagePtr data)
   session_->send(std::static_pointer_cast<FixMessage>(data)->fix_message);
 }
 
-FixClient::FixClient(const FIX::SessionSettings& settings, MessageHandler* handler)
+FixClient::FixClient(const FIX::SessionSettings& settings,
+                     MessageHandler* handler)
   : Client(handler)
   , settings_(std::move(settings))
 {
@@ -139,8 +140,10 @@ FixClient::fromApp(
 
   auto response = std::make_shared<FixMessage>(message);
   if (message_handler_)
-    message_handler_->on_recv(
-      amphisbaena::ScheduleRef(), amphisbaena::CoroutineRef(), session, response);
+    message_handler_->on_recv(amphisbaena::ScheduleRef(),
+                              amphisbaena::CoroutineRef(),
+                              session,
+                              response);
 }
 #pragma GCC diagnostic pop
 
@@ -165,7 +168,8 @@ FixClientFactory::FixClientFactory(const std::filesystem::path& pt)
 {
 }
 
-std::unique_ptr<Client> FixClientFactory::create(Client::MessageHandler* handler)
+std::unique_ptr<Client>
+FixClientFactory::create(Client::MessageHandler* handler)
 {
   return std::make_unique<FixClient>(settings_, handler);
 }

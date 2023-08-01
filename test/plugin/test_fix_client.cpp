@@ -10,10 +10,10 @@
 #include <sstream>
 #include <thread>
 
-#include "plugin/fix_client/fix_client.hpp"
-#include "impl/fix_message.hpp"
 #include "message.hpp"
 #include "mock/mock_client.hpp"
+#include "plugin/fix_client/fix_client.hpp"
+#include "plugin/fix_client/fix_message.hpp"
 #include "tool/fix_server.hpp"
 
 class FixClient : public testing::Test
@@ -147,7 +147,7 @@ TEST_F(FixClient, send)
   body->set_value("TransactTime", "20230718-04:57:20.922010000");
 
   amphisbaena::FixClient client(FIX::SessionSettings(client_settings),
-                               &message_handler);
+                                &message_handler);
 
   auto session = client.create(msg);
 
@@ -204,8 +204,8 @@ TEST_F(FixClient, recv)
   body->set_value("AvgPx", 10.01);
 
   amphisbaena::FixClient client(FIX::SessionSettings(client_settings),
-                               &message_handler);
-                               
+                                &message_handler);
+
   server.send(msg->fix_message);
 
   pms2.get_future().wait_for(std::chrono::milliseconds(1));

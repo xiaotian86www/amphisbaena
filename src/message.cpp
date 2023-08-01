@@ -1,8 +1,6 @@
 
 #include <memory>
 
-#include "impl/fix_message.hpp"
-#include "impl/json_message.hpp"
 #include "message.hpp"
 #include "log.hpp"
 

@@ -5,7 +5,6 @@
 #include <signal.h>
 
 #include "builder.hpp"
-#include "impl/fix_message.hpp"
 #include "impl/http_server.hpp"
 #include "impl/json_message.hpp"
 #include "impl/uds_server.hpp"
@@ -43,13 +42,11 @@ main(int argc, char** argv)
   amphisbaena::UDSServerFactory server_factory(ios, sch, "server.sock");
   amphisbaena::HttpServer http_server(server_factory);
   amphisbaena::MessageFactory::registe(
-    "Fix", [] { return std::make_shared<amphisbaena::FixMessage>(); });
-  amphisbaena::MessageFactory::registe(
     "Json", [] { return std::make_shared<amphisbaena::JsonMessage>(); });
 
-  amphisbaena::Plugin::load("src/builder/fix_client/libfix_client.so",
+  amphisbaena::Plugin::load("src/plugin/fix_client/libfix_client.so",
                            { "../cfg/fix_client/tradeclient.cfg" });
-  amphisbaena::Plugin::load("src/builder/http_to_fix/libhttp_to_fix.so");
+  amphisbaena::Plugin::load("src/plugin/http_to_fix/libhttp_to_fix.so");
 
   signal(SIGINT, sigint_handler);
   atexit(exit_handler);
