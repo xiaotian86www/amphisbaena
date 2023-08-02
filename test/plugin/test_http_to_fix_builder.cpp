@@ -8,11 +8,11 @@
 #include "builder.hpp"
 #include "environment.hpp"
 #include "fixture/fixture_schedule.hpp"
-#include "impl/json_message.hpp"
 #include "matcher/matcher_message.hpp"
 #include "message.hpp"
 #include "mock/mock_builder.hpp"
 #include "plugin/fix_client/fix_message.hpp"
+#include "plugin/http_server/json_message.hpp"
 #include "plugin/http_to_fix/http_to_fix_builder.hpp"
 #include "schedule.hpp"
 

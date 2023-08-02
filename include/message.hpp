@@ -10,7 +10,6 @@
 #include <unordered_map>
 
 #include "exception.hpp"
-#include "server.hpp"
 
 namespace amphisbaena {
 

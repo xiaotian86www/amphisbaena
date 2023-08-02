@@ -52,7 +52,7 @@ typedef std::shared_ptr<HttpSession> HttpSessionPtr;
 class HttpServer : public Server::MessageHandler
 {
 public:
-  HttpServer(ServerFactory& server_factory);
+  HttpServer(std::shared_ptr<ServerFactory> server_factory);
 
   ~HttpServer() override;
 

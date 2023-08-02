@@ -42,7 +42,7 @@ MessageBuilder::unregiste()
 void
 MessageBuilder::unregiste(std::shared_ptr<MessageBuilder> builder)
 {
-  LOG_INFO("Registe pattern: {}", builder->name());
+  LOG_INFO("Unregiste pattern: {}", builder->name());
   if (auto iter = builders_->find(builder->name());
       iter != builders_->end() && iter->second == builder) {
     auto new_builders =
@@ -78,77 +78,6 @@ MessageBuilder::create(Environment& env,
 std::shared_ptr<
   std::map<std::string, std::shared_ptr<MessageBuilder>, std::less<>>>
   MessageBuilder::builders_;
-
-Plugin::Plugin(const std::filesystem::path& path)
-  : path_(path)
-{
-  LOG_INFO("Load plugin path: {}", path_.string());
-  handle_ = dlopen(path_.c_str(), RTLD_NOW | RTLD_LOCAL);
-  if (!handle_)
-    throw CouldnotLoadException(path_.string(), dlerror());
-
-  try {
-    std::vector<const char*> args_;
-    args_.push_back(path_.c_str());
-    init(args_);
-  } catch (...) {
-    dlclose(handle_);
-    throw;
-  }
-}
-
-Plugin::Plugin(const std::filesystem::path& path,
-               const std::vector<std::string>& args)
-  : path_(path)
-{
-  LOG_INFO("Load plugin path: {}", path_.string());
-  handle_ = dlopen(path_.c_str(), RTLD_NOW | RTLD_LOCAL);
-  if (!handle_)
-    throw CouldnotLoadException(path_.string(), dlerror());
-
-  try {
-    std::vector<const char*> args_;
-    args_.push_back(path_.c_str());
-    for (const auto& arg : args) {
-      args_.push_back(arg.c_str());
-    }
-
-    init(args_);
-  } catch (...) {
-    dlclose(handle_);
-    throw;
-  }
-}
-
-Plugin::~Plugin()
-{
-  LOG_INFO("Unload plugin path: {}", path_.string());
-  deinit();
-
-  dlclose(handle_);
-}
-
-void
-Plugin::init(const std::vector<const char*>& args)
-{
-  assert(!args.empty());
-
-  void (*init)(int, const char* const*) = nullptr;
-  *(void**)(&init) = dlsym(handle_, "init");
-  if (!init)
-    throw CouldnotLoadException(args[0], dlerror());
-
-  init(args.size(), args.data());
-}
-
-void
-Plugin::deinit()
-{
-  void (*deinit)() = nullptr;
-  *(void**)(&deinit) = dlsym(handle_, "deinit");
-  if (deinit)
-    deinit();
-}
 
 // void
 // Plugin::load(

@@ -3,8 +3,8 @@
 
 #include "builder.hpp"
 #include "environment.hpp"
-#include "impl/json_message.hpp"
 #include "message.hpp"
+#include "plugin/http_server/json_message.hpp"
 
 class MessageBuilder1 : public amphisbaena::MessageBuilder
 {

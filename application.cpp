@@ -4,15 +4,13 @@
 #include <memory>
 #include <signal.h>
 
-#include "builder.hpp"
-#include "impl/http_server.hpp"
-#include "impl/json_message.hpp"
-#include "impl/uds_server.hpp"
 #include "log.hpp"
 #include "message.hpp"
+#include "plugin.hpp"
 #include "schedule.hpp"
 
 static boost::asio::io_service ios;
+static boost::asio::io_service::work work(ios);
 
 void
 sigint_handler(int sig)
@@ -23,37 +21,27 @@ sigint_handler(int sig)
   }
 }
 
-void
-exit_handler()
-{
-  amphisbaena::MessageBuilder::unregiste();
-  amphisbaena::MessageFactory::unregiste();
-
-  LOG_INFO("amphisbaena end");
-}
-
 int
 main(int argc, char** argv)
 {
   spdlog::set_level(spdlog::level::debug);
 
-  LOG_INFO("amphisbaena begin");
-  auto sch = std::make_shared<amphisbaena::Schedule>(ios);
-  amphisbaena::UDSServerFactory server_factory(ios, sch, "server.sock");
-  amphisbaena::HttpServer http_server(server_factory);
-  auto json_factory = std::make_shared<amphisbaena::JsonMessageFactory>();
-  amphisbaena::MessageFactory::registe(json_factory);
+  LOG_INFO("Amphisbaena begin");
 
-  amphisbaena::Plugin fix_client_plugin(
-    "src/plugin/fix_client/libfix_client.so",
-    { "../cfg/fix_client/tradeclient.cfg" });
-  amphisbaena::Plugin http_to_fix_plugin(
-    "src/plugin/http_to_fix/libhttp_to_fix.so");
+  {
+    amphisbaena::Plugin fix_client_plugin(
+      "src/plugin/fix_client/libfix_client.so",
+      { "../cfg/fix_client/tradeclient.cfg" });
+    amphisbaena::Plugin http_to_fix_plugin(
+      "src/plugin/http_to_fix/libhttp_to_fix.so");
+    amphisbaena::Plugin http_server_plugin(
+      "src/plugin/http_server/libhttp_server.so", { "server.sock" });
 
-  signal(SIGINT, sigint_handler);
-  atexit(exit_handler);
+    signal(SIGINT, sigint_handler);
 
-  ios.run();
+    ios.run();
+  }
 
+  LOG_INFO("Amphisbaena end");
   return 0;
 }

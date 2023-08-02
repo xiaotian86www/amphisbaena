@@ -3,14 +3,14 @@
 
 #include "builder.hpp"
 #include "environment.hpp"
-#include "impl/json_message.hpp"
 #include "message.hpp"
+#include "plugin/http_server/json_message.hpp"
 
 class MessageBuilder1 : public amphisbaena::MessageBuilder
 {
 public:
   amphisbaena::MessagePtr create(amphisbaena::Environment&,
-                                amphisbaena::MessagePtr) override
+                                 amphisbaena::MessagePtr) override
   {
     auto message = std::make_shared<amphisbaena::JsonMessage>();
     message->get_body()->set_value("Field", 1);

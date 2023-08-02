@@ -8,8 +8,8 @@
 #include <memory>
 
 #include "fixture/fixture_schedule.hpp"
-#include "impl/uds_server.hpp"
 #include "mock/mock_server.hpp"
+#include "plugin/http_server/uds_server.hpp"
 #include "schedule.hpp"
 
 class UDSServer : public FixtureSchedule
@@ -17,9 +17,9 @@ class UDSServer : public FixtureSchedule
 public:
   UDSServer()
     : server(std::make_shared<amphisbaena::UDSServer>(ios,
-                                                     sch,
-                                                     "server.socket",
-                                                     &message_handler))
+                                                      sch,
+                                                      "server.socket",
+                                                      &message_handler))
   {
   }
 

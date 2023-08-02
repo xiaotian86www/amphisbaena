@@ -1,7 +1,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "builder.hpp"
+#include "plugin.hpp"
 #include "environment.hpp"
 
 class Plugin : public testing::Test

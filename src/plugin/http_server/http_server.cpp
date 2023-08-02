@@ -170,8 +170,8 @@ HttpSession::handle_error(std::string_view version)
   return response;
 }
 
-HttpServer::HttpServer(ServerFactory& server_factory)
-  : server_(std::move(server_factory.create(this)))
+HttpServer::HttpServer(std::shared_ptr<ServerFactory> server_factory)
+  : server_(std::move(server_factory->create(this)))
 {
   LOG_INFO("HttpServer create");
 

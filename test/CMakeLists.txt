@@ -21,6 +21,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     amphisbaena_core
     http_to_fix
     fix_client
+    http_server
 )
 
 gtest_discover_tests(${PROJECT_NAME})

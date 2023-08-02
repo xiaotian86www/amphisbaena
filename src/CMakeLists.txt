@@ -6,7 +6,7 @@ add_subdirectory(plugin)
 find_package(Boost REQUIRED)
 
 aux_source_directory(${PROJECT_SOURCE_DIR} SRC_LIST)
-aux_source_directory(${PROJECT_SOURCE_DIR}/impl SRC_LIST)
+# aux_source_directory(${PROJECT_SOURCE_DIR}/plugin/http_server SRC_LIST)
 
 add_library(${PROJECT_NAME} SHARED ${SRC_LIST})
 
