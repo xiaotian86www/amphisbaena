@@ -26,7 +26,7 @@ public:
     amphisbaena::MessageFactory::registe(
       "Json", [] { return std::make_shared<amphisbaena::JsonMessage>(); });
 
-    amphisbaena::MessageBuilder::registe(fix_builder->name(), fix_builder);
+    amphisbaena::MessageBuilder::registe(fix_builder);
   }
 
   ~HttpToFixBuilder()

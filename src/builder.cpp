@@ -14,10 +14,9 @@
 
 namespace amphisbaena {
 void
-MessageBuilder::registe(std::string_view name,
-                        std::shared_ptr<MessageBuilder> builder)
+MessageBuilder::registe(std::shared_ptr<MessageBuilder> builder)
 {
-  LOG_INFO("Registe pattern: {}", name);
+  LOG_INFO("Registe pattern: {}", builder->name());
   auto new_builders =
     builders_
       ? std::make_shared<
@@ -27,7 +26,7 @@ MessageBuilder::registe(std::string_view name,
                                   std::shared_ptr<MessageBuilder>,
                                   std::less<>>>();
 
-  new_builders->insert_or_assign(std::string(name), builder);
+  new_builders->insert_or_assign(std::string(builder->name()), builder);
 
   builders_ = new_builders;
 }
@@ -41,21 +40,23 @@ MessageBuilder::unregiste()
 }
 
 void
-MessageBuilder::unregiste(std::string_view name)
+MessageBuilder::unregiste(std::shared_ptr<MessageBuilder> builder)
 {
-  LOG_INFO("Registe pattern: {}", name);
-  auto new_builders =
-    builders_
-      ? std::make_shared<
-          std::map<std::string, std::shared_ptr<MessageBuilder>, std::less<>>>(
-          *builders_)
-      : std::make_shared<std::map<std::string,
-                                  std::shared_ptr<MessageBuilder>,
-                                  std::less<>>>();
+  LOG_INFO("Registe pattern: {}", builder->name());
+  if (auto iter = builders_->find(builder->name());
+      iter != builders_->end() && iter->second == builder) {
+    auto new_builders =
+      builders_ ? std::make_shared<std::map<std::string,
+                                            std::shared_ptr<MessageBuilder>,
+                                            std::less<>>>(*builders_)
+                : std::make_shared<std::map<std::string,
+                                            std::shared_ptr<MessageBuilder>,
+                                            std::less<>>>();
 
-  new_builders->erase(std::string(name));
+    new_builders->erase(std::string(builder->name()));
 
-  builders_ = new_builders;
+    builders_ = new_builders;
+  }
 }
 
 MessagePtr

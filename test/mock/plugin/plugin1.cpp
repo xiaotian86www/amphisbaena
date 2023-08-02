@@ -20,11 +20,19 @@ public:
   std::string_view name() const override { return "Message"; }
 };
 
+static std::shared_ptr<amphisbaena::MessageBuilder> builder;
+
 extern "C"
 {
   void init(int argc, const char** argv)
   {
-    amphisbaena::MessageBuilder::registe("Message",
-                                        std::make_shared<MessageBuilder1>());
+    builder = std::make_shared<MessageBuilder1>();
+    amphisbaena::MessageBuilder::registe(builder);
+  }
+
+  void deinit()
+  {
+    amphisbaena::MessageBuilder::unregiste(builder);
+    builder.reset();
   }
 }

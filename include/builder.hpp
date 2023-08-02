@@ -24,12 +24,11 @@ public:
   virtual std::string_view name() const = 0;
 
 public:
-  static void registe(std::string_view,
-                      std::shared_ptr<MessageBuilder> builder);
+  static void registe(std::shared_ptr<MessageBuilder> builder);
 
   static void unregiste();
 
-  static void unregiste(std::string_view name);
+  static void unregiste(std::shared_ptr<MessageBuilder> builder);
 
   static MessagePtr create(Environment& env,
                            std::string_view name,

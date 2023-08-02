@@ -24,8 +24,7 @@ public:
     : http_server(server_factory)
     , message_builder(std::make_shared<MockMessageBuilder>("GET /"))
   {
-    amphisbaena::MessageBuilder::registe(message_builder->name(),
-                                        message_builder);
+    amphisbaena::MessageBuilder::registe(message_builder);
   }
 
   ~HttpServer() { amphisbaena::MessageBuilder::unregiste(); }
