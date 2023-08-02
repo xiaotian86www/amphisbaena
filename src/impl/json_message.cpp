@@ -6,6 +6,7 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <string_view>
 
 #include "json_message.hpp"
 #include "message.hpp"
@@ -442,6 +443,18 @@ void
 JsonMessage::clear()
 {
   doc_.RemoveAllMembers();
+}
+
+MessagePtr
+JsonMessageFactory::create()
+{
+  return std::make_shared<JsonMessage>();
+}
+
+std::string_view
+JsonMessageFactory::name()
+{
+  return "Json";
 }
 
 }

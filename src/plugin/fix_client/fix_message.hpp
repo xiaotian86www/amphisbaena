@@ -147,4 +147,12 @@ public:
 };
 
 typedef std::shared_ptr<FixMessage> FixMessagePtr;
+
+class FixMessageFactory : public MessageFactory
+{
+public:
+  MessagePtr create() override;
+
+  std::string_view name() override;
+};
 }

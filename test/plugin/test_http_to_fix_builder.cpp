@@ -12,6 +12,7 @@
 #include "matcher/matcher_message.hpp"
 #include "message.hpp"
 #include "mock/mock_builder.hpp"
+#include "plugin/fix_client/fix_message.hpp"
 #include "plugin/http_to_fix/http_to_fix_builder.hpp"
 #include "schedule.hpp"
 
@@ -20,11 +21,11 @@ class HttpToFixBuilder : public FixtureSchedule
 public:
   HttpToFixBuilder()
     : fix_builder(std::make_shared<MockMessageBuilder>("fix"))
+    , fix_message_factory(std::make_shared<amphisbaena::FixMessageFactory>())
+    , json_message_factory(std::make_shared<amphisbaena::JsonMessageFactory>())
   {
-    amphisbaena::MessageFactory::registe(
-      "Fix", [] { return std::make_shared<amphisbaena::JsonMessage>(); });
-    amphisbaena::MessageFactory::registe(
-      "Json", [] { return std::make_shared<amphisbaena::JsonMessage>(); });
+    amphisbaena::MessageFactory::registe(fix_message_factory);
+    amphisbaena::MessageFactory::registe(json_message_factory);
 
     amphisbaena::MessageBuilder::registe(fix_builder);
   }
@@ -37,8 +38,10 @@ public:
   }
 
 protected:
-  amphisbaena::builder::HttpToFixBuilder http_to_fix_builder;
   std::shared_ptr<MockMessageBuilder> fix_builder;
+  std::shared_ptr<amphisbaena::MessageFactory> fix_message_factory;
+  std::shared_ptr<amphisbaena::MessageFactory> json_message_factory;
+  amphisbaena::builder::HttpToFixBuilder http_to_fix_builder;
 };
 
 TEST_F(HttpToFixBuilder, call)

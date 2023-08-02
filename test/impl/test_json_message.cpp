@@ -1,9 +1,9 @@
 
 #include "fixture/fixture_message.hpp"
 #include "impl/json_message.hpp"
+#include "message.hpp"
 
-static auto ctor_func = [] {
-  return std::make_shared<amphisbaena::JsonMessage>();
-};
+static std::shared_ptr<amphisbaena::MessageFactory> factory(
+  std::make_shared<amphisbaena::JsonMessageFactory>());
 
-INSTANTIATE_TEST_SUITE_P(Json, Message, testing::Values(ctor_func));
+INSTANTIATE_TEST_SUITE_P(Json, Message, testing::Values(factory));

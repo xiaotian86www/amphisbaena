@@ -6,13 +6,14 @@
 
 using ctor_prototype = amphisbaena::MessagePtr();
 
-class Message : public testing::TestWithParam<amphisbaena::MessageFactory::ctor_function>
+class Message
+  : public testing::TestWithParam<std::shared_ptr<amphisbaena::MessageFactory>>
 {
 public:
-  void SetUp() { ctor_func = GetParam(); }
+  void SetUp() { factory = GetParam(); }
 
   void TearDown() {}
 
 protected:
-  amphisbaena::MessageFactory::ctor_function ctor_func;
+  std::shared_ptr<amphisbaena::MessageFactory> factory;
 };

@@ -437,4 +437,17 @@ FixMessage::init(std::istream& is)
   boost::property_tree::xml_parser::read_xml(is, pt);
   detail::init_tags(pt);
 }
+
+MessagePtr
+FixMessageFactory::create()
+{
+  return std::make_shared<FixMessage>();
+}
+
+std::string_view
+FixMessageFactory::name()
+{
+  return "Fix";
+}
+
 }

@@ -30,15 +30,18 @@ Object::copy_from(ObjectPtr right)
 }
 
 void
-MessageFactory::registe(std::string_view type, ctor_function ctor)
+MessageFactory::registe(std::shared_ptr<MessageFactory> factory)
 {
-  LOG_INFO("Registe message type: {}", type);
+  LOG_INFO("Registe message type: {}", factory->name());
   auto ctors =
     ctors_
-      ? std::make_shared<std::map<std::string, ctor_function, std::less<>>>(
+      ? std::make_shared<
+          std::map<std::string, std::shared_ptr<MessageFactory>, std::less<>>>(
           *ctors_)
-      : std::make_shared<std::map<std::string, ctor_function, std::less<>>>();
-  ctors->insert_or_assign(std::string(type), std::move(ctor));
+      : std::make_shared<std::map<std::string,
+                                  std::shared_ptr<MessageFactory>,
+                                  std::less<>>>();
+  ctors->insert_or_assign(std::string(factory->name()), factory);
 
   ctors_ = ctors;
 }
@@ -47,20 +50,20 @@ void
 MessageFactory::unregiste()
 {
   LOG_INFO("Unregiste message");
-  ctors_ =
-    std::make_shared<std::map<std::string, ctor_function, std::less<>>>();
+  ctors_ = std::make_shared<
+    std::map<std::string, std::shared_ptr<MessageFactory>, std::less<>>>();
 }
 
 void
-MessageFactory::unregiste(std::string_view type)
+MessageFactory::unregiste(std::shared_ptr<MessageFactory> factory)
 {
-  LOG_INFO("Unregiste message type: {}", type);
+  LOG_INFO("Unregiste message type: {}", factory->name());
   auto ctors =
     ctors_
-      ? std::make_shared<std::map<std::string, ctor_function, std::less<>>>(
+      ? std::make_shared<std::map<std::string, std::shared_ptr<MessageFactory>, std::less<>>>(
           *ctors_)
-      : std::make_shared<std::map<std::string, ctor_function, std::less<>>>();
-  ctors->erase(std::string(type));
+      : std::make_shared<std::map<std::string, std::shared_ptr<MessageFactory>, std::less<>>>();
+  ctors->erase(std::string(factory->name()));
 
   ctors_ = ctors;
 }
@@ -70,7 +73,7 @@ MessageFactory::create(std::string_view type)
 {
   if (auto ctors = ctors_) {
     if (auto iter = ctors->find(type); iter != ctors->end()) {
-      return iter->second();
+      return iter->second->create();
     }
   }
 
@@ -78,6 +81,6 @@ MessageFactory::create(std::string_view type)
 }
 
 std::shared_ptr<
-  std::map<std::string, MessageFactory::ctor_function, std::less<>>>
+  std::map<std::string, std::shared_ptr<MessageFactory>, std::less<>>>
   MessageFactory::ctors_;
 } // namespace amphisbaena

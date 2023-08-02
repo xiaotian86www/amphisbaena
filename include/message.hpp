@@ -247,20 +247,25 @@ enum class MessageType
 class MessageFactory
 {
 public:
-  using ctor_prototype = MessagePtr();
-  using ctor_function = std::function<ctor_prototype>;
+  virtual ~MessageFactory() = default;
 
 public:
-  static void registe(std::string_view type, ctor_function ctor);
+  virtual MessagePtr create() = 0;
+
+  virtual std::string_view name() = 0;
+
+public:
+  static void registe(std::shared_ptr<MessageFactory> factory);
 
   static void unregiste();
 
-  static void unregiste(std::string_view type);
+  static void unregiste(std::shared_ptr<MessageFactory> factory);
 
   static MessagePtr create(std::string_view type);
 
 private:
-  static std::shared_ptr<std::map<std::string, ctor_function, std::less<>>>
+  static std::shared_ptr<
+    std::map<std::string, std::shared_ptr<MessageFactory>, std::less<>>>
     ctors_;
 };
 } // namespace amphisbaena

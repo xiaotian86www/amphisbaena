@@ -137,4 +137,12 @@ public:
 private:
   RapidDocument doc_;
 };
+
+class JsonMessageFactory : public MessageFactory
+{
+public:
+  MessagePtr create() override;
+
+  std::string_view name() override;
+};
 }

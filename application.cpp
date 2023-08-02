@@ -41,8 +41,8 @@ main(int argc, char** argv)
   auto sch = std::make_shared<amphisbaena::Schedule>(ios);
   amphisbaena::UDSServerFactory server_factory(ios, sch, "server.sock");
   amphisbaena::HttpServer http_server(server_factory);
-  amphisbaena::MessageFactory::registe(
-    "Json", [] { return std::make_shared<amphisbaena::JsonMessage>(); });
+  auto json_factory = std::make_shared<amphisbaena::JsonMessageFactory>();
+  amphisbaena::MessageFactory::registe(json_factory);
 
   amphisbaena::Plugin fix_client_plugin(
     "src/plugin/fix_client/libfix_client.so",

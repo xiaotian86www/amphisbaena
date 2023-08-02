@@ -4,8 +4,7 @@
 
 // TODO FixMessage没有加载元数据
 
-static auto ctor_func = [] {
-  return std::make_shared<amphisbaena::FixMessage>();
-};
+static std::shared_ptr<amphisbaena::MessageFactory> factory(
+  std::make_shared<amphisbaena::FixMessageFactory>());
 
-INSTANTIATE_TEST_SUITE_P(Fix, Message, testing::Values(ctor_func));
+INSTANTIATE_TEST_SUITE_P(Fix, Message, testing::Values(factory));
