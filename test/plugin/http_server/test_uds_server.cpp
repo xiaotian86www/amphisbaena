@@ -7,8 +7,8 @@
 #include <gtest/gtest.h>
 #include <memory>
 
-#include "fixture/fixture_schedule.hpp"
-#include "mock/mock_server.hpp"
+#include "fixture_schedule.hpp"
+#include "mock_server.hpp"
 #include "plugin/http_server/uds_server.hpp"
 #include "schedule.hpp"
 

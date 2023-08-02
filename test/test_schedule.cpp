@@ -1,4 +1,4 @@
-#include "gtest/gtest.h"
+
 #include <boost/asio/io_service.hpp>
 #include <chrono>
 #include <ctime>
@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <thread>
 
-#include "fixture/fixture_schedule.hpp"
+#include "fixture_schedule.hpp"
 #include "schedule.hpp"
 #include "tool/util.hpp"
 

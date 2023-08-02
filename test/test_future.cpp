@@ -4,7 +4,7 @@
 #include <memory>
 #include <thread>
 
-#include "fixture/fixture_schedule.hpp"
+#include "fixture_schedule.hpp"
 #include "future.hpp"
 #include "schedule.hpp"
 

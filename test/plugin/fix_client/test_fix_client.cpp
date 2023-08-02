@@ -11,7 +11,7 @@
 #include <thread>
 
 #include "message.hpp"
-#include "mock/mock_client.hpp"
+#include "mock_client.hpp"
 #include "plugin/fix_client/fix_client.hpp"
 #include "plugin/fix_client/fix_message.hpp"
 #include "tool/fix_server.hpp"

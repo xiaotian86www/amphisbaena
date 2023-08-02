@@ -8,12 +8,12 @@
 
 #include "builder.hpp"
 #include "environment.hpp"
-#include "fixture/fixture_schedule.hpp"
+#include "fixture_schedule.hpp"
 #include "message.hpp"
-#include "mock/mock_builder.hpp"
-#include "mock/mock_server.hpp"
-#include "plugin/http_server/http_server.hpp"
+#include "mock_builder.hpp"
+#include "mock_server.hpp"
 #include "plugin/http_server/http_message.hpp"
+#include "plugin/http_server/http_server.hpp"
 #include "plugin/http_server/server.hpp"
 #include "schedule.hpp"
 
@@ -72,21 +72,21 @@ TEST_F(HttpServer, on_data)
         .WillRepeatedly(testing::Return());
 
       http_server->on_recv(sch,
-                          co,
-                          conn,
-                          "GET / HTTP/1.1\r\n"
-                          "Content-Type: application/json; charset=utf-8\r\n"
-                          "Content-Length: 27\r\n"
-                          "\r\n"
-                          "{\"SenderCompID\": \"CLIENT1\"}");
+                           co,
+                           conn,
+                           "GET / HTTP/1.1\r\n"
+                           "Content-Type: application/json; charset=utf-8\r\n"
+                           "Content-Length: 27\r\n"
+                           "\r\n"
+                           "{\"SenderCompID\": \"CLIENT1\"}");
       http_server->on_recv(sch,
-                          co,
-                          conn,
-                          "GET / HTTP/1.1\r\n"
-                          "Content-Type: application/json; charset=utf-8\r\n"
-                          "Content-Length: 27\r\n"
-                          "\r\n"
-                          "{\"SenderCompID\": \"CLIENT1\"}");
+                           co,
+                           conn,
+                           "GET / HTTP/1.1\r\n"
+                           "Content-Type: application/json; charset=utf-8\r\n"
+                           "Content-Length: 27\r\n"
+                           "\r\n"
+                           "{\"SenderCompID\": \"CLIENT1\"}");
     });
 }
 

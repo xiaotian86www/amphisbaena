@@ -1,4 +1,4 @@
-#include "gmock/gmock.h"
+
 #include <boost/asio/io_service.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -7,10 +7,10 @@
 #include <thread>
 
 #include "environment.hpp"
-#include "fixture/fixture_schedule.hpp"
-#include "mock/mock_builder.hpp"
-#include "mock/mock_client.hpp"
-#include "mock/mock_session.hpp"
+#include "fixture_schedule.hpp"
+#include "mock_builder.hpp"
+#include "mock_session.hpp"
+#include "mock_client.hpp"
 #include "plugin/fix_client/fix_builder.hpp"
 #include "plugin/fix_client/fix_message.hpp"
 #include "schedule.hpp"

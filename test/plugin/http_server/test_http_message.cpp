@@ -1,5 +1,5 @@
 
-#include "fixture/fixture_message.hpp"
+#include "fixture_message.hpp"
 #include "plugin/http_server/http_message.hpp"
 #include "message.hpp"
 

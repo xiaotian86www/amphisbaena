@@ -1,8 +1,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "fixture/fixture_message.hpp"
-#include "matcher/matcher_message.hpp"
+#include "fixture_message.hpp"
+#include "matcher_message.hpp"
 #include "message.hpp"
 
 TEST_P(Message, get_int)

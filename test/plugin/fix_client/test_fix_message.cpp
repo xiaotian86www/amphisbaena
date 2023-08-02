@@ -1,5 +1,5 @@
 
-#include "fixture/fixture_message.hpp"
+#include "fixture_message.hpp"
 #include "plugin/fix_client/fix_message.hpp"
 
 // TODO FixMessage没有加载元数据
