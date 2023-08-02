@@ -102,12 +102,12 @@ private:
   RapidValue& value_;
 };
 
-class JsonMessage : public Message
+class HttpMessage : public Message
 {
 public:
-  JsonMessage();
+  HttpMessage();
 
-  JsonMessage(const JsonMessage& right);
+  HttpMessage(const HttpMessage& right);
 
   MessagePtr clone() const override;
 

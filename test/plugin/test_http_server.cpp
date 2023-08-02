@@ -13,7 +13,7 @@
 #include "mock/mock_builder.hpp"
 #include "mock/mock_server.hpp"
 #include "plugin/http_server/http_server.hpp"
-#include "plugin/http_server/json_message.hpp"
+#include "plugin/http_server/http_message.hpp"
 #include "plugin/http_server/server.hpp"
 #include "schedule.hpp"
 
@@ -49,7 +49,7 @@ TEST_F(HttpServer, on_data)
            })))
     .Times(2)
     .WillRepeatedly(testing::Invoke([] {
-      auto response = std::make_shared<amphisbaena::JsonMessage>();
+      auto response = std::make_shared<amphisbaena::HttpMessage>();
       auto response_body = response->get_body();
 
       response_body->set_value("SenderCompID", "CLIENT1");
@@ -119,7 +119,7 @@ TEST_F(HttpServer, on_data_fail)
              return head->get_value("method", "") == "GET" &&
                     head->get_value("url", "") == "/";
            })))
-    .WillOnce(testing::Return(std::make_shared<amphisbaena::JsonMessage>()));
+    .WillOnce(testing::Return(std::make_shared<amphisbaena::HttpMessage>()));
 
   sch->spawn(
     [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {

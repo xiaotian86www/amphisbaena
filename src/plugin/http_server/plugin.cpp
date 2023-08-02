@@ -4,7 +4,7 @@
 
 #include "builder.hpp"
 #include "http_server.hpp"
-#include "json_message.hpp"
+#include "http_message.hpp"
 #include "message.hpp"
 #include "uds_server.hpp"
 
@@ -36,7 +36,7 @@ extern "C"
   {
     ios.stop();
     th.join();
-    
+
     amphisbaena::MessageFactory::unregiste(factory);
 
     factory.reset();

@@ -25,10 +25,10 @@ HttpToFixBuilder::create(Environment& env, MessagePtr request)
 
   auto fix_response = MessageBuilder::create(env, "fix", fix_request);
 
-  auto json_response = MessageFactory::create("Json");
-  json_response->get_body()->copy_from(fix_response->get_body());
+  auto http_response = MessageFactory::create("Json");
+  http_response->get_body()->copy_from(fix_response->get_body());
 
-  return json_response;
+  return http_response;
 }
 
 std::string_view

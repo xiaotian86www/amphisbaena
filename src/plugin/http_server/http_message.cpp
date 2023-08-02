@@ -8,7 +8,7 @@
 #include <rapidjson/writer.h>
 #include <string_view>
 
-#include "json_message.hpp"
+#include "http_message.hpp"
 #include "message.hpp"
 
 namespace amphisbaena {
@@ -370,7 +370,7 @@ JsonObject::set_value(std::string_view name, Type_ value)
   }
 }
 
-JsonMessage::JsonMessage()
+HttpMessage::HttpMessage()
   : doc_(rapidjson::Type::kObjectType, &g_allocator)
 {
   doc_.AddMember("head", RapidValue(rapidjson::Type::kObjectType), g_allocator);
@@ -378,8 +378,8 @@ JsonMessage::JsonMessage()
   doc_.AddMember("tail", RapidValue(rapidjson::Type::kObjectType), g_allocator);
 }
 
-JsonMessage::JsonMessage(const JsonMessage& right)
-  : JsonMessage()
+HttpMessage::HttpMessage(const HttpMessage& right)
+  : HttpMessage()
 {
   *get_head() = *right.get_head();
   *get_body() = *right.get_body();
@@ -387,48 +387,48 @@ JsonMessage::JsonMessage(const JsonMessage& right)
 }
 
 MessagePtr
-JsonMessage::clone() const
+HttpMessage::clone() const
 {
-  return std::make_shared<JsonMessage>(*this);
+  return std::make_shared<HttpMessage>(*this);
 }
 
 ObjectPtr
-JsonMessage::get_head()
+HttpMessage::get_head()
 {
   return std::make_unique<JsonObject>(g_allocator,
                                       doc_.FindMember("head")->value);
 }
 
 ConstObjectPtr
-JsonMessage::get_head() const
+HttpMessage::get_head() const
 {
-  return const_cast<JsonMessage*>(this)->get_head();
+  return const_cast<HttpMessage*>(this)->get_head();
 }
 
 ObjectPtr
-JsonMessage::get_body()
+HttpMessage::get_body()
 {
   return std::make_unique<JsonObject>(g_allocator,
                                       doc_.FindMember("body")->value);
 }
 
 ConstObjectPtr
-JsonMessage::get_body() const
+HttpMessage::get_body() const
 {
-  return const_cast<JsonMessage*>(this)->get_body();
+  return const_cast<HttpMessage*>(this)->get_body();
 }
 
 ObjectPtr
-JsonMessage::get_tail()
+HttpMessage::get_tail()
 {
   return std::make_unique<JsonObject>(g_allocator,
                                       doc_.FindMember("tail")->value);
 }
 
 ConstObjectPtr
-JsonMessage::get_tail() const
+HttpMessage::get_tail() const
 {
-  return const_cast<JsonMessage*>(this)->get_tail();
+  return const_cast<HttpMessage*>(this)->get_tail();
 }
 
 // std::string to_string() const { return {}; }
@@ -440,7 +440,7 @@ JsonMessage::get_tail() const
 // void from_binary(std::string_view bin) {}
 
 void
-JsonMessage::clear()
+HttpMessage::clear()
 {
   doc_.RemoveAllMembers();
 }
@@ -448,7 +448,7 @@ JsonMessage::clear()
 MessagePtr
 JsonMessageFactory::create()
 {
-  return std::make_shared<JsonMessage>();
+  return std::make_shared<HttpMessage>();
 }
 
 std::string_view

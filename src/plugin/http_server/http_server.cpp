@@ -6,7 +6,7 @@
 #include "builder.hpp"
 #include "environment.hpp"
 #include "http_server.hpp"
-#include "json_message.hpp"
+#include "http_message.hpp"
 #include "log.hpp"
 #include "message.hpp"
 #include "session.hpp"
@@ -61,7 +61,7 @@ HttpSession::HttpSession(HttpServer* server,
   , sch_(sch)
   , co_(co)
   , conn_(conn)
-  , request_(std::make_shared<JsonMessage>())
+  , request_(std::make_shared<HttpMessage>())
 {
   env_.sch = sch_;
   env_.co = co_;
@@ -97,7 +97,7 @@ HttpSession::on_recv(std::string_view data)
   enum llhttp_errno err = llhttp_execute(this, data.data(), data.length());
   if (err != HPE_OK) {
     llhttp_reset(this);
-    request_ = std::make_shared<JsonMessage>();
+    request_ = std::make_shared<HttpMessage>();
   }
 }
 
@@ -123,7 +123,7 @@ HttpSession::do_recv()
     response_head->set_value("version", request_head->get_string("version"));
 
   } catch (...) {
-    request_ = std::make_shared<JsonMessage>();
+    request_ = std::make_shared<HttpMessage>();
 
     response = handle_error(request_head->get_string("version"));
   }
@@ -148,7 +148,7 @@ HttpSession::set_body(std::string_view value)
 MessagePtr
 HttpSession::handle_error(std::string_view version)
 {
-  auto response = std::make_shared<JsonMessage>();
+  auto response = std::make_shared<HttpMessage>();
   auto response_head = response->get_head();
 
   try {
