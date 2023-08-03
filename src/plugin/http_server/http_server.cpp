@@ -1,17 +1,59 @@
 
+#include <cstdlib>
 #include <llhttp.h>
 #include <memory>
 #include <rapidjson/document.h>
 
 #include "builder.hpp"
 #include "environment.hpp"
-#include "http_server.hpp"
 #include "http_message.hpp"
+#include "http_server.hpp"
 #include "log.hpp"
 #include "message.hpp"
 #include "session.hpp"
 
 namespace amphisbaena {
+
+struct content_t
+{
+  std::size_t capital;
+  std::size_t length;
+  char buffer[];
+};
+
+static content_t*
+init_content(std::size_t length)
+{
+  std::size_t captital = (length + 1024) / 1024 * 1024;
+  content_t* content = static_cast<content_t*>(malloc(captital));
+  if (!content)
+    return content;
+  content->capital = captital;
+  content->length = length;
+  return content;
+}
+
+static content_t*
+reinit_content(content_t* content, std::size_t length)
+{
+  if (length < content->capital) {
+    content->length = length;
+    return content;
+  }
+  std::size_t captital = (length + 1024) / 1024 * 1024;
+  content_t* new_content = static_cast<content_t*>(realloc(content, captital));
+  if (!new_content)
+    return new_content;
+  new_content->capital = captital;
+  new_content->length = length;
+  return new_content;
+}
+
+static void
+deinit_content(content_t* content)
+{
+  free(content);
+}
 
 static int
 handle_on_method(llhttp_t* http, const char* at, size_t length)
@@ -41,7 +83,36 @@ static int
 handle_on_body(llhttp_t* http, const char* at, size_t length)
 {
   auto* parser = static_cast<HttpSession*>(http);
-  parser->set_body(std::string_view(at, length));
+  // content_length为剩余content长度，加上length等于整个content长度
+  // 当content分多次得到的时候，需要将之前的部分content缓存下来
+  content_t* content = static_cast<content_t*>(parser->data);
+  assert(content);
+
+  if (parser->content_length > 0) {
+    if (content->length == 0) {
+      content = reinit_content(content, parser->content_length + length);
+      if (!content)
+        return HPE_INTERNAL;
+      parser->data = content;
+    }
+    memcpy(content->buffer + content->length - length - parser->content_length,
+           at,
+           length);
+  } else {
+    std::string_view buffer;
+    if (content->length > 0) {
+      memcpy(content->buffer + content->length - length, at, length);
+      buffer = { content->buffer, content->length };
+    } else {
+      buffer = { at, length };
+    }
+
+    try {
+      parser->set_body(std::string_view(buffer));
+    } catch (...) {
+      return HPE_INTERNAL;
+    }
+  }
   return HPE_OK;
 }
 
@@ -63,8 +134,16 @@ HttpSession::HttpSession(HttpServer* server,
   , conn_(conn)
   , request_(std::make_shared<HttpMessage>())
 {
+  llhttp_init(this, HTTP_REQUEST, &server->settings);
+  llhttp_t::data = init_content(0);
   env_.sch = sch_;
   env_.co = co_;
+}
+
+HttpSession::~HttpSession()
+{
+  auto* content = static_cast<content_t*>(llhttp_t::data);
+  deinit_content(content);
 }
 
 void
@@ -96,8 +175,7 @@ HttpSession::on_recv(std::string_view data)
 {
   enum llhttp_errno err = llhttp_execute(this, data.data(), data.length());
   if (err != HPE_OK) {
-    llhttp_reset(this);
-    request_ = std::make_shared<HttpMessage>();
+    reset();
   }
 }
 
@@ -170,17 +248,26 @@ HttpSession::handle_error(std::string_view version)
   return response;
 }
 
+void
+HttpSession::reset()
+{
+  llhttp_reset(this);
+  auto* content = static_cast<content_t*>(llhttp_t::data);
+  content->length = 0;
+  request_ = std::make_shared<HttpMessage>();
+}
+
 HttpServer::HttpServer(std::shared_ptr<ServerFactory> server_factory)
   : server_(std::move(server_factory->create(this)))
 {
   LOG_INFO("HttpServer create");
 
-  llhttp_settings_init(&settings_);
-  settings_.on_method = handle_on_method;
-  settings_.on_url = handle_on_url;
-  settings_.on_version = handle_on_version;
-  settings_.on_body = handle_on_body;
-  settings_.on_message_complete = handle_on_message_complete;
+  llhttp_settings_init(&settings);
+  settings.on_method = handle_on_method;
+  settings.on_url = handle_on_url;
+  settings.on_version = handle_on_version;
+  settings.on_body = handle_on_body;
+  settings.on_message_complete = handle_on_message_complete;
 }
 
 HttpServer::~HttpServer()
@@ -197,7 +284,6 @@ HttpServer::on_recv(ScheduleRef sch,
   HttpSessionPtr session;
   if (auto iter = sessions_.find(conn); iter == sessions_.end()) {
     session = std::make_shared<HttpSession>(this, sch, co, conn);
-    llhttp_init(session.get(), HTTP_REQUEST, &settings_);
     sessions_.insert_or_assign(conn, session);
   } else {
     session = iter->second;

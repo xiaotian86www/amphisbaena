@@ -24,6 +24,8 @@ public:
               CoroutineRef co,
               ConnectionRef conn);
 
+  ~HttpSession() override;
+
 public:
   void send(MessagePtr message) override;
 
@@ -37,6 +39,8 @@ public:
 
 private:
   MessagePtr handle_error(std::string_view version);
+
+  void reset();
 
 private:
   HttpServer* server_;
@@ -62,8 +66,10 @@ public:
                ConnectionPtr conn,
                std::string_view data) override;
 
+public:
+  llhttp_settings_t settings;
+
 private:
-  llhttp_settings_t settings_;
   std::unique_ptr<Server> server_;
   std::map<ConnectionPtr, HttpSessionPtr> sessions_;
 };

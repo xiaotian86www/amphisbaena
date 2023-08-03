@@ -1,11 +1,13 @@
 
 #include <cassert>
 #include <cstdint>
+#include <fmt/core.h>
 #include <rapidjson/document.h>
 #include <rapidjson/error/en.h>
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
+#include <stdexcept>
 #include <string_view>
 
 #include "http_message.hpp"
@@ -304,12 +306,11 @@ JsonObject::from_string(std::string_view str)
   RapidDocument doc(rapidjson::Type::kObjectType, &g_allocator);
   rapidjson::ParseResult ok = doc.Parse(str.data(), str.size());
   if (!ok) {
-    // TODO 解析异常
-    printf("JSON parse error: %s (%lu)\n",
-           rapidjson::GetParseError_En(ok.Code()),
-           ok.Offset());
+    std::string what = fmt::format("parse error: {} ({})",
+                                   rapidjson::GetParseError_En(ok.Code()),
+                                   ok.Offset());
 
-    return;
+    throw std::invalid_argument(what);
   }
 
   value_.Swap(doc);

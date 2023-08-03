@@ -90,6 +90,64 @@ TEST_F(HttpServer, on_data)
     });
 }
 
+TEST_F(HttpServer, on_data_split)
+{
+  EXPECT_CALL(
+    *message_builder,
+    create(testing::_, testing::Truly([](amphisbaena::MessagePtr message) {
+             auto head = message->get_head();
+             auto body = message->get_body();
+             return head->get_string("method") == "GET" &&
+                    head->get_string("url") == "/" &&
+                    body->get_string("SenderCompID") == "CLIENT1";
+           })))
+    .Times(2)
+    .WillRepeatedly(testing::Invoke([] {
+      auto response = std::make_shared<amphisbaena::HttpMessage>();
+      auto response_body = response->get_body();
+
+      response_body->set_value("SenderCompID", "CLIENT1");
+
+      return response;
+    }));
+
+  sch->spawn(
+    [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
+      auto conn = std::make_shared<MockConnection>(sch, co);
+
+      EXPECT_CALL(
+        *conn,
+        send(testing::StrEq("HTTP/1.1 200 OK\r\n"
+                            "Content-Type: application/json; charset=utf-8\r\n"
+                            "Content-Length: 26\r\n"
+                            "\r\n"
+                            "{\"SenderCompID\":\"CLIENT1\"}")))
+        .Times(2)
+        .WillRepeatedly(testing::Return());
+
+      http_server->on_recv(sch,
+                           co,
+                           conn,
+                           "GET / HTTP/1.1\r\n"
+                           "Content-Type: application/json; charset=utf-8\r\n"
+                           "Content-Length: 27\r\n"
+                           "\r\n"
+                           "{\"SenderCompID\": ");
+      http_server->on_recv(sch,
+                           co,
+                           conn,
+                           "\"CLIENT1\"}");
+      http_server->on_recv(sch,
+                           co,
+                           conn,
+                           "GET / HTTP/1.1\r\n"
+                           "Content-Type: application/json; charset=utf-8\r\n"
+                           "Content-Length: 27\r\n"
+                           "\r\n"
+                           "{\"SenderCompID\": \"CLIENT1\"}");
+    });
+}
+
 TEST_F(HttpServer, on_data_not_found)
 {
   sch->spawn(
