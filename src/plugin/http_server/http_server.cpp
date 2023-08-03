@@ -26,7 +26,7 @@ static content_t*
 init_content(std::size_t length)
 {
   std::size_t captital = (length + 1024) / 1024 * 1024;
-  content_t* content = static_cast<content_t*>(malloc(captital));
+  auto content = static_cast<content_t*>(malloc(captital));
   if (!content)
     return content;
   content->capital = captital;
@@ -45,7 +45,7 @@ reinit_content(content_t* content, std::size_t length)
   }
 
   std::size_t captital = (length + 1024) / 1024 * 1024;
-  content_t* new_content = static_cast<content_t*>(realloc(content, captital));
+  auto new_content = static_cast<content_t*>(realloc(content, captital));
   if (!new_content)
     return new_content;
   new_content->capital = captital;
@@ -63,7 +63,7 @@ deinit_content(content_t* content)
 static int
 handle_on_method(llhttp_t* http, const char* at, size_t length)
 {
-  auto* parser = static_cast<HttpSession*>(http);
+  auto parser = static_cast<HttpSession*>(http);
   parser->set_head("method", std::string_view(at, length));
   return HPE_OK;
 }
@@ -71,7 +71,7 @@ handle_on_method(llhttp_t* http, const char* at, size_t length)
 static int
 handle_on_url(llhttp_t* http, const char* at, size_t length)
 {
-  auto* parser = static_cast<HttpSession*>(http);
+  auto parser = static_cast<HttpSession*>(http);
   parser->set_head("url", std::string_view(at, length));
   return HPE_OK;
 }
@@ -79,7 +79,7 @@ handle_on_url(llhttp_t* http, const char* at, size_t length)
 static int
 handle_on_version(llhttp_t* http, const char* at, size_t length)
 {
-  auto* parser = static_cast<HttpSession*>(http);
+  auto parser = static_cast<HttpSession*>(http);
   parser->set_head("version", std::string_view(at, length));
   return HPE_OK;
 }
@@ -111,8 +111,8 @@ handle_on_header_value_complete(llhttp_t* http)
 static int
 handle_on_headers_complete(llhttp_t* http)
 {
-  auto* parser = static_cast<HttpSession*>(http);
-  content_t* content = static_cast<content_t*>(parser->data);
+  auto parser = static_cast<HttpSession*>(http);
+  auto content = static_cast<content_t*>(parser->data);
   assert(content);
   content = reinit_content(content, parser->content_length);
   if (!content)
@@ -124,10 +124,10 @@ handle_on_headers_complete(llhttp_t* http)
 static int
 handle_on_body(llhttp_t* http, const char* at, size_t length)
 {
-  auto* parser = static_cast<HttpSession*>(http);
+  auto parser = static_cast<HttpSession*>(http);
   // content_length为剩余content长度，加上length等于整个content长度
   // 当content分多次得到的时候，需要将之前的部分content缓存下来
-  content_t* content = static_cast<content_t*>(parser->data);
+  auto content = static_cast<content_t*>(parser->data);
   assert(content);
 
   if (content->length == length) {
@@ -159,6 +159,15 @@ handle_on_message_complete(llhttp_t* http)
   }
 }
 
+static int
+handle_on_reset(llhttp_t* http)
+{
+  auto parser = static_cast<HttpSession*>(http);
+  parser->reset();
+
+  return HPE_OK;
+}
+
 HttpSession::HttpSession(HttpServer* server,
                          ScheduleRef sch,
                          CoroutineRef co,
@@ -177,7 +186,7 @@ HttpSession::HttpSession(HttpServer* server,
 
 HttpSession::~HttpSession()
 {
-  auto* content = static_cast<content_t*>(llhttp_t::data);
+  auto content = static_cast<content_t*>(llhttp_t::data);
   deinit_content(content);
 }
 
@@ -210,6 +219,7 @@ HttpSession::on_recv(std::string_view data)
 {
   enum llhttp_errno err = llhttp_execute(this, data.data(), data.length());
   if (err != HPE_OK) {
+    llhttp_reset(this);
     reset();
   }
 }
@@ -236,8 +246,6 @@ HttpSession::do_recv()
     response_head->set_value("version", request_head->get_string("version"));
 
   } catch (...) {
-    request_ = amphisbaena::MessageFactory::create("Http");
-
     response = handle_error(request_head->get_string("version"));
   }
 
@@ -286,7 +294,6 @@ HttpSession::handle_error(std::string_view version)
 void
 HttpSession::reset()
 {
-  llhttp_reset(this);
   request_ = amphisbaena::MessageFactory::create("Http");
 }
 
@@ -306,6 +313,7 @@ HttpServer::HttpServer(std::shared_ptr<ServerFactory> server_factory)
   settings.on_header_value_complete = handle_on_header_value_complete;
   settings.on_headers_complete = handle_on_headers_complete;
   settings.on_message_complete = handle_on_message_complete;
+  settings.on_reset = handle_on_reset;
 }
 
 HttpServer::~HttpServer()

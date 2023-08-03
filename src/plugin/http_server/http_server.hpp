@@ -37,10 +37,10 @@ public:
 
   void set_body(std::string_view value);
 
+  void reset();
+
 private:
   MessagePtr handle_error(std::string_view version);
-
-  void reset();
 
 private:
   HttpServer* server_;
