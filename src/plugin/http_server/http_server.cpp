@@ -14,40 +14,40 @@
 
 namespace amphisbaena {
 
-static content_t*
-init_content(std::size_t length)
-{
-  std::size_t captital = (length + 1024) / 1024 * 1024;
-  auto content = static_cast<content_t*>(malloc(captital));
-  if (!content)
-    return content;
-  content->capital = captital;
-  content->length = length;
-  return content;
-}
+// static content_t*
+// init_content(std::size_t length)
+// {
+//   std::size_t captital = (length + 1024) / 1024 * 1024;
+//   auto content = static_cast<content_t*>(malloc(captital));
+//   if (!content)
+//     return content;
+//   content->capital = captital;
+//   content->length = length;
+//   return content;
+// }
 
-static content_t*
-reinit_content(content_t* content, std::size_t length)
-{
-  if (length < content->capital) {
-    content->length = length;
-    return content;
-  }
+// static content_t*
+// reinit_content(content_t* content, std::size_t length)
+// {
+//   if (length < content->capital) {
+//     content->length = length;
+//     return content;
+//   }
 
-  std::size_t captital = (length + 1024) / 1024 * 1024;
-  auto new_content = static_cast<content_t*>(realloc(content, captital));
-  if (!new_content)
-    return new_content;
-  new_content->capital = captital;
-  new_content->length = length;
-  return new_content;
-}
+//   std::size_t captital = (length + 1024) / 1024 * 1024;
+//   auto new_content = static_cast<content_t*>(realloc(content, captital));
+//   if (!new_content)
+//     return new_content;
+//   new_content->capital = captital;
+//   new_content->length = length;
+//   return new_content;
+// }
 
-static void
-deinit_content(content_t* content)
-{
-  free(content);
-}
+// static void
+// deinit_content(content_t* content)
+// {
+//   free(content);
+// }
 
 llhttp_settings_t HttpSession::settings_ = {
   .on_message_begin = nullptr,
@@ -84,17 +84,13 @@ HttpSession::HttpSession(HttpServer* server,
   , co_(co)
   , conn_(conn)
   , request_(amphisbaena::MessageFactory::create("Http"))
-  , content_(init_content(0))
 {
   llhttp_init(this, HTTP_REQUEST, &settings_);
   env_.sch = sch_;
   env_.co = co_;
 }
 
-HttpSession::~HttpSession()
-{
-  deinit_content(content_);
-}
+HttpSession::~HttpSession() {}
 
 void
 HttpSession::send(MessagePtr message)
@@ -158,11 +154,8 @@ int
 HttpSession::handle_on_headers_complete(llhttp_t* http)
 {
   auto parser = static_cast<HttpSession*>(http);
-  assert(parser->content_);
-  auto new_content = reinit_content(parser->content_, parser->content_length);
-  if (!new_content)
-    return HPE_INTERNAL;
-  parser->content_ = new_content;
+  parser->content_.clear();
+  parser->content_.reserve(parser->content_length);
   return HPE_OK;
 }
 
@@ -172,20 +165,15 @@ HttpSession::handle_on_body(llhttp_t* http, const char* at, size_t length)
   auto parser = static_cast<HttpSession*>(http);
   // content_length为剩余content长度，加上length等于整个content长度
   // 当content分多次得到的时候，需要将之前的部分content缓存下来
-  assert(parser->content_);
-
-  if (parser->content_->length == length) {
+  if (parser->content_.size() == length) {
     auto request_body = parser->request_->get_body();
     static_cast<JsonObject*>(request_body.get())->from_string({ at, length });
   } else {
-    memcpy(parser->content_->buffer + parser->content_->length - length -
-             parser->content_length,
-           at,
-           length);
+    parser->content_.append(at, length);
     if (http->content_length == 0) {
       auto request_body = parser->request_->get_body();
       static_cast<JsonObject*>(request_body.get())
-        ->from_string({ parser->content_->buffer, parser->content_->length });
+        ->from_string(parser->content_);
     }
   }
 

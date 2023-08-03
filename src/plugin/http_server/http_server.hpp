@@ -13,12 +13,12 @@
 namespace amphisbaena {
 class HttpServer;
 
-struct content_t
-{
-  std::size_t capital;
-  std::size_t length;
-  char buffer[];
-};
+// struct content_t
+// {
+//   std::size_t capital;
+//   std::size_t length;
+//   char buffer[];
+// };
 
 class HttpSession
   : public std::enable_shared_from_this<HttpSession>
@@ -64,7 +64,7 @@ private:
   CoroutineRef co_;
   ConnectionRef conn_;
   MessagePtr request_;
-  content_t* content_;
+  std::string content_;
 };
 
 typedef std::shared_ptr<HttpSession> HttpSessionPtr;
