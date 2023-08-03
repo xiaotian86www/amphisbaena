@@ -22,7 +22,7 @@ public:
   HttpToFixBuilder()
     : fix_builder(std::make_shared<MockMessageBuilder>("fix"))
     , fix_message_factory(std::make_shared<amphisbaena::FixMessageFactory>())
-    , http_message_factory(std::make_shared<amphisbaena::JsonMessageFactory>())
+    , http_message_factory(std::make_shared<amphisbaena::HttpMessageFactory>())
   {
     amphisbaena::MessageFactory::registe(fix_message_factory);
     amphisbaena::MessageFactory::registe(http_message_factory);
@@ -71,7 +71,7 @@ TEST_F(HttpToFixBuilder, call)
           return response;
         }));
 
-      auto request = amphisbaena::MessageFactory::create("Json");
+      auto request = amphisbaena::MessageFactory::create("Http");
 
       auto request_body = request->get_body();
       request_body->set_value("SenderCompID", "CLIENT1");

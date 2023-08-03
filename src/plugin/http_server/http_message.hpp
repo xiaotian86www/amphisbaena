@@ -138,7 +138,7 @@ private:
   RapidDocument doc_;
 };
 
-class JsonMessageFactory : public MessageFactory
+class HttpMessageFactory : public MessageFactory
 {
 public:
   MessagePtr create() override;

@@ -18,6 +18,7 @@ struct content_t
 {
   std::size_t capital;
   std::size_t length;
+  const char* const_buffer;
   char buffer[];
 };
 
@@ -30,6 +31,7 @@ init_content(std::size_t length)
     return content;
   content->capital = captital;
   content->length = length;
+  content->const_buffer = nullptr;
   return content;
 }
 
@@ -38,14 +40,17 @@ reinit_content(content_t* content, std::size_t length)
 {
   if (length < content->capital) {
     content->length = length;
+    content->const_buffer = nullptr;
     return content;
   }
+
   std::size_t captital = (length + 1024) / 1024 * 1024;
   content_t* new_content = static_cast<content_t*>(realloc(content, captital));
   if (!new_content)
     return new_content;
   new_content->capital = captital;
   new_content->length = length;
+  new_content->const_buffer = nullptr;
   return new_content;
 }
 
@@ -80,6 +85,43 @@ handle_on_version(llhttp_t* http, const char* at, size_t length)
 }
 
 static int
+handle_on_header_field(llhttp_t* http, const char* at, size_t length)
+{
+  return HPE_OK;
+}
+
+static int
+handle_on_header_value(llhttp_t* http, const char* at, size_t length)
+{
+  return HPE_OK;
+}
+
+static int
+handle_on_header_field_complete(llhttp_t* http)
+{
+  return HPE_OK;
+}
+
+static int
+handle_on_header_value_complete(llhttp_t* http)
+{
+  return HPE_OK;
+}
+
+static int
+handle_on_headers_complete(llhttp_t* http)
+{
+  auto* parser = static_cast<HttpSession*>(http);
+  content_t* content = static_cast<content_t*>(parser->data);
+  assert(content);
+  content = reinit_content(content, parser->content_length);
+  if (!content)
+    return HPE_INTERNAL;
+  parser->data = content;
+  return HPE_OK;
+}
+
+static int
 handle_on_body(llhttp_t* http, const char* at, size_t length)
 {
   auto* parser = static_cast<HttpSession*>(http);
@@ -88,31 +130,14 @@ handle_on_body(llhttp_t* http, const char* at, size_t length)
   content_t* content = static_cast<content_t*>(parser->data);
   assert(content);
 
-  if (parser->content_length > 0) {
-    if (content->length == 0) {
-      content = reinit_content(content, parser->content_length + length);
-      if (!content)
-        return HPE_INTERNAL;
-      parser->data = content;
-    }
+  if (content->length == length) {
+    content->const_buffer = at;
+  } else {
     memcpy(content->buffer + content->length - length - parser->content_length,
            at,
            length);
-  } else {
-    std::string_view buffer;
-    if (content->length > 0) {
-      memcpy(content->buffer + content->length - length, at, length);
-      buffer = { content->buffer, content->length };
-    } else {
-      buffer = { at, length };
-    }
-
-    try {
-      parser->set_body(std::string_view(buffer));
-    } catch (...) {
-      return HPE_INTERNAL;
-    }
   }
+
   return HPE_OK;
 }
 
@@ -120,8 +145,18 @@ static int
 handle_on_message_complete(llhttp_t* http)
 {
   auto parser = static_cast<HttpSession*>(http);
-  parser->do_recv();
-  return HPE_OK;
+  auto content = static_cast<content_t*>(parser->data);
+  try {
+    if (content->length > 0) {
+      parser->set_body(
+        { content->const_buffer ? content->const_buffer : content->buffer,
+          content->length });
+    }
+    parser->do_recv();
+    return HPE_OK;
+  } catch (...) {
+    return HPE_INTERNAL;
+  }
 }
 
 HttpSession::HttpSession(HttpServer* server,
@@ -132,7 +167,7 @@ HttpSession::HttpSession(HttpServer* server,
   , sch_(sch)
   , co_(co)
   , conn_(conn)
-  , request_(std::make_shared<HttpMessage>())
+  , request_(amphisbaena::MessageFactory::create("Http"))
 {
   llhttp_init(this, HTTP_REQUEST, &server->settings);
   llhttp_t::data = init_content(0);
@@ -201,7 +236,7 @@ HttpSession::do_recv()
     response_head->set_value("version", request_head->get_string("version"));
 
   } catch (...) {
-    request_ = std::make_shared<HttpMessage>();
+    request_ = amphisbaena::MessageFactory::create("Http");
 
     response = handle_error(request_head->get_string("version"));
   }
@@ -226,7 +261,7 @@ HttpSession::set_body(std::string_view value)
 MessagePtr
 HttpSession::handle_error(std::string_view version)
 {
-  auto response = std::make_shared<HttpMessage>();
+  auto response = amphisbaena::MessageFactory::create("Http");
   auto response_head = response->get_head();
 
   try {
@@ -252,9 +287,7 @@ void
 HttpSession::reset()
 {
   llhttp_reset(this);
-  auto* content = static_cast<content_t*>(llhttp_t::data);
-  content->length = 0;
-  request_ = std::make_shared<HttpMessage>();
+  request_ = amphisbaena::MessageFactory::create("Http");
 }
 
 HttpServer::HttpServer(std::shared_ptr<ServerFactory> server_factory)
@@ -267,6 +300,11 @@ HttpServer::HttpServer(std::shared_ptr<ServerFactory> server_factory)
   settings.on_url = handle_on_url;
   settings.on_version = handle_on_version;
   settings.on_body = handle_on_body;
+  settings.on_header_field = handle_on_header_field;
+  settings.on_header_value = handle_on_header_value;
+  settings.on_header_field_complete = handle_on_header_field_complete;
+  settings.on_header_value_complete = handle_on_header_value_complete;
+  settings.on_headers_complete = handle_on_headers_complete;
   settings.on_message_complete = handle_on_message_complete;
 }
 

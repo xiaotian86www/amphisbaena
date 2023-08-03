@@ -21,16 +21,23 @@ class HttpServer : public FixtureSchedule
 {
 public:
   HttpServer()
-    : server_factory(std::make_shared<MockServerFactory>())
+    : http_message_factory(std::make_shared<amphisbaena::HttpMessageFactory>())
+    , server_factory(std::make_shared<MockServerFactory>())
     , http_server(std::make_shared<amphisbaena::HttpServer>(server_factory))
     , message_builder(std::make_shared<MockMessageBuilder>("GET /"))
   {
+    amphisbaena::MessageFactory::registe(http_message_factory);
     amphisbaena::MessageBuilder::registe(message_builder);
   }
 
-  ~HttpServer() { amphisbaena::MessageBuilder::unregiste(); }
+  ~HttpServer()
+  {
+    amphisbaena::MessageFactory::unregiste();
+    amphisbaena::MessageBuilder::unregiste();
+  }
 
 protected:
+  std::shared_ptr<amphisbaena::MessageFactory> http_message_factory;
   std::shared_ptr<amphisbaena::ServerFactory> server_factory;
   std::shared_ptr<amphisbaena::HttpServer> http_server;
   std::shared_ptr<MockMessageBuilder> message_builder;
@@ -133,10 +140,7 @@ TEST_F(HttpServer, on_data_split)
                            "Content-Length: 27\r\n"
                            "\r\n"
                            "{\"SenderCompID\": ");
-      http_server->on_recv(sch,
-                           co,
-                           conn,
-                           "\"CLIENT1\"}");
+      http_server->on_recv(sch, co, conn, "\"CLIENT1\"}");
       http_server->on_recv(sch,
                            co,
                            conn,

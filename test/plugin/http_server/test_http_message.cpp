@@ -4,6 +4,6 @@
 #include "message.hpp"
 
 static std::shared_ptr<amphisbaena::MessageFactory> factory(
-  std::make_shared<amphisbaena::JsonMessageFactory>());
+  std::make_shared<amphisbaena::HttpMessageFactory>());
 
-INSTANTIATE_TEST_SUITE_P(Json, Message, testing::Values(factory));
+INSTANTIATE_TEST_SUITE_P(Http, Message, testing::Values(factory));

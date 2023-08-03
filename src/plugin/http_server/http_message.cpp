@@ -447,15 +447,15 @@ HttpMessage::clear()
 }
 
 MessagePtr
-JsonMessageFactory::create()
+HttpMessageFactory::create()
 {
   return std::make_shared<HttpMessage>();
 }
 
 std::string_view
-JsonMessageFactory::name()
+HttpMessageFactory::name()
 {
-  return "Json";
+  return "Http";
 }
 
 }

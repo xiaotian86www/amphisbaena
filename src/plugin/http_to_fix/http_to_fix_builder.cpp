@@ -25,7 +25,7 @@ HttpToFixBuilder::create(Environment& env, MessagePtr request)
 
   auto fix_response = MessageBuilder::create(env, "fix", fix_request);
 
-  auto http_response = MessageFactory::create("Json");
+  auto http_response = MessageFactory::create("Http");
   http_response->get_body()->copy_from(fix_response->get_body());
 
   return http_response;

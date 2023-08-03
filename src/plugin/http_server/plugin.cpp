@@ -19,7 +19,7 @@ extern "C"
     if (argc < 2)
       throw std::invalid_argument("Usage: " + std::string(argv[0]));
 
-    factory = std::make_shared<amphisbaena::JsonMessageFactory>();
+    factory = std::make_shared<amphisbaena::HttpMessageFactory>();
 
     amphisbaena::MessageFactory::registe(factory);
 
