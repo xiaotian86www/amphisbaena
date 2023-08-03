@@ -14,14 +14,6 @@
 
 namespace amphisbaena {
 
-struct content_t
-{
-  std::size_t capital;
-  std::size_t length;
-  const char* const_buffer;
-  char buffer[];
-};
-
 static content_t*
 init_content(std::size_t length)
 {
@@ -31,7 +23,6 @@ init_content(std::size_t length)
     return content;
   content->capital = captital;
   content->length = length;
-  content->const_buffer = nullptr;
   return content;
 }
 
@@ -40,7 +31,6 @@ reinit_content(content_t* content, std::size_t length)
 {
   if (length < content->capital) {
     content->length = length;
-    content->const_buffer = nullptr;
     return content;
   }
 
@@ -50,7 +40,6 @@ reinit_content(content_t* content, std::size_t length)
     return new_content;
   new_content->capital = captital;
   new_content->length = length;
-  new_content->const_buffer = nullptr;
   return new_content;
 }
 
@@ -60,113 +49,31 @@ deinit_content(content_t* content)
   free(content);
 }
 
-static int
-handle_on_method(llhttp_t* http, const char* at, size_t length)
-{
-  auto parser = static_cast<HttpSession*>(http);
-  parser->set_head("method", std::string_view(at, length));
-  return HPE_OK;
-}
-
-static int
-handle_on_url(llhttp_t* http, const char* at, size_t length)
-{
-  auto parser = static_cast<HttpSession*>(http);
-  parser->set_head("url", std::string_view(at, length));
-  return HPE_OK;
-}
-
-static int
-handle_on_version(llhttp_t* http, const char* at, size_t length)
-{
-  auto parser = static_cast<HttpSession*>(http);
-  parser->set_head("version", std::string_view(at, length));
-  return HPE_OK;
-}
-
-static int
-handle_on_header_field(llhttp_t* http, const char* at, size_t length)
-{
-  return HPE_OK;
-}
-
-static int
-handle_on_header_value(llhttp_t* http, const char* at, size_t length)
-{
-  return HPE_OK;
-}
-
-static int
-handle_on_header_field_complete(llhttp_t* http)
-{
-  return HPE_OK;
-}
-
-static int
-handle_on_header_value_complete(llhttp_t* http)
-{
-  return HPE_OK;
-}
-
-static int
-handle_on_headers_complete(llhttp_t* http)
-{
-  auto parser = static_cast<HttpSession*>(http);
-  auto content = static_cast<content_t*>(parser->data);
-  assert(content);
-  content = reinit_content(content, parser->content_length);
-  if (!content)
-    return HPE_INTERNAL;
-  parser->data = content;
-  return HPE_OK;
-}
-
-static int
-handle_on_body(llhttp_t* http, const char* at, size_t length)
-{
-  auto parser = static_cast<HttpSession*>(http);
-  // content_length为剩余content长度，加上length等于整个content长度
-  // 当content分多次得到的时候，需要将之前的部分content缓存下来
-  auto content = static_cast<content_t*>(parser->data);
-  assert(content);
-
-  if (content->length == length) {
-    content->const_buffer = at;
-  } else {
-    memcpy(content->buffer + content->length - length - parser->content_length,
-           at,
-           length);
-  }
-
-  return HPE_OK;
-}
-
-static int
-handle_on_message_complete(llhttp_t* http)
-{
-  auto parser = static_cast<HttpSession*>(http);
-  auto content = static_cast<content_t*>(parser->data);
-  try {
-    if (content->length > 0) {
-      parser->set_body(
-        { content->const_buffer ? content->const_buffer : content->buffer,
-          content->length });
-    }
-    parser->do_recv();
-    return HPE_OK;
-  } catch (...) {
-    return HPE_INTERNAL;
-  }
-}
-
-static int
-handle_on_reset(llhttp_t* http)
-{
-  auto parser = static_cast<HttpSession*>(http);
-  parser->reset();
-
-  return HPE_OK;
-}
+llhttp_settings_t HttpSession::settings_ = {
+  .on_message_begin = nullptr,
+  .on_url = handle_on_url,
+  .on_status = nullptr,
+  .on_method = handle_on_method,
+  .on_version = handle_on_version,
+  .on_header_field = nullptr,
+  .on_header_value = nullptr,
+  .on_chunk_extension_name = nullptr,
+  .on_chunk_extension_value = nullptr,
+  .on_headers_complete = handle_on_headers_complete,
+  .on_body = handle_on_body,
+  .on_message_complete = handle_on_message_complete,
+  .on_url_complete = nullptr,
+  .on_status_complete = nullptr,
+  .on_method_complete = nullptr,
+  .on_version_complete = nullptr,
+  .on_header_field_complete = nullptr,
+  .on_header_value_complete = nullptr,
+  .on_chunk_extension_name_complete = nullptr,
+  .on_chunk_extension_value_complete = nullptr,
+  .on_chunk_header = nullptr,
+  .on_chunk_complete = nullptr,
+  .on_reset = handle_on_reset
+};
 
 HttpSession::HttpSession(HttpServer* server,
                          ScheduleRef sch,
@@ -177,17 +84,16 @@ HttpSession::HttpSession(HttpServer* server,
   , co_(co)
   , conn_(conn)
   , request_(amphisbaena::MessageFactory::create("Http"))
+  , content_(init_content(0))
 {
-  llhttp_init(this, HTTP_REQUEST, &server->settings);
-  llhttp_t::data = init_content(0);
+  llhttp_init(this, HTTP_REQUEST, &settings_);
   env_.sch = sch_;
   env_.co = co_;
 }
 
 HttpSession::~HttpSession()
 {
-  auto content = static_cast<content_t*>(llhttp_t::data);
-  deinit_content(content);
+  deinit_content(content_);
 }
 
 void
@@ -220,25 +126,90 @@ HttpSession::on_recv(std::string_view data)
   enum llhttp_errno err = llhttp_execute(this, data.data(), data.length());
   if (err != HPE_OK) {
     llhttp_reset(this);
-    reset();
+    request_ = amphisbaena::MessageFactory::create("Http");
   }
 }
 
-void
-HttpSession::do_recv()
+int
+HttpSession::handle_on_method(llhttp_t* http, const char* at, size_t length)
 {
+  auto parser = static_cast<HttpSession*>(http);
+  parser->request_->get_head()->set_value("method", { at, length });
+  return HPE_OK;
+}
+
+int
+HttpSession::handle_on_url(llhttp_t* http, const char* at, size_t length)
+{
+  auto parser = static_cast<HttpSession*>(http);
+  parser->request_->get_head()->set_value("url", { at, length });
+  return HPE_OK;
+}
+
+int
+HttpSession::handle_on_version(llhttp_t* http, const char* at, size_t length)
+{
+  auto parser = static_cast<HttpSession*>(http);
+  parser->request_->get_head()->set_value("version", { at, length });
+  return HPE_OK;
+}
+
+int
+HttpSession::handle_on_headers_complete(llhttp_t* http)
+{
+  auto parser = static_cast<HttpSession*>(http);
+  assert(parser->content_);
+  auto new_content = reinit_content(parser->content_, parser->content_length);
+  if (!new_content)
+    return HPE_INTERNAL;
+  parser->content_ = new_content;
+  return HPE_OK;
+}
+
+int
+HttpSession::handle_on_body(llhttp_t* http, const char* at, size_t length)
+{
+  auto parser = static_cast<HttpSession*>(http);
+  // content_length为剩余content长度，加上length等于整个content长度
+  // 当content分多次得到的时候，需要将之前的部分content缓存下来
+  assert(parser->content_);
+
+  if (parser->content_->length == length) {
+    auto request_body = parser->request_->get_body();
+    static_cast<JsonObject*>(request_body.get())->from_string({ at, length });
+  } else {
+    memcpy(parser->content_->buffer + parser->content_->length - length -
+             parser->content_length,
+           at,
+           length);
+    if (http->content_length == 0) {
+      auto request_body = parser->request_->get_body();
+      static_cast<JsonObject*>(request_body.get())
+        ->from_string({ parser->content_->buffer, parser->content_->length });
+    }
+  }
+
+  return HPE_OK;
+}
+
+int
+HttpSession::handle_on_message_complete(llhttp_t* http)
+{
+  auto parser = static_cast<HttpSession*>(http);
+
   std::string response_name;
-  auto request_head = request_->get_head();
+  auto request_head = parser->request_->get_head();
   response_name += request_head->get_string("method");
   response_name += " ";
   response_name += request_head->get_string("url");
 
   MessagePtr response;
 
-  env_.down = shared_from_this();
+  parser->env_.down = parser->shared_from_this();
 
   try {
-    response = MessageBuilder::create(env_, response_name, request_);
+    response =
+      MessageBuilder::create(parser->env_, response_name, parser->request_);
 
     auto response_head = response->get_head();
 
@@ -246,24 +217,21 @@ HttpSession::do_recv()
     response_head->set_value("version", request_head->get_string("version"));
 
   } catch (...) {
-    response = handle_error(request_head->get_string("version"));
+    response = parser->handle_error(request_head->get_string("version"));
   }
 
-  send(response);
+  parser->send(response);
+
+  return HPE_OK;
 }
 
-void
-HttpSession::set_head(std::string_view name, std::string_view value)
+int
+HttpSession::handle_on_reset(llhttp_t* http)
 {
-  auto request_head = request_->get_head();
-  request_head->set_value(name, value);
-}
+  auto parser = static_cast<HttpSession*>(http);
+  parser->request_ = amphisbaena::MessageFactory::create("Http");
 
-void
-HttpSession::set_body(std::string_view value)
-{
-  auto request_body = request_->get_body();
-  static_cast<JsonObject*>(request_body.get())->from_string(value);
+  return HPE_OK;
 }
 
 MessagePtr
@@ -291,29 +259,10 @@ HttpSession::handle_error(std::string_view version)
   return response;
 }
 
-void
-HttpSession::reset()
-{
-  request_ = amphisbaena::MessageFactory::create("Http");
-}
-
 HttpServer::HttpServer(std::shared_ptr<ServerFactory> server_factory)
   : server_(std::move(server_factory->create(this)))
 {
   LOG_INFO("HttpServer create");
-
-  llhttp_settings_init(&settings);
-  settings.on_method = handle_on_method;
-  settings.on_url = handle_on_url;
-  settings.on_version = handle_on_version;
-  settings.on_body = handle_on_body;
-  settings.on_header_field = handle_on_header_field;
-  settings.on_header_value = handle_on_header_value;
-  settings.on_header_field_complete = handle_on_header_field_complete;
-  settings.on_header_value_complete = handle_on_header_value_complete;
-  settings.on_headers_complete = handle_on_headers_complete;
-  settings.on_message_complete = handle_on_message_complete;
-  settings.on_reset = handle_on_reset;
 }
 
 HttpServer::~HttpServer()
