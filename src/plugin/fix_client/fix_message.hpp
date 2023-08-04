@@ -89,6 +89,11 @@ public:
 
   const GroupPtr get_group(std::string_view name) const override;
 
+public:
+  void from_string(std::string_view str) override;
+
+  std::string to_string() const override;
+
 private:
   template<typename Field_, typename Value_>
   Value_ get_value(std::string_view name, Value_ default_value) const;

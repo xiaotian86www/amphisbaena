@@ -61,7 +61,7 @@ HttpSession::send(MessagePtr message)
 {
   auto head = message->get_head();
   auto body = message->get_body();
-  const auto& body_str = static_cast<JsonObject*>(body.get())->to_string();
+  const auto& body_str = body.get()->to_string();
 
   std::string response = fmt::format(
     "HTTP/{} {} {}\r\n"
@@ -135,13 +135,12 @@ HttpSession::handle_on_body(llhttp_t* http, const char* at, size_t length)
   // 当content分多次得到的时候，需要将之前的部分content缓存下来
   if (parser->content_.size() == length) {
     auto request_body = parser->request_->get_body();
-    static_cast<JsonObject*>(request_body.get())->from_string({ at, length });
+    request_body.get()->from_string({ at, length });
   } else {
     parser->content_.append(at, length);
     if (http->content_length == 0) {
       auto request_body = parser->request_->get_body();
-      static_cast<JsonObject*>(request_body.get())
-        ->from_string(parser->content_);
+      request_body.get()->from_string(parser->content_);
     }
   }
 

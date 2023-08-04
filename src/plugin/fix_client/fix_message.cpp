@@ -301,6 +301,17 @@ FixObject::get_group(std::string_view name) const
   return {};
 }
 
+void
+FixObject::from_string(std::string_view str)
+{
+}
+
+std::string
+FixObject::to_string() const
+{
+  return std::string();
+}
+
 template<typename Field_, typename Value_>
 Value_
 FixObject::get_value(std::string_view name, Value_ default_value) const

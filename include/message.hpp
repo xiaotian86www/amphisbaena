@@ -175,6 +175,12 @@ public:
   virtual GroupPtr get_group(std::string_view name) = 0;
 
   virtual const GroupPtr get_group(std::string_view name) const = 0;
+
+public:
+  virtual void from_string(std::string_view str) = 0;
+  
+  virtual std::string to_string() const = 0;
+
 };
 
 class Group
