@@ -24,19 +24,24 @@ public:
 
   void stop();
 
-  void send(FIX::Message& message);
+  void send(std::string_view begin_string,
+            std::string_view sender_comp_id,
+            std::string_view target_comp_id,
+            std::string_view body);
 
-  MOCK_METHOD(void, onLogon, (const FIX::SessionID&), (override));
-
-  MOCK_METHOD(void, onLogout, (const FIX::SessionID&), (override));
-
-  MOCK_METHOD(void, onAdmin, (const FIX::Message&, const FIX::SessionID&), ());
-
-  MOCK_METHOD(void, onApp, (const FIX::Message&, const FIX::SessionID&), ());
+  MOCK_METHOD(void,
+              on_recv,
+              (std::string_view begin_string,
+               std::string_view sender_comp_id,
+               std::string_view target_comp_id,
+               std::string_view body),
+              ());
 
 public:
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
+  void onLogon(const FIX::SessionID&) override;
+  void onLogout(const FIX::SessionID&) override;
   /// Notification of a session begin created
   void onCreate(const FIX::SessionID&) override;
   /// Notification of admin message being sent to target

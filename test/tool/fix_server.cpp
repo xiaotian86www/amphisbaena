@@ -1,5 +1,6 @@
 #include <istream>
 #include <memory>
+#include <quickfix/FixFieldNumbers.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
@@ -48,9 +49,16 @@ FixServer::stop()
 }
 
 void
-FixServer::send(FIX::Message& message)
+FixServer::send(std::string_view begin_string,
+                std::string_view sender_comp_id,
+                std::string_view target_comp_id,
+                std::string_view body)
 {
-  FIX::Session::sendToTarget(message);
+  FIX::SessionID session_id = FIX::SessionID(std::string(begin_string),
+                                             std::string(sender_comp_id),
+                                             std::string(target_comp_id));
+  FIX::Message message = FIX::Message(std::string(body));
+  FIX::Session::sendToTarget(message, session_id);
 }
 
 #pragma GCC diagnostic push
@@ -78,7 +86,6 @@ FixServer::fromAdmin(
                                           FIX::IncorrectTagValue,
                                           FIX::RejectLogon)
 {
-  onAdmin(message, session_id);
 }
 
 void
@@ -89,6 +96,9 @@ FixServer::fromApp(
                                           FIX::IncorrectTagValue,
                                           FIX::UnsupportedMessageType)
 {
-  onApp(message, session_id);
+  on_recv(session_id.getBeginString().getString(),
+          session_id.getSenderCompID().getString(),
+          session_id.getTargetCompID().getString(),
+          message.toString());
 }
 #pragma GCC diagnostic pop

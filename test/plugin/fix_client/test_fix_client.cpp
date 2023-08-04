@@ -105,40 +105,24 @@ protected:
 
 TEST_F(FixClient, send)
 {
-  std::promise<void> pms1, pms2;
-
-  EXPECT_CALL(
-    server,
-    onLogon(testing::Eq(FIX::SessionID("FIX.4.2", "EXECUTOR", "CLIENT1"))))
-    .WillOnce(
-      testing::Invoke([&pms1](const FIX::SessionID&) { pms1.set_value(); }));
-  EXPECT_CALL(
-    server,
-    onAdmin(testing::_,
-            testing::Eq(FIX::SessionID("FIX.4.2", "EXECUTOR", "CLIENT1"))))
-    .WillRepeatedly(testing::Return());
-  EXPECT_CALL(
-    server,
-    onApp(testing::_,
-          testing::Eq(FIX::SessionID("FIX.4.2", "EXECUTOR", "CLIENT1"))))
-    .WillOnce(
-      testing::Invoke([&pms2](const FIX::Message&, const FIX::SessionID&) {
-        pms2.set_value();
-      }));
-  EXPECT_CALL(server, onLogout(testing::_)).WillOnce(testing::Return());
+  std::promise<void> pms;
 
   server.start();
 
-  pms1.get_future().wait_for(std::chrono::milliseconds(1));
+  EXPECT_CALL(server, on_recv("FIX.4.2", "EXECUTOR", "CLIENT1", testing::_))
+    .WillOnce(testing::Invoke([&pms](std::string_view,
+                                     std::string_view,
+                                     std::string_view,
+                                     std::string_view) { pms.set_value(); }));
 
-  auto msg = std::make_shared<amphisbaena::FixMessage>();
-  auto head = msg->get_head();
+  auto request = std::make_shared<amphisbaena::FixMessage>();
+  auto head = request->get_head();
   head->set_value("MsgType", FIX::MsgType_NewOrderSingle);
   head->set_value("BeginString", "FIX.4.2");
   head->set_value("SenderCompID", "CLIENT1");
   head->set_value("TargetCompID", "EXECUTOR");
 
-  auto body = msg->get_body();
+  auto body = request->get_body();
   body->set_value("ClOrdID", "100001");
   body->set_value("HandlInst", "1");
   body->set_value("OrdType", "1");
@@ -149,11 +133,11 @@ TEST_F(FixClient, send)
   amphisbaena::FixClient client(FIX::SessionSettings(client_settings),
                                 &message_handler);
 
-  auto session = client.create(msg);
+  auto session = client.create(request);
 
-  session->send(msg);
+  session->send(request);
 
-  pms2.get_future().wait_for(std::chrono::milliseconds(10));
+  pms.get_future().wait_for(std::chrono::milliseconds(10));
 }
 
 TEST_F(FixClient, recv)
