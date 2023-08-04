@@ -35,32 +35,6 @@ protected:
   std::shared_ptr<HttpClient> client;
 };
 
-TEST_F(UDSServer, on_recv_bak)
-{
-  boost::asio::io_service io_service;
-  boost::asio::local::stream_protocol::socket sock(io_service);
-
-  std::string_view data("1234567890");
-
-  EXPECT_CALL(message_handler,
-              on_recv(testing::_, testing::_, testing::_, testing::_))
-    .WillOnce(testing::Invoke([](amphisbaena::ScheduleRef sch,
-                                 amphisbaena::CoroutineRef co,
-                                 amphisbaena::ConnectionRef conn,
-                                 std::string_view data) { conn.send(data); }));
-
-  sock.connect("server.socket");
-  sock.write_some(boost::asio::buffer(data));
-
-  char buffer[100];
-  auto size = sock.read_some(boost::asio::buffer(buffer, 100));
-  EXPECT_PRED2([&](auto left, auto right) { return left == right; },
-               std::string_view(buffer, size),
-               data);
-
-  stop();
-}
-
 TEST_F(UDSServer, on_recv)
 {
   std::promise<void> pms;

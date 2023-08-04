@@ -15,7 +15,7 @@
 namespace amphisbaena {
 
 llhttp_settings_t HttpSession::settings_ = {
-  .on_message_begin = nullptr,
+  .on_message_begin = handle_on_message_begin,
   .on_url = handle_on_url,
   .on_status = nullptr,
   .on_method = handle_on_method,
@@ -37,7 +37,7 @@ llhttp_settings_t HttpSession::settings_ = {
   .on_chunk_extension_value_complete = nullptr,
   .on_chunk_header = nullptr,
   .on_chunk_complete = nullptr,
-  .on_reset = handle_on_reset
+  .on_reset = nullptr
 };
 
 HttpSession::HttpSession(HttpServer* server,
@@ -48,7 +48,6 @@ HttpSession::HttpSession(HttpServer* server,
   , sch_(sch)
   , co_(co)
   , conn_(conn)
-  , request_(amphisbaena::MessageFactory::create("Http"))
 {
   llhttp_init(this, HTTP_REQUEST, &settings_);
   env_.sch = sch_;
@@ -84,8 +83,15 @@ HttpSession::on_recv(std::string_view data)
   enum llhttp_errno err = llhttp_execute(this, data.data(), data.length());
   if (err != HPE_OK) {
     llhttp_reset(this);
-    request_ = amphisbaena::MessageFactory::create("Http");
   }
+}
+
+int
+HttpSession::handle_on_message_begin(llhttp_t* http)
+{
+  auto parser = static_cast<HttpSession*>(http);
+  parser->request_ = amphisbaena::MessageFactory::create("Http");
+  return HPE_OK;
 }
 
 int
@@ -171,15 +177,6 @@ HttpSession::handle_on_message_complete(llhttp_t* http)
   }
 
   parser->send(response);
-
-  return HPE_OK;
-}
-
-int
-HttpSession::handle_on_reset(llhttp_t* http)
-{
-  auto parser = static_cast<HttpSession*>(http);
-  parser->request_ = amphisbaena::MessageFactory::create("Http");
 
   return HPE_OK;
 }

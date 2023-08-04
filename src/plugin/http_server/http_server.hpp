@@ -39,6 +39,8 @@ public:
   void on_recv(std::string_view data);
 
 private:
+  static int handle_on_message_begin(llhttp_t* http);
+
   static int handle_on_method(llhttp_t* http, const char* at, size_t length);
 
   static int handle_on_url(llhttp_t* http, const char* at, size_t length);
@@ -50,8 +52,6 @@ private:
   static int handle_on_body(llhttp_t* http, const char* at, size_t length);
 
   static int handle_on_message_complete(llhttp_t* http);
-
-  static int handle_on_reset(llhttp_t* http);
 
 private:
   MessagePtr handle_error(std::string_view version);
