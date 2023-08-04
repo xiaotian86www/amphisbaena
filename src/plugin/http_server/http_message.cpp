@@ -279,12 +279,14 @@ JsonObject::get_or_set_object(std::string_view name)
     }
     return std::make_unique<JsonObject>(g_allocator, iter->value);
   } else {
-    auto& value =
-      value_.AddMember(rapidjson::StringRef(name.data(), name.size()),
-                       RapidValue(rapidjson::Type::kObjectType),
-                       g_allocator);
+    value_.AddMember(rapidjson::StringRef(name.data(), name.size()),
+                     RapidValue(rapidjson::Type::kObjectType),
+                     g_allocator);
 
-    return std::make_unique<JsonObject>(g_allocator, value);
+    iter =
+      value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
+
+    return std::make_unique<JsonObject>(g_allocator, iter->value);
   }
 }
 

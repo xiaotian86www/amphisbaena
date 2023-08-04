@@ -24,6 +24,8 @@ public:
     , fix_message_factory(std::make_shared<amphisbaena::FixMessageFactory>())
     , http_message_factory(std::make_shared<amphisbaena::HttpMessageFactory>())
   {
+    amphisbaena::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
+
     amphisbaena::MessageFactory::registe(fix_message_factory);
     amphisbaena::MessageFactory::registe(http_message_factory);
 
@@ -55,18 +57,19 @@ TEST_F(HttpToFixBuilder, call)
       EXPECT_CALL(*fix_builder,
                   create(testing::Ref(env),
                          testing::Truly([](amphisbaena::MessagePtr request) {
+                           auto request_head = request->get_head();
                            auto request_body = request->get_body();
-                           return request_body->get_string("SenderCompID") ==
+                           return request_head->get_string("SenderCompID") ==
                                     "CLIENT1" &&
-                                  request_body->get_int("MsgSeqNum") == 1 &&
+                                  request_head->get_int("MsgSeqNum") == 1 &&
                                   request_body->get_double("LeavesQty") == 1.01;
                          })))
         .WillOnce(testing::Invoke([] {
           auto response = amphisbaena::MessageFactory::create("fix");
-
+          auto request_head = response->get_head();
           auto response_body = response->get_body();
-          response_body->set_value("SenderCompID", "CLIENT2");
-          response_body->set_value("MsgSeqNum", 2);
+          request_head->set_value("SenderCompID", "CLIENT2");
+          request_head->set_value("MsgSeqNum", 2);
           response_body->set_value("LeavesQty", 2.01);
           return response;
         }));
@@ -74,17 +77,23 @@ TEST_F(HttpToFixBuilder, call)
       auto request = amphisbaena::MessageFactory::create("Http");
 
       auto request_body = request->get_body();
-      request_body->set_value("SenderCompID", "CLIENT1");
-      request_body->set_value("MsgSeqNum", 1);
-      request_body->set_value("LeavesQty", 1.01);
+      auto request_body_head = request_body->get_or_set_object("head");
+      auto request_body_body = request_body->get_or_set_object("body");
+      request_body_head->set_value("SenderCompID", "CLIENT1");
+      request_body_head->set_value("MsgSeqNum", 1);
+      request_body_body->set_value("LeavesQty", 1.01);
 
       auto response = http_to_fix_builder.create(env, request);
 
       auto response_body = response->get_body();
+      auto response_body_head = response_body->get_or_set_object("head");
+      auto response_body_body = response_body->get_or_set_object("body");
 
-      EXPECT_THAT(response_body,
+      EXPECT_THAT(response_body_head,
                   testing::AllOf(field_string_eq("SenderCompID", "CLIENT2"),
-                                 field_int_eq("MsgSeqNum", 2),
-                                 field_double_eq("LeavesQty", 2.01)));
+                                 field_int_eq("MsgSeqNum", 2)));
+
+      EXPECT_THAT(response_body_body,
+                  testing::AllOf(field_double_eq("LeavesQty", 2.01)));
     });
 }
