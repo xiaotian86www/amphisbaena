@@ -161,9 +161,9 @@ TEST_F(HttpServer, on_data_not_found)
         *conn,
         send("HTTP/1.1 404 NOT_FOUND\r\n"
                             "Content-Type: application/json; charset=utf-8\r\n"
-                            "Content-Length: 2\r\n"
+                            "Content-Length: 37\r\n"
                             "\r\n"
-                            "{}"))
+                            "{\"description\":\"GET /root not found\"}"))
         .Times(2)
         .WillRepeatedly(testing::Return());
 
