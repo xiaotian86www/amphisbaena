@@ -20,10 +20,6 @@ public:
   ~FixServer() override;
 
 public:
-  void start();
-
-  void stop();
-
   void send(FIX::Message& message);
 
   MOCK_METHOD(void, onLogon, (const FIX::SessionID&), (override));

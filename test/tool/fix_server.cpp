@@ -28,21 +28,11 @@ FixServer::FixServer(const FIX::SessionSettings& settings)
 
   acceptor_ = std::make_unique<FIX::SocketAcceptor>(
     *this, *store_factory_, settings, *log_factory_);
-}
 
-FixServer::~FixServer()
-{
-  stop();
-}
-
-void
-FixServer::start()
-{
   acceptor_->start();
 }
 
-void
-FixServer::stop()
+FixServer::~FixServer()
 {
   acceptor_->stop();
 }
