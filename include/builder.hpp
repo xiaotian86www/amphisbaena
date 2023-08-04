@@ -31,7 +31,7 @@ public:
   static void unregiste(std::shared_ptr<MessageBuilder> builder);
 
   static MessagePtr create(Environment& env,
-                           std::string_view name,
+                           std::string_view pattern,
                            MessagePtr request);
 
 private:

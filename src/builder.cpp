@@ -61,16 +61,17 @@ MessageBuilder::unregiste(std::shared_ptr<MessageBuilder> builder)
 
 MessagePtr
 MessageBuilder::create(Environment& env,
-                       std::string_view name,
+                       std::string_view pattern,
                        MessagePtr request)
 {
+  LOG_DEBUG("pattern: {}", pattern);
   if (auto builders = builders_) {
-    if (auto it = builders->find(name); it != builders->end()) {
+    if (auto it = builders->find(pattern); it != builders->end()) {
       return it->second->create(env, request);
     }
   }
 
-  throw NotFoundException(name);
+  throw NotFoundException(pattern);
 }
 
 // std::unordered_map<std::string_view, std::shared_ptr<MessageBuilder>>

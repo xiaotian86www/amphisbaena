@@ -73,7 +73,7 @@ FixBuilder::create(Environment& env, MessagePtr request)
 std::string_view
 FixBuilder::name() const
 {
-  return "Fix";
+  return "fix";
 }
 
 void

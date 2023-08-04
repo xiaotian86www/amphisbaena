@@ -458,7 +458,7 @@ FixMessageFactory::create()
 std::string_view
 FixMessageFactory::name()
 {
-  return "Fix";
+  return "fix";
 }
 
 }

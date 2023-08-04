@@ -70,11 +70,11 @@ TEST_F(HttpServer, on_data)
 
       EXPECT_CALL(
         *conn,
-        send(testing::StrEq("HTTP/1.1 200 OK\r\n"
+        send("HTTP/1.1 200 OK\r\n"
                             "Content-Type: application/json; charset=utf-8\r\n"
                             "Content-Length: 26\r\n"
                             "\r\n"
-                            "{\"SenderCompID\":\"CLIENT1\"}")))
+                            "{\"SenderCompID\":\"CLIENT1\"}"))
         .Times(2)
         .WillRepeatedly(testing::Return());
 
@@ -124,11 +124,11 @@ TEST_F(HttpServer, on_data_split)
 
       EXPECT_CALL(
         *conn,
-        send(testing::StrEq("HTTP/1.1 200 OK\r\n"
+        send("HTTP/1.1 200 OK\r\n"
                             "Content-Type: application/json; charset=utf-8\r\n"
                             "Content-Length: 26\r\n"
                             "\r\n"
-                            "{\"SenderCompID\":\"CLIENT1\"}")))
+                            "{\"SenderCompID\":\"CLIENT1\"}"))
         .Times(2)
         .WillRepeatedly(testing::Return());
 
@@ -159,11 +159,11 @@ TEST_F(HttpServer, on_data_not_found)
       auto conn = std::make_shared<MockConnection>(sch, co);
       EXPECT_CALL(
         *conn,
-        send(testing::StrEq("HTTP/1.1 404 NOT_FOUND\r\n"
+        send("HTTP/1.1 404 NOT_FOUND\r\n"
                             "Content-Type: application/json; charset=utf-8\r\n"
                             "Content-Length: 2\r\n"
                             "\r\n"
-                            "{}")))
+                            "{}"))
         .Times(2)
         .WillRepeatedly(testing::Return());
 
@@ -188,11 +188,11 @@ TEST_F(HttpServer, on_data_fail)
       auto conn = std::make_shared<MockConnection>(sch, co);
       EXPECT_CALL(
         *conn,
-        send(testing::StrEq("HTTP/1.1 200 OK\r\n"
+        send("HTTP/1.1 200 OK\r\n"
                             "Content-Type: application/json; charset=utf-8\r\n"
                             "Content-Length: 2\r\n"
                             "\r\n"
-                            "{}")))
+                            "{}"))
         .WillOnce(testing::Return());
 
       http_server->on_recv(sch, co, conn, "GET HTTP/1.1\r\n\r\n");

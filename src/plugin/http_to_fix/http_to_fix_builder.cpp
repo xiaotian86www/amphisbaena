@@ -20,7 +20,7 @@ HttpToFixBuilder::~HttpToFixBuilder()
 MessagePtr
 HttpToFixBuilder::create(Environment& env, MessagePtr request)
 {
-  auto fix_request = MessageFactory::create("Fix");
+  auto fix_request = MessageFactory::create("fix");
   fix_request->get_body()->copy_from(request->get_body());
 
   auto fix_response = MessageBuilder::create(env, "fix", fix_request);

@@ -62,7 +62,7 @@ TEST_F(HttpToFixBuilder, call)
                                   request_body->get_double("LeavesQty") == 1.01;
                          })))
         .WillOnce(testing::Invoke([] {
-          auto response = amphisbaena::MessageFactory::create("Fix");
+          auto response = amphisbaena::MessageFactory::create("fix");
 
           auto response_body = response->get_body();
           response_body->set_value("SenderCompID", "CLIENT2");

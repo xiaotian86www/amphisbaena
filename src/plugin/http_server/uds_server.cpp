@@ -70,6 +70,7 @@ UDSConnection::recv(char* buffer, std::size_t buf_len)
     return -1;
   }
 
+  LOG_DEBUG("Recv size: {}", size);
   return size;
 }
 
@@ -151,9 +152,7 @@ UDSServer::handle(ScheduleRef sch, CoroutineRef co)
   std::shared_ptr<UDSConnection> conn =
     std::make_shared<UDSConnection>(sch, co, std::move(sock));
   for (;;) {
-    boost::system::error_code ec;
     std::size_t size = conn->recv(data.data(), data.size());
-    LOG_DEBUG("Recv size: {}", size);
 
     if (size == -1) {
       break;

@@ -151,20 +151,25 @@ int
 HttpSession::handle_on_message_complete(llhttp_t* http)
 {
   auto parser = static_cast<HttpSession*>(http);
-
-  std::string response_name;
   auto request_head = parser->request_->get_head();
-  response_name += request_head->get_string("method");
-  response_name += " ";
-  response_name += request_head->get_string("url");
+  auto request_body = parser->request_->get_body();
+
+  LOG_DEBUG("method: {}, url: {}, body: {}",
+            request_head->get_string("method"),
+            request_head->get_string("url"),
+            request_body->to_string());
+
+  std::string pattern;
+  pattern += request_head->get_string("method");
+  pattern += " ";
+  pattern += request_head->get_string("url");
 
   MessagePtr response;
 
   parser->env_.down = parser->shared_from_this();
 
   try {
-    response =
-      MessageBuilder::create(parser->env_, response_name, parser->request_);
+    response = MessageBuilder::create(parser->env_, pattern, parser->request_);
 
     auto response_head = response->get_head();
 
@@ -174,6 +179,10 @@ HttpSession::handle_on_message_complete(llhttp_t* http)
   } catch (...) {
     response = parser->handle_error(request_head->get_string("version"));
   }
+
+  LOG_DEBUG("code: {}, body: {}",
+            response->get_head()->get_int("code"),
+            response->get_body()->to_string());
 
   parser->send(response);
 
@@ -185,19 +194,25 @@ HttpSession::handle_error(std::string_view version)
 {
   auto response = amphisbaena::MessageFactory::create("Http");
   auto response_head = response->get_head();
+  auto response_body = response->get_body();
 
   try {
     throw;
   } catch (const NotFoundException& ec) {
     response_head->set_value("code", HTTP_STATUS_NOT_FOUND);
+    response_body->set_value("description", ec.what());
   } catch (const NoKeyException& ec) {
     response_head->set_value("code", HTTP_STATUS_BAD_REQUEST);
+    response_body->set_value("description", ec.what());
   } catch (const TypeExecption& ec) {
     response_head->set_value("code", HTTP_STATUS_BAD_REQUEST);
+    response_body->set_value("description", ec.what());
   } catch (const UnknownKeyException& ec) {
     response_head->set_value("code", HTTP_STATUS_BAD_REQUEST);
+    response_body->set_value("description", ec.what());
   } catch (const Exception& ec) {
     response_head->set_value("code", HTTP_STATUS_INTERNAL_SERVER_ERROR);
+    response_body->set_value("description", ec.what());
   }
 
   response_head->set_value("version", version);
