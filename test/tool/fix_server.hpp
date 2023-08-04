@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <gmock/gmock.h>
 #include <istream>
 
@@ -15,7 +16,7 @@
 class FixServer : public FIX::Application
 {
 public:
-  FixServer(const FIX::SessionSettings& settings);
+  FixServer(const std::filesystem::path& path);
 
   ~FixServer() override;
 

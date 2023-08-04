@@ -3,10 +3,6 @@
 #include <future>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include <quickfix/DataDictionary.h>
-#include <quickfix/FixValues.h>
-#include <quickfix/SessionID.h>
-#include <quickfix/SessionSettings.h>
 #include <sstream>
 #include <thread>
 
@@ -20,50 +16,7 @@ class FixClient : public testing::Test
 {
 public:
   FixClient()
-    : server_settings(R"(
-[DEFAULT]
-ConnectionType=acceptor
-SocketAcceptPort=10000
-SocketReuseAddress=Y
-StartTime=00:00:00
-EndTime=00:00:00
-FileLogPath=log
-UseDataDictionary=Y
-#ServerCertificateFile=./cfg/certs/127_0_0_1_server.crt
-#ServerCertificateKeyFile=./cfg/certs/127_0_0_1_server.key
-SSLProtocol = all
-TimestampPrecision=6
-PreserveMessageFieldsOrder=N
-
-[SESSION]
-BeginString=FIX.4.2
-SenderCompID=EXECUTOR
-TargetCompID=CLIENT1
-#FileStorePath=store
-DataDictionary=/usr/local/share/quickfix/FIX42.xml
-
-[SESSION]
-BeginString=FIX.4.2
-SenderCompID=EXECUTOR
-TargetCompID=CLIENT2
-#FileStorePath=store
-DataDictionary=/usr/local/share/quickfix/FIX42.xml
-
-[SESSION]
-BeginString=FIX.4.3
-SenderCompID=EXECUTOR
-TargetCompID=CLIENT1
-#FileStorePath=store
-DataDictionary=/usr/local/share/quickfix/FIX43.xml
-
-[SESSION]
-BeginString=FIX.4.3
-SenderCompID=EXECUTOR
-TargetCompID=CLIENT2
-#FileStorePath=store
-DataDictionary=/usr/local/share/quickfix/FIX43.xml
-)")
-    , client_settings(R"(
+    : client_settings(R"(
 [DEFAULT]
 ConnectionType=initiator
 ReconnectInterval=2
@@ -91,13 +44,12 @@ SocketConnectHost=127.0.0.1
 SocketConnectPort=10000
 HeartBtInt=30 
 )")
-    , server(FIX::SessionSettings(server_settings))
+    , server("../../test/cfg/executor.cfg")
   {
     amphisbaena::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
   }
 
 protected:
-  std::stringstream server_settings;
   std::stringstream client_settings;
   MockClient::MockMessageHandler message_handler;
   FixServer server;
@@ -140,53 +92,40 @@ TEST_F(FixClient, send)
 
 TEST_F(FixClient, recv)
 {
-  std::promise<void> pms1, pms2;
+  std::promise<void> pms;
 
-  EXPECT_CALL(
-    server,
-    onLogon(testing::Eq(FIX::SessionID("FIX.4.2", "EXECUTOR", "CLIENT1"))))
-    .WillOnce(
-      testing::Invoke([&pms1](const FIX::SessionID&) { pms1.set_value(); }));
-  EXPECT_CALL(
-    server,
-    onAdmin(testing::_,
-            testing::Eq(FIX::SessionID("FIX.4.2", "EXECUTOR", "CLIENT1"))))
-    .WillRepeatedly(testing::Return());
   EXPECT_CALL(message_handler,
               on_recv(testing::_, testing::_, testing::_, testing::_))
     .WillOnce(
-      testing::Invoke([&pms2](amphisbaena::ScheduleRef,
-                              amphisbaena::CoroutineRef,
-                              amphisbaena::SessionPtr,
-                              amphisbaena::MessagePtr) { pms2.set_value(); }));
-  EXPECT_CALL(server, onLogout(testing::_)).WillOnce(testing::Return());
+      testing::Invoke([&pms](amphisbaena::ScheduleRef,
+                             amphisbaena::CoroutineRef,
+                             amphisbaena::SessionPtr,
+                             amphisbaena::MessagePtr) { pms.set_value(); }));
 
-  pms1.get_future().wait_for(std::chrono::milliseconds(1));
+  FIX::Message response;
+  auto& head = response.getHeader();
+  head.setField(FIX::FIELD::MsgType, FIX::MsgType_ExecutionReport);
+  head.setField(FIX::FIELD::BeginString, FIX::BeginString_FIX42);
+  head.setField(FIX::FIELD::SenderCompID, "EXECUTOR");
+  head.setField(FIX::FIELD::TargetCompID, "CLIENT1");
 
-  auto msg = std::make_shared<amphisbaena::FixMessage>();
-  auto head = msg->get_head();
-  head->set_value("MsgType", FIX::MsgType_ExecutionReport);
-  head->set_value("BeginString", "FIX.4.2");
-  head->set_value("SenderCompID", "EXECUTOR");
-  head->set_value("TargetCompID", "CLIENT1");
-
-  auto body = msg->get_body();
-  body->set_value("OrderID", "100001");
-  body->set_value("ClOrdID", "100001");
-  body->set_value("ExecID", "100001");
-  body->set_value("ExecTransType", "0");
-  body->set_value("ExecType", "0");
-  body->set_value("OrdStatus", "0");
-  body->set_value("Symbol", "AAPL");
-  body->set_value("Side", "1");
-  body->set_value("LeavesQty", 100.78);
-  body->set_value("CumQty", 88.88);
-  body->set_value("AvgPx", 10.01);
+  auto& body = response;
+  body.setField(FIX::FIELD::OrderID, "100001");
+  body.setField(FIX::FIELD::ClOrdID, "100001");
+  body.setField(FIX::FIELD::ExecID, "100001");
+  body.setField(FIX::FIELD::ExecTransType, "0");
+  body.setField(FIX::FIELD::ExecType, "0");
+  body.setField(FIX::FIELD::OrdStatus, "0");
+  body.setField(FIX::FIELD::Symbol, "AAPL");
+  body.setField(FIX::FIELD::Side, "1");
+  body.setField(FIX::FIELD::LeavesQty, "100.78");
+  body.setField(FIX::FIELD::CumQty, "88.88");
+  body.setField(FIX::FIELD::AvgPx, "10.01");
 
   amphisbaena::FixClient client(FIX::SessionSettings(client_settings),
                                 &message_handler);
 
-  server.send(msg->fix_message);
+  server.send("FIX.4.2", "EXECUTOR", "CLIENT1", response.toString());
 
-  pms2.get_future().wait_for(std::chrono::milliseconds(10));
+  pms.get_future().wait_for(std::chrono::milliseconds(10));
 }

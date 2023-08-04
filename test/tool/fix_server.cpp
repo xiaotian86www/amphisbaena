@@ -15,8 +15,10 @@
 
 #include "fix_server.hpp"
 
-FixServer::FixServer(const FIX::SessionSettings& settings)
+FixServer::FixServer(const std::filesystem::path& path)
 {
+  FIX::SessionSettings settings(path.string());
+  
   if (settings.get().has(FIX::FILE_STORE_PATH))
     store_factory_ = std::make_unique<FIX::FileStoreFactory>(settings);
   else
@@ -53,6 +55,16 @@ FixServer::send(std::string_view begin_string,
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
+void
+FixServer::onLogon(const FIX::SessionID&)
+{
+}
+
+void
+FixServer::onLogout(const FIX::SessionID&)
+{
+}
+
 void
 FixServer::onCreate(const FIX::SessionID&)
 {
