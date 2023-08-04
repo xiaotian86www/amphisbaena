@@ -101,8 +101,17 @@ public:
     what_ += desc;
   }
 
+public:
+  const char* what() const noexcept override { return what_.c_str(); }
+
 private:
   std::string name_;
   std::string what_;
+};
+
+class TimeoutException : public Exception
+{
+public:
+  const char* what() const noexcept override { return "timeout"; }
 };
 }

@@ -111,7 +111,6 @@ TEST_F(FixBuilder, timeout)
     env.sch = sch_;
     env.co = co_;
 
-    auto response = builder.create(env, request);
-    EXPECT_EQ(response, nullptr);
+    EXPECT_THROW(builder.create(env, request), amphisbaena::TimeoutException);
   });
 }

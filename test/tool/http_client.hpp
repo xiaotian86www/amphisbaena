@@ -25,7 +25,7 @@ public:
 
   MOCK_METHOD(void,
               on_recv,
-              (llhttp_status_t status, std::string_view body),
+              (uint16_t status, std::string_view body),
               ());
 
 public:

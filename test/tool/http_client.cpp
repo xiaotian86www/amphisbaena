@@ -123,7 +123,7 @@ int
 HttpClient::handle_on_message_complete(llhttp_t* http)
 {
   auto parser = static_cast<HttpClient*>(http);
-  parser->on_recv(static_cast<llhttp_status>(parser->status_code),
+  parser->on_recv(parser->status_code,
                   parser->content_);
   return HPE_OK;
 }

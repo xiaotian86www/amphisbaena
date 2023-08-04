@@ -57,8 +57,7 @@ FixBuilder::create(Environment& env, MessagePtr request)
   for (;;) {
     auto response = ftr.get_for(timeout_milli_, MessagePtr());
     if (!response) {
-      // TODO 超时
-      return response;
+      throw TimeoutException();
     }
 
     if (auto request_head = request->get_head();

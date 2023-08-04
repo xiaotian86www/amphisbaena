@@ -65,9 +65,9 @@ TEST_F(UDSServer, on_recv)
 
   EXPECT_CALL(
     *client,
-    on_recv(llhttp_status::HTTP_STATUS_OK, "{\"TargetCompID\":\"CLIENT1\"}"))
+    on_recv(200, "{\"TargetCompID\":\"CLIENT1\"}"))
     .WillOnce(testing::Invoke(
-      [&pms](llhttp_status_t, std::string_view) { pms.set_value(); }));
+      [&pms](uint16_t, std::string_view) { pms.set_value(); }));
 
   client->send("1.1", "GET", "/", "{\"SenderCompID\":\"CLIENT1\"}");
 
