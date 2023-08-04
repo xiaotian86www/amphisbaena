@@ -1,3 +1,5 @@
+#pragma once
+
 #include <spdlog/spdlog.h>
 
 #define LOG_ERROR(...) spdlog::error(__VA_ARGS__)

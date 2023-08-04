@@ -14,41 +14,6 @@
 
 namespace amphisbaena {
 
-// static content_t*
-// init_content(std::size_t length)
-// {
-//   std::size_t captital = (length + 1024) / 1024 * 1024;
-//   auto content = static_cast<content_t*>(malloc(captital));
-//   if (!content)
-//     return content;
-//   content->capital = captital;
-//   content->length = length;
-//   return content;
-// }
-
-// static content_t*
-// reinit_content(content_t* content, std::size_t length)
-// {
-//   if (length < content->capital) {
-//     content->length = length;
-//     return content;
-//   }
-
-//   std::size_t captital = (length + 1024) / 1024 * 1024;
-//   auto new_content = static_cast<content_t*>(realloc(content, captital));
-//   if (!new_content)
-//     return new_content;
-//   new_content->capital = captital;
-//   new_content->length = length;
-//   return new_content;
-// }
-
-// static void
-// deinit_content(content_t* content)
-// {
-//   free(content);
-// }
-
 llhttp_settings_t HttpSession::settings_ = {
   .on_message_begin = nullptr,
   .on_url = handle_on_url,
@@ -95,23 +60,20 @@ HttpSession::~HttpSession() {}
 void
 HttpSession::send(MessagePtr message)
 {
-  std::string response;
   auto head = message->get_head();
   auto body = message->get_body();
   const auto& body_str = static_cast<JsonObject*>(body.get())->to_string();
-  // const auto& body = message->get_body();
-  response += "HTTP/";
-  response += head->get_string("version");
-  response += " ";
-  response += std::to_string(head->get_int("code"));
-  response += " ";
-  response +=
-    llhttp_status_name(static_cast<llhttp_status_t>(head->get_int("code")));
-  response += "\r\n";
-  response += "Content-Type: application/json; charset=utf-8\r\n";
-  response += "Content-Length: " + std::to_string(body_str.length()) + "\r\n";
-  response += "\r\n";
-  response += body_str;
+
+  std::string response = fmt::format(
+    "HTTP/{} {} {}\r\n"
+    "Content-Type: application/json; charset=utf-8\r\n"
+    "Content-Length: {}\r\n\r\n"
+    "{}",
+    head->get_string("version"),
+    head->get_int("code"),
+    llhttp_status_name(static_cast<llhttp_status_t>(head->get_int("code"))),
+    body_str.length(),
+    body_str);
 
   conn_.send(response);
 }
