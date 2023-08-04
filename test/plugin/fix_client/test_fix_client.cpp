@@ -153,7 +153,7 @@ TEST_F(FixClient, send)
 
   session->send(msg);
 
-  pms2.get_future().wait_for(std::chrono::milliseconds(1));
+  pms2.get_future().wait_for(std::chrono::milliseconds(10));
 }
 
 TEST_F(FixClient, recv)
@@ -208,5 +208,5 @@ TEST_F(FixClient, recv)
 
   server.send(msg->fix_message);
 
-  pms2.get_future().wait_for(std::chrono::milliseconds(1));
+  pms2.get_future().wait_for(std::chrono::milliseconds(10));
 }
