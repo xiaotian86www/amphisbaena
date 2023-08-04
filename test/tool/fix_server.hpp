@@ -20,10 +20,6 @@ public:
   ~FixServer() override;
 
 public:
-  void start();
-
-  void stop();
-
   void send(std::string_view begin_string,
             std::string_view sender_comp_id,
             std::string_view target_comp_id,

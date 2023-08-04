@@ -107,8 +107,6 @@ TEST_F(FixClient, send)
 {
   std::promise<void> pms;
 
-  server.start();
-
   EXPECT_CALL(server, on_recv("FIX.4.2", "EXECUTOR", "CLIENT1", testing::_))
     .WillOnce(testing::Invoke([&pms](std::string_view,
                                      std::string_view,
@@ -162,8 +160,6 @@ TEST_F(FixClient, recv)
                               amphisbaena::SessionPtr,
                               amphisbaena::MessagePtr) { pms2.set_value(); }));
   EXPECT_CALL(server, onLogout(testing::_)).WillOnce(testing::Return());
-
-  server.start();
 
   pms1.get_future().wait_for(std::chrono::milliseconds(1));
 
