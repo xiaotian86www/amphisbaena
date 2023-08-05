@@ -1,4 +1,5 @@
 
+#include <boost/asio/io_service.hpp>
 #include <memory>
 #include <thread>
 
@@ -7,10 +8,13 @@
 #include "common/uds_server/uds_server.hpp"
 #include "http_message.hpp"
 #include "message.hpp"
+#include "schedule.hpp"
 
-static std::shared_ptr<amphisbaena::MessageFactory> factory;
 static boost::asio::io_service ios;
-static std::thread th;
+static std::shared_ptr<amphisbaena::Schedule> schedule;
+static std::shared_ptr<amphisbaena::MessageFactory> factory;
+static std::shared_ptr<amphisbaena::HttpServer> server;
+static std::thread ios_thread;
 
 extern "C"
 {
@@ -19,26 +23,25 @@ extern "C"
     if (argc < 2)
       throw std::invalid_argument("Usage: " + std::string(argv[0]));
 
+    schedule = std::make_shared<amphisbaena::Schedule>(ios);
     factory = std::make_shared<amphisbaena::HttpMessageFactory>();
-
     amphisbaena::MessageFactory::registe(factory);
 
-    auto sch = std::make_shared<amphisbaena::Schedule>(ios);
-    auto server_factory =
-      std::make_shared<amphisbaena::UDSServerFactory>(ios, sch, argv[1]);
-    auto http_server =
-      std::make_shared<amphisbaena::HttpServer>(server_factory);
+    server = std::make_shared<amphisbaena::HttpServer>(
+      std::make_shared<amphisbaena::UDSServerFactory>(ios, schedule, argv[1]));
 
-    th = std::thread([sch, http_server] { ios.run(); });
+    ios_thread = std::thread([] { ios.run(); });
   }
 
   void deinit()
   {
     ios.stop();
-    th.join();
-
+    ios_thread.join();
+    
     amphisbaena::MessageFactory::unregiste(factory);
 
+    server.reset();
     factory.reset();
+    schedule.reset();
   }
 }

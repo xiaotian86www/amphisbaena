@@ -89,7 +89,7 @@ UDSServer::UDSServer(boost::asio::io_service& ios,
   , ios_(ios)
   , sch_(sch)
   , endpoint_(file)
-  , acceptor_(ios)
+  , acceptor_(ios_)
 {
   LOG_INFO("UDSServer create");
   acceptor_.open(endpoint_.protocol());
