@@ -4,8 +4,6 @@
 
 #include "message.hpp"
 
-using ctor_prototype = amphisbaena::MessagePtr();
-
 class Message
   : public testing::TestWithParam<std::shared_ptr<amphisbaena::MessageFactory>>
 {

@@ -10,10 +10,41 @@
 #include <rapidjson/rapidjson.h>
 #include <string>
 
-class HttpClient : public llhttp_t
+class Client
+{
+public:
+  class MessageHandler
+  {
+  public:
+    virtual ~MessageHandler() = default;
+
+  public:
+    virtual void on_recv(std::string_view data) = 0;
+  };
+
+public:
+  Client(MessageHandler* handler)
+    : handler_(handler)
+  {
+  }
+
+  virtual ~Client() = default;
+
+public:
+  virtual void send(std::string_view data) = 0;
+
+protected:
+  MessageHandler* handler_;
+};
+
+class HttpClient
+  : public llhttp_t
+  , public Client::MessageHandler
 {
 public:
   HttpClient(const std::filesystem::path& path);
+
+  HttpClient(std::string_view host, uint16_t port);
 
   ~HttpClient();
 
@@ -23,10 +54,7 @@ public:
             std::string_view path,
             std::string_view body);
 
-  MOCK_METHOD(void,
-              on_recv,
-              (uint16_t status, std::string_view body),
-              ());
+  MOCK_METHOD(void, on_recv, (uint16_t status, std::string_view body), ());
 
 public:
   static int handle_on_message_begin(llhttp_t* http);
@@ -35,15 +63,50 @@ public:
 
   static int handle_on_message_complete(llhttp_t* http);
 
-private:
-  void do_recv(boost::system::error_code ec, std::size_t size);
+public:
+  void on_recv(std::string_view data) override;
 
 private:
   static llhttp_settings_t settings_;
-  boost::asio::io_service ios_;
-  boost::asio::io_service::work work_;
-  boost::asio::local::stream_protocol::socket sock_;
+  std::unique_ptr<Client> client_;
   std::string content_;
-  std::array<char, 1024> buffer_;
-  std::thread th_;
 };
+
+// class HttpClientFactory
+// {
+// public:
+//   virtual ~HttpClientFactory() = default;
+
+// public:
+//   virtual std::unique_ptr<HttpClient> create() = 0;
+// };
+
+// class UDSHttpClientFactory
+//   : public HttpClientFactory
+// {
+// public:
+//   UDSHttpClientFactory(std::string_view path);
+
+// public:
+//   std::unique_ptr<HttpClient> create() override
+//   {
+//     return std::make_unique<HttpClient>(path_);
+//   }
+
+// private:
+//   std::string path_;
+// };
+
+// class TcpHttpClientFactory
+//   : public HttpClientFactory
+// {
+// public:
+//   TcpHttpClientFactory(std::string_view host, uint16_t port);
+
+// public:
+//   std::unique_ptr<HttpClient> create() override;
+
+// private:
+//   std::string host_;
+//   uint16_t port_;
+// };

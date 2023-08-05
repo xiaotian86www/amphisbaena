@@ -3,7 +3,9 @@
 
 #include "schedule.hpp"
 
-class FixtureSchedule : public testing::Test
+template<typename Base>
+class FixtureSchedule
+  : public Base
 {
 public:
   FixtureSchedule()
@@ -12,13 +14,13 @@ public:
   }
 
 public:
-  void SetUp() override
+  void SetUp()
   {
     work_ = std::make_unique<boost::asio::io_service::work>(ios);
     th_ = std::thread([this] { ios.run(); });
   }
 
-  void TearDown() override
+  void TearDown()
   {
     work_.reset();
     th_.join();

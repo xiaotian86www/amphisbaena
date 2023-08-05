@@ -16,7 +16,8 @@
 #include "plugin/http_to_fix/http_to_fix_builder.hpp"
 #include "schedule.hpp"
 
-class HttpToFixBuilder : public FixtureSchedule
+class HttpToFixBuilder
+  : public FixtureSchedule<testing::Test>
 {
 public:
   HttpToFixBuilder()

@@ -9,13 +9,14 @@
 #include "environment.hpp"
 #include "fixture_schedule.hpp"
 #include "mock_builder.hpp"
-#include "mock_session.hpp"
 #include "mock_client.hpp"
+#include "mock_session.hpp"
 #include "plugin/fix_client/fix_builder.hpp"
 #include "plugin/fix_client/fix_message.hpp"
 #include "schedule.hpp"
 
-class FixBuilder : public FixtureSchedule
+class FixBuilder
+  : public FixtureSchedule<testing::Test>
 {
 public:
   FixBuilder()

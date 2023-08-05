@@ -1,15 +1,51 @@
-// #include "gmock/gmock.h"
-// #include "gtest/gtest.h"
+#include <functional>
+#include <future>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <llhttp.h>
+#include <memory>
+#include <rapidjson/document.h>
+#include <rapidjson/rapidjson.h>
 
-// #include "mock_server.hpp"
-// #include "server.hpp"
+#include "fixture_server.hpp"
+#include "schedule.hpp"
 
-// TEST(server, get_server)
-// {
-//   auto server_pool = std::make_shared<amphisbaena::ServerPool>();
+TEST_P(Server, on_recv)
+{
+  std::promise<void> pms;
 
-//   auto server = std::make_shared<MockServer>();
+  EXPECT_CALL(message_handler,
+              on_recv(testing::_,
+                      testing::_,
+                      testing::_,
+                      "GET / HTTP/1.1\r\n"
+                      "Content-Type: application/json; charset=utf-8\r\n"
+                      "Content-Length: 26\r\n"
+                      "\r\n"
+                      "{\"SenderCompID\":\"CLIENT1\"}"))
+    .WillOnce(testing::Invoke([](amphisbaena::ScheduleRef sch,
+                                 amphisbaena::CoroutineRef co,
+                                 amphisbaena::ConnectionRef conn,
+                                 std::string_view data) {
+      conn.send("HTTP/1.1 200 OK\r\n"
+                "Content-Type: application/json; charset=utf-8\r\n"
+                "Content-Length: 26\r\n"
+                "\r\n"
+                "{\"TargetCompID\":\"CLIENT1\"}");
+    }));
 
-//   server_pool->add("server1", server);
-//   EXPECT_EQ(server_pool->get("server1"), server.get());
-// }
+  rapidjson::Document response_body(rapidjson::Type::kObjectType);
+  response_body.AddMember(
+    "TargetCompID", "CLIENT1", response_body.GetAllocator());
+
+  EXPECT_CALL(
+    *client,
+    on_recv(200, "{\"TargetCompID\":\"CLIENT1\"}"))
+    .WillOnce(testing::Invoke(
+      [&pms](uint16_t, std::string_view) { pms.set_value(); }));
+
+  client->send("1.1", "GET", "/", "{\"SenderCompID\":\"CLIENT1\"}");
+
+  pms.get_future().wait_for(std::chrono::milliseconds(10));
+  stop();
+}

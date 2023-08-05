@@ -21,6 +21,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     quickfix
     test_tool
     test_uds_server
+    test_tcp_server
     test_http_parser
     test_http_to_fix
     test_fix_client

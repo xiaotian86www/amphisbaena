@@ -16,7 +16,8 @@
 #include "plugin/http_server/http_message.hpp"
 #include "schedule.hpp"
 
-class HttpServer : public FixtureSchedule
+class HttpServer
+  : public FixtureSchedule<testing::Test>
 {
 public:
   HttpServer()
