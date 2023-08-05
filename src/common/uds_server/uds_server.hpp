@@ -14,12 +14,12 @@
 using namespace boost::asio::local;
 
 namespace amphisbaena {
-class UDSConnection
+class UdsConnection
   : public std::enable_shared_from_this<Connection>
   , public Connection
 {
 public:
-  UDSConnection(ScheduleRef sch, CoroutineRef co, stream_protocol::socket sock);
+  UdsConnection(ScheduleRef sch, CoroutineRef co, stream_protocol::socket sock);
 
 public:
   void send(std::string_view data) override;
@@ -32,17 +32,17 @@ private:
   stream_protocol::socket sock_;
 };
 
-class UDSServer
-  : public std::enable_shared_from_this<UDSServer>
+class UdsServer
+  : public std::enable_shared_from_this<UdsServer>
   , public Server
 {
 public:
-  UDSServer(boost::asio::io_service& ios,
+  UdsServer(boost::asio::io_service& ios,
             std::shared_ptr<Schedule> sch,
             const std::filesystem::path& file,
             MessageHandler* message_handler);
 
-  virtual ~UDSServer();
+  virtual ~UdsServer();
 
 private:
   stream_protocol::socket accept(ScheduleRef sch, CoroutineRef co);
@@ -56,10 +56,10 @@ private:
   stream_protocol::acceptor acceptor_;
 };
 
-class UDSServerFactory : public ServerFactory
+class UdsServerFactory : public ServerFactory
 {
 public:
-  UDSServerFactory(boost::asio::io_service& ios,
+  UdsServerFactory(boost::asio::io_service& ios,
                    std::shared_ptr<Schedule> sch,
                    const std::filesystem::path& file);
 

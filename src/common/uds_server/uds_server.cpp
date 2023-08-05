@@ -11,7 +11,7 @@
 #include "uds_server.hpp"
 
 namespace amphisbaena {
-UDSConnection::UDSConnection(ScheduleRef sch,
+UdsConnection::UdsConnection(ScheduleRef sch,
                              CoroutineRef co,
                              stream_protocol::socket sock)
   : Connection(sch, co)
@@ -20,7 +20,7 @@ UDSConnection::UDSConnection(ScheduleRef sch,
 }
 
 void
-UDSConnection::send(std::string_view data)
+UdsConnection::send(std::string_view data)
 {
   std::size_t send_size = 0;
   for (;;) {
@@ -49,7 +49,7 @@ UDSConnection::send(std::string_view data)
 }
 
 std::size_t
-UDSConnection::recv(char* buffer, std::size_t buf_len)
+UdsConnection::recv(char* buffer, std::size_t buf_len)
 {
   boost::system::error_code ec;
   std::size_t size;
@@ -75,13 +75,13 @@ UDSConnection::recv(char* buffer, std::size_t buf_len)
 }
 
 void
-UDSConnection::close()
+UdsConnection::close()
 {
   boost::system::error_code ec;
   sock_.close(ec);
 }
 
-UDSServer::UDSServer(boost::asio::io_service& ios,
+UdsServer::UdsServer(boost::asio::io_service& ios,
                      std::shared_ptr<Schedule> sch,
                      const std::filesystem::path& file,
                      MessageHandler* message_handler)
@@ -91,7 +91,7 @@ UDSServer::UDSServer(boost::asio::io_service& ios,
   , endpoint_(file)
   , acceptor_(ios_)
 {
-  LOG_INFO("UDSServer create");
+  LOG_INFO("UdsServer create");
   acceptor_.open(endpoint_.protocol());
 
   acceptor_.set_option(stream_protocol::acceptor::reuse_address(true));
@@ -103,19 +103,19 @@ UDSServer::UDSServer(boost::asio::io_service& ios,
   acceptor_.listen();
 
   sch_->spawn(std::bind(
-    &UDSServer::handle, this, std::placeholders::_1, std::placeholders::_2));
+    &UdsServer::handle, this, std::placeholders::_1, std::placeholders::_2));
 }
 
-UDSServer::~UDSServer()
+UdsServer::~UdsServer()
 {
-  LOG_INFO("UDSServer destroy");
+  LOG_INFO("UdsServer destroy");
   boost::system::error_code ec;
   acceptor_.close(ec);
   unlink(endpoint_.path().c_str());
 }
 
 stream_protocol::socket
-UDSServer::accept(ScheduleRef sch, CoroutineRef co)
+UdsServer::accept(ScheduleRef sch, CoroutineRef co)
 {
   stream_protocol::socket sock(ios_);
   for (;;) {
@@ -138,7 +138,7 @@ UDSServer::accept(ScheduleRef sch, CoroutineRef co)
 }
 
 void
-UDSServer::handle(ScheduleRef sch, CoroutineRef co)
+UdsServer::handle(ScheduleRef sch, CoroutineRef co)
 {
   // 接受连接
   auto sock = accept(sch, co);
@@ -146,11 +146,11 @@ UDSServer::handle(ScheduleRef sch, CoroutineRef co)
 
   // 开启新协程接受连接
   sch_->spawn(std::bind(
-    &UDSServer::handle, this, std::placeholders::_1, std::placeholders::_2));
+    &UdsServer::handle, this, std::placeholders::_1, std::placeholders::_2));
 
   // 接受消息
-  std::shared_ptr<UDSConnection> conn =
-    std::make_shared<UDSConnection>(sch, co, std::move(sock));
+  std::shared_ptr<UdsConnection> conn =
+    std::make_shared<UdsConnection>(sch, co, std::move(sock));
   for (;;) {
     std::size_t size = conn->recv(data.data(), data.size());
 
@@ -166,7 +166,7 @@ UDSServer::handle(ScheduleRef sch, CoroutineRef co)
   }
 }
 
-UDSServerFactory::UDSServerFactory(boost::asio::io_service& ios,
+UdsServerFactory::UdsServerFactory(boost::asio::io_service& ios,
                                    std::shared_ptr<Schedule> sch,
                                    const std::filesystem::path& file)
   : ios_(ios)
@@ -176,9 +176,9 @@ UDSServerFactory::UDSServerFactory(boost::asio::io_service& ios,
 }
 
 std::unique_ptr<Server>
-UDSServerFactory::create(Server::MessageHandler* message_handler)
+UdsServerFactory::create(Server::MessageHandler* message_handler)
 {
-  return std::make_unique<UDSServer>(ios_, sch_, file_, message_handler);
+  return std::make_unique<UdsServer>(ios_, sch_, file_, message_handler);
 }
 
 }

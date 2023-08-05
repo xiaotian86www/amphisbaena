@@ -6,7 +6,7 @@
 #include "tool/http_client.hpp"
 
 INSTANTIATE_TEST_SUITE_P(
-  TCP,
+  Tcp,
   Server,
   testing::Values(std::make_pair(
     [](boost::asio::io_service& ios,

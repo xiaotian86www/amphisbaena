@@ -9,10 +9,10 @@
 
 #include "http_client.hpp"
 
-class UDSClient : public Client
+class UdsClient : public Client
 {
 public:
-  UDSClient(const std::filesystem::path& path, Client::MessageHandler* handler)
+  UdsClient(const std::filesystem::path& path, Client::MessageHandler* handler)
     : Client(handler)
     , work_(ios_)
     , sock_(ios_)
@@ -20,7 +20,7 @@ public:
     sock_.connect(path.string());
 
     sock_.async_read_some(boost::asio::buffer(buffer_.data(), buffer_.size()),
-                          std::bind(&UDSClient::do_recv,
+                          std::bind(&UdsClient::do_recv,
                                     this,
                                     std::placeholders::_1,
                                     std::placeholders::_2));
@@ -28,7 +28,7 @@ public:
     th_ = std::thread([this] { ios_.run(); });
   }
 
-  ~UDSClient()
+  ~UdsClient()
   {
     boost::system::error_code ec;
     sock_.close(ec);
@@ -52,7 +52,7 @@ private:
     handler_->on_recv({ buffer_.data(), size });
 
     sock_.async_read_some(boost::asio::buffer(buffer_.data(), buffer_.size()),
-                          std::bind(&UDSClient::do_recv,
+                          std::bind(&UdsClient::do_recv,
                                     this,
                                     std::placeholders::_1,
                                     std::placeholders::_2));
@@ -66,10 +66,10 @@ private:
   std::thread th_;
 };
 
-class TCPClient : public Client
+class TcpClient : public Client
 {
 public:
-  TCPClient(std::string_view host,
+  TcpClient(std::string_view host,
             uint16_t port,
             Client::MessageHandler* handler)
     : Client(handler)
@@ -80,7 +80,7 @@ public:
       boost::asio::ip::address::from_string(std::string(host)), port));
 
     sock_.async_read_some(boost::asio::buffer(buffer_.data(), buffer_.size()),
-                          std::bind(&TCPClient::do_recv,
+                          std::bind(&TcpClient::do_recv,
                                     this,
                                     std::placeholders::_1,
                                     std::placeholders::_2));
@@ -88,7 +88,7 @@ public:
     th_ = std::thread([this] { ios_.run(); });
   }
 
-  ~TCPClient()
+  ~TcpClient()
   {
     boost::system::error_code ec;
     sock_.close(ec);
@@ -112,7 +112,7 @@ private:
     handler_->on_recv({ buffer_.data(), size });
 
     sock_.async_read_some(boost::asio::buffer(buffer_.data(), buffer_.size()),
-                          std::bind(&TCPClient::do_recv,
+                          std::bind(&TcpClient::do_recv,
                                     this,
                                     std::placeholders::_1,
                                     std::placeholders::_2));
@@ -153,13 +153,13 @@ llhttp_settings_t HttpClient::settings_ = {
 };
 
 HttpClient::HttpClient(const std::filesystem::path& path)
-  : client_(new UDSClient(path, this))
+  : client_(new UdsClient(path, this))
 {
   llhttp_init(this, HTTP_RESPONSE, &settings_);
 }
 
 HttpClient::HttpClient(std::string_view host, uint16_t port)
-  : client_(new TCPClient(host, port, this))
+  : client_(new TcpClient(host, port, this))
 {
   llhttp_init(this, HTTP_RESPONSE, &settings_);
 }

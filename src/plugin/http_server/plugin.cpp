@@ -28,7 +28,7 @@ extern "C"
     amphisbaena::MessageFactory::registe(factory);
 
     server = std::make_shared<amphisbaena::HttpServer>(
-      std::make_shared<amphisbaena::UDSServerFactory>(ios, schedule, argv[1]));
+      std::make_shared<amphisbaena::UdsServerFactory>(ios, schedule, argv[1]));
 
     ios_thread = std::thread([] { ios.run(); });
   }
