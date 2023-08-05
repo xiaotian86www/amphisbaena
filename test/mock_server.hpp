@@ -1,7 +1,7 @@
 
 #include <gmock/gmock.h>
 
-#include "plugin/http_server/server.hpp"
+#include "server.hpp"
 
 class MockConnection : public amphisbaena::Connection
 {

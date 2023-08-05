@@ -11,7 +11,6 @@
 #include <string_view>
 
 #include "http_message.hpp"
-#include "message.hpp"
 
 namespace amphisbaena {
 
@@ -283,8 +282,7 @@ JsonObject::get_or_set_object(std::string_view name)
                      RapidValue(rapidjson::Type::kObjectType),
                      g_allocator);
 
-    iter =
-      value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
+    iter = value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
 
     return std::make_unique<JsonObject>(g_allocator, iter->value);
   }

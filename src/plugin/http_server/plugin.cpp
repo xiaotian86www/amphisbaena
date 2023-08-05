@@ -3,10 +3,10 @@
 #include <thread>
 
 #include "builder.hpp"
-#include "http_server.hpp"
+#include "common/http_parser/http_parser.hpp"
+#include "common/uds_server/uds_server.hpp"
 #include "http_message.hpp"
 #include "message.hpp"
-#include "uds_server.hpp"
 
 static std::shared_ptr<amphisbaena::MessageFactory> factory;
 static boost::asio::io_service ios;
@@ -24,12 +24,12 @@ extern "C"
     amphisbaena::MessageFactory::registe(factory);
 
     auto sch = std::make_shared<amphisbaena::Schedule>(ios);
-    auto server_factory = std::make_shared<amphisbaena::UDSServerFactory>(ios, sch, argv[1]);
-    auto http_server = std::make_shared<amphisbaena::HttpServer>(server_factory);
+    auto server_factory =
+      std::make_shared<amphisbaena::UDSServerFactory>(ios, sch, argv[1]);
+    auto http_server =
+      std::make_shared<amphisbaena::HttpServer>(server_factory);
 
-    th = std::thread([sch, http_server] {
-      ios.run();
-    });
+    th = std::thread([sch, http_server] { ios.run(); });
   }
 
   void deinit()

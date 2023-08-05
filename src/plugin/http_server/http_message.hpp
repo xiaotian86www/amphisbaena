@@ -1,12 +1,12 @@
 #pragma once
 
-#include "message.hpp"
-
 #include <memory>
 #include <rapidjson/allocators.h>
 #include <rapidjson/document.h>
 #include <rapidjson/encodings.h>
 #include <rapidjson/rapidjson.h>
+
+#include "message.hpp"
 
 namespace amphisbaena {
 

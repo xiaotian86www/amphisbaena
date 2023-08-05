@@ -7,6 +7,7 @@ include_directories(${PROJECT_SOURCE_DIR})
 
 add_subdirectory(tool)
 add_subdirectory(mock/plugin)
+add_subdirectory(common)
 add_subdirectory(plugin)
 
 aux_source_directory(${PROJECT_SOURCE_DIR} SRC_LIST)
@@ -19,6 +20,8 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     amphisbaena_core
     quickfix
     test_tool
+    test_uds_server
+    test_http_parser
     test_http_to_fix
     test_fix_client
     test_http_server

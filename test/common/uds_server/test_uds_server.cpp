@@ -13,7 +13,7 @@
 
 #include "fixture_schedule.hpp"
 #include "mock_server.hpp"
-#include "plugin/http_server/uds_server.hpp"
+#include "common/uds_server/uds_server.hpp"
 #include "schedule.hpp"
 #include "tool/http_client.hpp"
 
