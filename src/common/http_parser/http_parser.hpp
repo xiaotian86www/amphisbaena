@@ -26,7 +26,7 @@ class HttpSession
   , public llhttp_t
 {
 public:
-  HttpSession(HttpServer* server,
+  HttpSession(Session::MessageHandler* message_handle,
               ScheduleRef sch,
               CoroutineRef co,
               ConnectionRef conn);
@@ -58,7 +58,7 @@ private:
 
 private:
   static llhttp_settings_t settings_;
-  HttpServer* server_;
+  Session::MessageHandler* message_handle_;
   Environment env_;
   ScheduleRef sch_;
   CoroutineRef co_;
@@ -72,7 +72,8 @@ typedef std::shared_ptr<HttpSession> HttpSessionPtr;
 class HttpServer : public Server::MessageHandler
 {
 public:
-  HttpServer(std::shared_ptr<ServerFactory> server_factory);
+  HttpServer(std::shared_ptr<ServerFactory> server_factory,
+             Session::MessageHandler* message_handler);
 
   ~HttpServer() override;
 
@@ -81,6 +82,9 @@ public:
                CoroutineRef co,
                ConnectionPtr conn,
                std::string_view data) override;
+
+protected:
+  Session::MessageHandler* message_handler_;
 
 private:
   std::unique_ptr<Server> server_;

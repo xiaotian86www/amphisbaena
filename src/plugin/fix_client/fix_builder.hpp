@@ -33,7 +33,7 @@ public:
 private:
   std::map<SessionPtr, Promise<MessagePtr>> pmss_;
   std::mutex pmss_mtx_;
-  std::unique_ptr<Client> service_;
+  std::unique_ptr<Client> client_;
   int timeout_milli_;
 };
 }

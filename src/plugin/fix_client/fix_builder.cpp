@@ -14,7 +14,7 @@
 
 namespace amphisbaena {
 FixBuilder::FixBuilder(ClientFactory& client_factory, int timeout_milli)
-  : service_(std::move(client_factory.create(this)))
+  : client_(std::move(client_factory.create(this)))
   , timeout_milli_(timeout_milli)
 {
   LOG_INFO("FixBuilder create");
@@ -29,7 +29,7 @@ MessagePtr
 FixBuilder::create(Environment& env, MessagePtr request)
 {
   if (!env.up) {
-    env.up = service_->create(request);
+    env.up = client_->create(request);
     if (!env.up) {
       // TODO 查找不到会话
       return MessagePtr();

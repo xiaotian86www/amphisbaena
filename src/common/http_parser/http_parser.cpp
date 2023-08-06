@@ -38,11 +38,11 @@ llhttp_settings_t HttpSession::settings_ = {
   .on_reset = nullptr
 };
 
-HttpSession::HttpSession(HttpServer* server,
+HttpSession::HttpSession(Session::MessageHandler* message_handle,
                          ScheduleRef sch,
                          CoroutineRef co,
                          ConnectionRef conn)
-  : server_(server)
+  : message_handle_(message_handle)
   , sch_(sch)
   , co_(co)
   , conn_(conn)
@@ -149,40 +149,9 @@ int
 HttpSession::handle_on_message_complete(llhttp_t* http)
 {
   auto parser = static_cast<HttpSession*>(http);
-  auto request_head = parser->request_->get_head();
-  auto request_body = parser->request_->get_body();
 
-  LOG_DEBUG("method: {}, url: {}, body: {}",
-            request_head->get_string("method"),
-            request_head->get_string("url"),
-            request_body->to_string());
-
-  std::string pattern;
-  pattern += request_head->get_string("method");
-  pattern += " ";
-  pattern += request_head->get_string("url");
-
-  MessagePtr response;
-
-  parser->env_.down = parser->shared_from_this();
-
-  try {
-    response = MessageBuilder::create(parser->env_, pattern, parser->request_);
-
-    auto response_head = response->get_head();
-
-    response_head->set_value("code", HTTP_STATUS_OK);
-    response_head->set_value("version", request_head->get_string("version"));
-
-  } catch (...) {
-    response = parser->handle_error(request_head->get_string("version"));
-  }
-
-  LOG_DEBUG("code: {}, body: {}",
-            response->get_head()->get_int("code"),
-            response->get_body()->to_string());
-
-  parser->send(response);
+  parser->message_handle_->on_recv(
+    parser->sch_, parser->co_, parser->shared_from_this(), parser->request_);
 
   return HPE_OK;
 }
@@ -218,8 +187,10 @@ HttpSession::handle_error(std::string_view version)
   return response;
 }
 
-HttpServer::HttpServer(std::shared_ptr<ServerFactory> server_factory)
-  : server_(std::move(server_factory->create(this)))
+HttpServer::HttpServer(std::shared_ptr<ServerFactory> server_factory,
+                       Session::MessageHandler* message_handler)
+  : message_handler_(message_handler)
+  , server_(std::move(server_factory->create(this)))
 {
   LOG_INFO("HttpServer create");
 }
@@ -237,7 +208,7 @@ HttpServer::on_recv(ScheduleRef sch,
 {
   HttpSessionPtr session;
   if (auto iter = sessions_.find(conn); iter == sessions_.end()) {
-    session = std::make_shared<HttpSession>(this, sch, co, conn);
+    session = std::make_shared<HttpSession>(message_handler_, sch, co, conn);
     sessions_.insert_or_assign(conn, session);
   } else {
     session = iter->second;

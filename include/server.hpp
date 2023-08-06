@@ -72,9 +72,6 @@ public:
   };
 
 public:
-  using ctor_prototype = std::unique_ptr<Server>(MessageHandler*);
-
-public:
   Server(MessageHandler* message_handler)
     : message_handler_(message_handler)
   {
