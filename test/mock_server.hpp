@@ -1,5 +1,6 @@
 
 #include <gmock/gmock.h>
+#include <memory>
 
 #include "server.hpp"
 
@@ -33,9 +34,19 @@ public:
 class MockServerFactory : public amphisbaena::ServerFactory
 {
 public:
+  MockServerFactory()
+    : server(nullptr)
+  {
+  }
+
+public:
   std::unique_ptr<amphisbaena::Server> create(
     amphisbaena::Server::MessageHandler* handler) override
   {
-    return std::make_unique<MockServer>(handler);
+    server = new MockServer(handler);
+    return std::unique_ptr<amphisbaena::Server>(server);
   }
+
+public:
+  MockServer* server;
 };

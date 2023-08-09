@@ -79,7 +79,17 @@ public:
 
   virtual ~Server() = default;
 
-protected:
+public:
+  void dispatch_message(ScheduleRef sch,
+                        CoroutineRef co,
+                        ConnectionPtr conn,
+                        std::string_view data)
+  {
+    assert(message_handler_);
+    message_handler_->on_recv(sch, co, conn, data);
+  }
+
+private:
   MessageHandler* message_handler_;
 };
 

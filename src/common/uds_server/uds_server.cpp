@@ -158,11 +158,10 @@ UdsServer::handle(ScheduleRef sch, CoroutineRef co)
       break;
     }
 
-    assert(message_handler_);
-    message_handler_->on_recv(sch,
-                              co,
-                              std::static_pointer_cast<Connection>(conn),
-                              { data.data(), size });
+    dispatch_message(sch,
+                     co,
+                     std::static_pointer_cast<Connection>(conn),
+                     { data.data(), size });
   }
 }
 
