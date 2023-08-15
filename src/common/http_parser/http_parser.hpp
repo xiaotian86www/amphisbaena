@@ -13,13 +13,6 @@
 namespace amphisbaena {
 class HttpServer;
 
-// struct content_t
-// {
-//   std::size_t capital;
-//   std::size_t length;
-//   char buffer[];
-// };
-
 class HttpSession
   : public std::enable_shared_from_this<HttpSession>
   , public Session
