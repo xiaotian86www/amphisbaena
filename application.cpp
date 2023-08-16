@@ -30,13 +30,16 @@ main(int argc, char** argv)
 
   {
     amphisbaena::Plugin fix_client_plugin(
+      "fix_client",
       "src/plugin/fix_client/libfix_client.so.0",
       { "/usr/local/share/quickfix/FIX42.xml",
         "../cfg/fix_client/tradeclient.cfg" });
     amphisbaena::Plugin http_to_fix_plugin(
-      "src/plugin/http_to_fix/libhttp_to_fix.so.0");
+      "http_to_fix", "src/plugin/http_to_fix/libhttp_to_fix.so.0", {});
     amphisbaena::Plugin http_server_plugin(
-      "src/plugin/http_server/libhttp_server.so.0", { "server.sock" });
+      "http_server",
+      "src/plugin/http_server/libhttp_server.so.0",
+      { "server.sock" });
 
     signal(SIGINT, sigint_handler);
 

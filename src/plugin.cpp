@@ -2,32 +2,16 @@
 #include <dlfcn.h>
 #include <filesystem>
 
+#include "exception.hpp"
 #include "log.hpp"
 #include "plugin.hpp"
-#include "exception.hpp"
 
 namespace amphisbaena {
-Plugin::Plugin(const std::filesystem::path& path)
-  : path_(path)
-{
-  LOG_INFO("Load plugin path: {}", path_.string());
-  handle_ = dlopen(path_.c_str(), RTLD_NOW | RTLD_LOCAL);
-  if (!handle_)
-    throw CouldnotLoadException(path_.string(), dlerror());
-
-  try {
-    std::vector<const char*> args_;
-    args_.push_back(path_.c_str());
-    init(args_);
-  } catch (...) {
-    dlclose(handle_);
-    throw;
-  }
-}
-
-Plugin::Plugin(const std::filesystem::path& path,
+Plugin::Plugin(std::string_view name,
+               const std::filesystem::path& path,
                const std::vector<std::string>& args)
-  : path_(path)
+  : name_(name)
+  , path_(path)
 {
   LOG_INFO("Load plugin path: {}", path_.string());
   handle_ = dlopen(path_.c_str(), RTLD_NOW | RTLD_LOCAL);

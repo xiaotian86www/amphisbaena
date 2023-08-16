@@ -17,11 +17,15 @@ class Application : public testing::Test
 public:
   Application()
     : fix_server("../../test/cfg/executor.cfg")
-    , fix_client("../src/plugin/fix_client/libfix_client.so.0",
+    , fix_client("fix_client",
+                 "../src/plugin/fix_client/libfix_client.so.0",
                  { "/usr/local/share/quickfix/FIX42.xml",
                    "../../cfg/fix_client/tradeclient.cfg" })
-    , http_to_fix("../src/plugin/http_to_fix/libhttp_to_fix.so.0")
-    , http_server("../src/plugin/http_server/libhttp_server.so.0",
+    , http_to_fix("http_to_fix",
+                  "../src/plugin/http_to_fix/libhttp_to_fix.so.0",
+                  {})
+    , http_server("http_server",
+                  "../src/plugin/http_server/libhttp_server.so.0",
                   { "server.sock" })
     , http_client("server.sock")
   {
@@ -96,9 +100,8 @@ TEST_F(Application, send)
     }));
 
   EXPECT_CALL(http_client, on_recv(200, testing::_))
-    .WillOnce(testing::Invoke([&pms](uint16_t, std::string_view) {
-      pms.set_value();
-    }));
+    .WillOnce(
+      testing::Invoke([&pms](uint16_t, std::string_view) { pms.set_value(); }));
 
   http_client.send("1.1", "GET", "/", { sb.GetString(), sb.GetLength() });
 
