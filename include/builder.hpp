@@ -24,10 +24,29 @@ public:
   virtual std::string_view name() const = 0;
 
 public:
+  /**
+   * @brief 注册
+   * 
+   * @param builder 
+   * 
+   * 要求线程安全
+   */
   static void registe(std::shared_ptr<MessageBuilder> builder);
 
+  /**
+   * @brief 取消全部注册
+   * 
+   * 要求线程安全
+   */
   static void unregiste();
 
+  /**
+   * @brief 取消注册
+   * 
+   * @param builder 
+   *
+   * 要求线程安全
+   */
   static void unregiste(std::shared_ptr<MessageBuilder> builder);
 
   static MessagePtr create(Environment& env,

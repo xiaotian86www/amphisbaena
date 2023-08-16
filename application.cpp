@@ -29,6 +29,8 @@ main(int argc, char** argv)
   LOG_INFO("Amphisbaena begin");
 
   {
+    // TODO 插件生命周期以及状态管理由主线程负责，能接受http管控请求
+    
     amphisbaena::Plugin fix_client_plugin(
       "fix_client",
       "src/plugin/fix_client/libfix_client.so.0",

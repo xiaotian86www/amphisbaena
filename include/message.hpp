@@ -260,10 +260,29 @@ public:
   virtual std::string_view name() = 0;
 
 public:
+  /**
+   * @brief 注册
+   * 
+   * @param factory 
+   *
+   * 要求线程安全
+   */
   static void registe(std::shared_ptr<MessageFactory> factory);
 
+  /**
+   * @brief 取消全部注册
+   * 
+   * 要求线程安全
+   */
   static void unregiste();
 
+  /**
+   * @brief 取消注册
+   * 
+   * @param factory 
+   *
+   * 要求线程安全
+   */
   static void unregiste(std::shared_ptr<MessageFactory> factory);
 
   static MessagePtr create(std::string_view type);

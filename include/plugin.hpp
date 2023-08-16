@@ -14,8 +14,6 @@ public:
 
   ~Plugin();
 
-  // TODO 新增plugin容器管理功能
-
 public:
   std::string_view name() { return name_; }
 
