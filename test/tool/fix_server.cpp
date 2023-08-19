@@ -2,8 +2,6 @@
 #include <memory>
 #include <quickfix/FixFieldNumbers.h>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
 #include <quickfix/FileLog.h>
 #include <quickfix/FileStore.h>
 #include <quickfix/Log.h>
@@ -11,7 +9,6 @@
 #include <quickfix/Session.h>
 #include <quickfix/SessionSettings.h>
 #include <quickfix/SocketAcceptor.h>
-#pragma GCC diagnostic pop
 
 #include "fix_server.hpp"
 
@@ -53,8 +50,6 @@ FixServer::send(std::string_view begin_string,
   FIX::Session::sendToTarget(message, session_id);
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
 void
 FixServer::onLogon(const FIX::SessionID&)
 {
@@ -76,14 +71,14 @@ FixServer::toAdmin(FIX::Message&, const FIX::SessionID&)
 }
 
 void
-FixServer::toApp(FIX::Message&, const FIX::SessionID&) throw(FIX::DoNotSend)
+FixServer::toApp(FIX::Message&, const FIX::SessionID&) EXCEPT(FIX::DoNotSend)
 {
 }
 
 void
 FixServer::fromAdmin(
   const FIX::Message& message,
-  const FIX::SessionID& session_id) throw(FIX::FieldNotFound,
+  const FIX::SessionID& session_id) EXCEPT(FIX::FieldNotFound,
                                           FIX::IncorrectDataFormat,
                                           FIX::IncorrectTagValue,
                                           FIX::RejectLogon)
@@ -93,7 +88,7 @@ FixServer::fromAdmin(
 void
 FixServer::fromApp(
   const FIX::Message& message,
-  const FIX::SessionID& session_id) throw(FIX::FieldNotFound,
+  const FIX::SessionID& session_id) EXCEPT(FIX::FieldNotFound,
                                           FIX::IncorrectDataFormat,
                                           FIX::IncorrectTagValue,
                                           FIX::UnsupportedMessageType)
@@ -103,4 +98,3 @@ FixServer::fromApp(
           session_id.getTargetCompID().getString(),
           message.toString());
 }
-#pragma GCC diagnostic pop

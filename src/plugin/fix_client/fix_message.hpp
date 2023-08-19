@@ -6,15 +6,12 @@
 #include <stdexcept>
 #include <string_view>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
 #include <quickfix/DataDictionary.h>
 #include <quickfix/Field.h>
 #include <quickfix/FieldMap.h>
 #include <quickfix/FieldTypes.h>
 #include <quickfix/FixFields.h>
 #include <quickfix/Message.h>
-#pragma GCC diagnostic pop
 
 #include "message.hpp"
 

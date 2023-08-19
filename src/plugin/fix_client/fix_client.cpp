@@ -5,8 +5,6 @@
 #include <mutex>
 #include <stdexcept>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
 #include <quickfix/DataDictionary.h>
 #include <quickfix/FileLog.h>
 #include <quickfix/FileStore.h>
@@ -19,7 +17,6 @@
 #include <quickfix/SessionID.h>
 #include <quickfix/SessionSettings.h>
 #include <quickfix/SocketInitiator.h>
-#pragma GCC diagnostic pop
 
 #include "client.hpp"
 #include "fix_client.hpp"
@@ -80,8 +77,6 @@ FixClient::create(MessagePtr message)
   }
 }
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
 void
 FixClient::onCreate(const FIX::SessionID&)
 {
@@ -111,13 +106,13 @@ FixClient::toAdmin(FIX::Message&, const FIX::SessionID&)
 }
 
 void
-FixClient::toApp(FIX::Message&, const FIX::SessionID&) throw(FIX::DoNotSend)
+FixClient::toApp(FIX::Message&, const FIX::SessionID&) EXCEPT(FIX::DoNotSend)
 {
 }
 
 void
 FixClient::fromAdmin(const FIX::Message&,
-                     const FIX::SessionID&) throw(FIX::FieldNotFound,
+                     const FIX::SessionID&) EXCEPT(FIX::FieldNotFound,
                                                   FIX::IncorrectDataFormat,
                                                   FIX::IncorrectTagValue,
                                                   FIX::RejectLogon)
@@ -127,7 +122,7 @@ FixClient::fromAdmin(const FIX::Message&,
 void
 FixClient::fromApp(
   const FIX::Message& message,
-  const FIX::SessionID& session_id) throw(FIX::FieldNotFound,
+  const FIX::SessionID& session_id) EXCEPT(FIX::FieldNotFound,
                                           FIX::IncorrectDataFormat,
                                           FIX::IncorrectTagValue,
                                           FIX::UnsupportedMessageType)
@@ -145,7 +140,6 @@ FixClient::fromApp(
                               session,
                               response);
 }
-#pragma GCC diagnostic pop
 
 void
 FixClient::init_sessions()

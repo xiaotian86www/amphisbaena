@@ -6,8 +6,6 @@
 #include <memory>
 #include <string_view>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
 #include <quickfix/Application.h>
 #include <quickfix/DataDictionary.h>
 #include <quickfix/Initiator.h>
@@ -16,7 +14,6 @@
 #include <quickfix/Session.h>
 #include <quickfix/SessionID.h>
 #include <quickfix/SessionSettings.h>
-#pragma GCC diagnostic pop
 
 #include "client.hpp"
 #include "fix_message.hpp"
@@ -52,8 +49,6 @@ public:
   SessionPtr create(MessagePtr message) override;
 
 public:
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
   /// Notification of a session begin created
   void onCreate(const FIX::SessionID&) override;
   /// Notification of a session successfully logging on
@@ -64,20 +59,19 @@ public:
   void toAdmin(FIX::Message&, const FIX::SessionID&) override;
   /// Notification of app message being sent to target
   void toApp(FIX::Message&,
-             const FIX::SessionID&) throw(FIX::DoNotSend) override;
+             const FIX::SessionID&) EXCEPT(FIX::DoNotSend) override;
   /// Notification of admin message being received from target
   void fromAdmin(const FIX::Message&,
-                 const FIX::SessionID&) throw(FIX::FieldNotFound,
+                 const FIX::SessionID&) EXCEPT(FIX::FieldNotFound,
                                               FIX::IncorrectDataFormat,
                                               FIX::IncorrectTagValue,
                                               FIX::RejectLogon) override;
   /// Notification of app message being received from target
-  void fromApp(const FIX::Message&, const FIX::SessionID&) throw(
+  void fromApp(const FIX::Message&, const FIX::SessionID&) EXCEPT(
     FIX::FieldNotFound,
     FIX::IncorrectDataFormat,
     FIX::IncorrectTagValue,
     FIX::UnsupportedMessageType) override;
-#pragma GCC diagnostic pop
 
 private:
   void init_sessions();

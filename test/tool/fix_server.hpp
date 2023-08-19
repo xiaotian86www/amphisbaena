@@ -4,14 +4,11 @@
 #include <gmock/gmock.h>
 #include <istream>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
 #include <quickfix/Acceptor.h>
 #include <quickfix/Application.h>
 #include <quickfix/Log.h>
 #include <quickfix/SessionID.h>
 #include <quickfix/SessionSettings.h>
-#pragma GCC diagnostic pop
 
 class FixServer : public FIX::Application
 {
@@ -35,8 +32,6 @@ public:
               ());
 
 public:
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdynamic-exception-spec"
   void onLogon(const FIX::SessionID&) override;
   void onLogout(const FIX::SessionID&) override;
   /// Notification of a session begin created
@@ -45,20 +40,20 @@ public:
   void toAdmin(FIX::Message&, const FIX::SessionID&) override;
   /// Notification of app message being sent to target
   void toApp(FIX::Message&,
-             const FIX::SessionID&) throw(FIX::DoNotSend) override;
+             const FIX::SessionID&) EXCEPT(FIX::DoNotSend) override;
   /// Notification of admin message being received from target
   void fromAdmin(const FIX::Message&,
-                 const FIX::SessionID&) throw(FIX::FieldNotFound,
+                 const FIX::SessionID&) EXCEPT(FIX::FieldNotFound,
                                               FIX::IncorrectDataFormat,
                                               FIX::IncorrectTagValue,
                                               FIX::RejectLogon) override;
   /// Notification of app message being received from target
-  void fromApp(const FIX::Message&, const FIX::SessionID&) throw(
+  void fromApp(const FIX::Message&, const FIX::SessionID&) EXCEPT(
     FIX::FieldNotFound,
     FIX::IncorrectDataFormat,
     FIX::IncorrectTagValue,
     FIX::UnsupportedMessageType) override;
-#pragma GCC diagnostic pop
+
 private:
   std::unique_ptr<FIX::MessageStoreFactory> store_factory_;
   std::unique_ptr<FIX::LogFactory> log_factory_;

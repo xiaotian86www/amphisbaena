@@ -15,54 +15,29 @@
 namespace amphisbaena {
 
 namespace detail {
-// template<typename Type_>
-// constexpr bool
-// check_type(const RapidValue& value);
-
-// template<>
-// constexpr bool
-// check_type<int32_t>(const RapidValue& value)
-// {
-//   return value.IsInt();
-// }
-
-// template<>
-// constexpr bool
-// check_type<std::string_view>(const RapidValue& value)
-// {
-//   return value.IsString();
-// }
-
-// template<>
-// constexpr bool
-// check_type<double>(const RapidValue& value)
-// {
-//   return value.IsDouble();
-// }
-
 template<typename Type_>
-constexpr Type_
+inline Type_
 get_value(const RapidValue& value)
 {
   return value.Get<Type_>();
 }
 
 template<>
-constexpr std::string_view
+inline std::string_view
 get_value<std::string_view>(const RapidValue& value)
 {
   return { value.GetString(), value.GetStringLength() };
 }
 
 template<typename Type_>
-constexpr void
+inline void
 set_value(RapidDocument::AllocatorType& allocator, RapidValue& value, Type_ v)
 {
   value.Set<Type_>(v);
 }
 
 template<>
-constexpr void
+inline void
 set_value<std::string_view>(RapidDocument::AllocatorType& allocator,
                             RapidValue& value,
                             std::string_view v)
@@ -85,7 +60,7 @@ create_value<std::string_view>(RapidDocument::AllocatorType& allocator,
   return RapidValue(value.data(), value.size(), allocator);
 }
 
-constexpr FieldType
+inline FieldType
 get_type(const RapidValue& value)
 {
   switch (value.GetType()) {

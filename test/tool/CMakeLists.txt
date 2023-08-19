@@ -7,5 +7,6 @@ add_library(${PROJECT_NAME} SHARED ${SRC_LIST})
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     fmt
+    llhttp_shared
     quickfix
 )

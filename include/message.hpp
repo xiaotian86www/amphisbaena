@@ -35,6 +35,8 @@ field_type_name(FieldType type)
     case FieldType::kDouble:
       return "double";
   }
+
+  return "";
 }
 
 template<typename T>
