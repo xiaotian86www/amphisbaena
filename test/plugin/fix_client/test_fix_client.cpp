@@ -25,7 +25,7 @@ FileLogPath=log
 StartTime=00:00:00
 EndTime=00:00:00
 UseDataDictionary=Y
-DataDictionary=/usr/local/share/quickfix/FIX42.xml
+DataDictionary=../../thirdparty/quickfix/spec/FIX42.xml
 #HttpAcceptPort=9911
 #ClientCertificateFile =
 #ClientCertificateKeyFile =
@@ -46,7 +46,7 @@ HeartBtInt=30
 )")
     , server("../../test/cfg/executor.cfg")
   {
-    amphisbaena::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
+    amphisbaena::FixMessage::init("../../thirdparty/quickfix/spec/FIX42.xml");
   }
 
 protected:

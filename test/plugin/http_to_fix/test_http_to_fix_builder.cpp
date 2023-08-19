@@ -25,7 +25,7 @@ public:
     , fix_message_factory(std::make_shared<amphisbaena::FixMessageFactory>())
     , http_message_factory(std::make_shared<amphisbaena::HttpMessageFactory>())
   {
-    amphisbaena::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
+    amphisbaena::FixMessage::init("../../thirdparty/quickfix/spec/FIX42.xml");
 
     amphisbaena::MessageFactory::registe(fix_message_factory);
     amphisbaena::MessageFactory::registe(http_message_factory);

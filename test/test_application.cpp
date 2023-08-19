@@ -19,7 +19,7 @@ public:
     : fix_server("../../test/cfg/executor.cfg")
     , fix_client("fix_client",
                  "../src/plugin/fix_client/libfix_client.so.0",
-                 { "/usr/local/share/quickfix/FIX42.xml",
+                 { "../../thirdparty/quickfix/spec/FIX42.xml",
                    "../../cfg/fix_client/tradeclient.cfg" })
     , http_to_fix("http_to_fix",
                   "../src/plugin/http_to_fix/libhttp_to_fix.so.0",

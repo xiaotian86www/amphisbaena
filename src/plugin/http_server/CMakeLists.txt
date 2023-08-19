@@ -9,7 +9,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES VERSION 0.1.0 SOVERSION 0)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     fmt
-    llhttp
+    llhttp_shared
     amphisbaena_core
     uds_server
     http_parser

@@ -23,7 +23,7 @@ public:
     : session(std::make_shared<MockSession>())
     , builder(client_factory, 1)
   {
-    amphisbaena::FixMessage::init("/usr/local/share/quickfix/FIX42.xml");
+    amphisbaena::FixMessage::init("../../thirdparty/quickfix/spec/FIX42.xml");
   }
 
 protected:

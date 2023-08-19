@@ -10,4 +10,4 @@ add_library(${PROJECT_NAME} STATIC ${SRC_LIST})
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION 0.1.0 SOVERSION 0)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
-    llhttp)
+    llhttp_shared)

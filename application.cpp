@@ -34,7 +34,7 @@ main(int argc, char** argv)
     amphisbaena::Plugin fix_client_plugin(
       "fix_client",
       "src/plugin/fix_client/libfix_client.so.0",
-      { "/usr/local/share/quickfix/FIX42.xml",
+      { "../thirdparty/quickfix/spec/FIX42.xml",
         "../cfg/fix_client/tradeclient.cfg" });
     amphisbaena::Plugin http_to_fix_plugin(
       "http_to_fix", "src/plugin/http_to_fix/libhttp_to_fix.so.0", {});
