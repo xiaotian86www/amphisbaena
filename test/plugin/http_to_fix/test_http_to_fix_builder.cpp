@@ -6,18 +6,17 @@
 #include <string_view>
 
 #include "builder.hpp"
+#include "common/http_message/http_message.hpp"
 #include "environment.hpp"
 #include "fixture_schedule.hpp"
 #include "matcher_message.hpp"
 #include "message.hpp"
 #include "mock_builder.hpp"
 #include "plugin/fix_client/fix_message.hpp"
-#include "plugin/http_server/http_message.hpp"
 #include "plugin/http_to_fix/http_to_fix_builder.hpp"
 #include "schedule.hpp"
 
-class HttpToFixBuilder
-  : public FixtureSchedule<testing::Test>
+class HttpToFixBuilder : public FixtureSchedule<testing::Test>
 {
 public:
   HttpToFixBuilder()

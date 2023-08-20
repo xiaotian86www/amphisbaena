@@ -18,6 +18,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     quickfix
     amphisbaena_core
     test_tool
+    test_http_message
     test_uds_server
     test_tcp_server
     test_http_parser
@@ -26,4 +27,5 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     test_http_server
 )
 
-# gtest_discover_tests(${PROJECT_NAME})
+include(GoogleTest)
+gtest_discover_tests(${PROJECT_NAME})

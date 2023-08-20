@@ -1,6 +1,6 @@
 
+#include "common/http_message/http_message.hpp"
 #include "fixture_message.hpp"
-#include "plugin/http_server/http_message.hpp"
 #include "message.hpp"
 
 static std::shared_ptr<amphisbaena::MessageFactory> factory(

@@ -7,6 +7,7 @@
 #include <thread>
 
 #include "builder.hpp"
+#include "common/http_message/http_message.hpp"
 #include "common/http_parser/http_parser.hpp"
 #include "environment.hpp"
 #include "fixture_schedule.hpp"
@@ -14,7 +15,6 @@
 #include "mock_builder.hpp"
 #include "mock_server.hpp"
 #include "mock_session.hpp"
-#include "plugin/http_server/http_message.hpp"
 #include "schedule.hpp"
 
 class HttpParser : public FixtureSchedule<testing::Test>

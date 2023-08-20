@@ -2,9 +2,9 @@
 #include <memory>
 
 #include "builder.hpp"
+#include "common/http_message/http_message.hpp"
 #include "environment.hpp"
 #include "message.hpp"
-#include "plugin/http_server/http_message.hpp"
 
 class MessageBuilder1 : public amphisbaena::MessageBuilder
 {

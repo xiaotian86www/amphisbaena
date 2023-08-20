@@ -79,7 +79,7 @@ get_type(const RapidValue& value)
 }
 }
 
-RapidAllocator g_allocator;
+static RapidAllocator g_allocator;
 
 JsonObject::ConstIterator::ConstIterator(RapidValue::ConstMemberIterator it)
   : it_(it)
