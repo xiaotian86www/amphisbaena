@@ -6,12 +6,17 @@
 #include <stdexcept>
 #include <string_view>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include <quickfix/DataDictionary.h>
 #include <quickfix/Field.h>
 #include <quickfix/FieldMap.h>
 #include <quickfix/FieldTypes.h>
 #include <quickfix/FixFields.h>
 #include <quickfix/Message.h>
+#pragma GCC diagnostic pop
 
 #include "message.hpp"
 

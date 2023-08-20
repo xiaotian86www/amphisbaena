@@ -23,10 +23,10 @@ TEST_P(Server, on_recv)
                       "Content-Length: 26\r\n"
                       "\r\n"
                       "{\"SenderCompID\":\"CLIENT1\"}"))
-    .WillOnce(testing::Invoke([](amphisbaena::ScheduleRef sch,
-                                 amphisbaena::CoroutineRef co,
+    .WillOnce(testing::Invoke([](amphisbaena::ScheduleRef /* sch */,
+                                 amphisbaena::CoroutineRef /* co */,
                                  amphisbaena::ConnectionRef conn,
-                                 std::string_view data) {
+                                 std::string_view /* data */) {
       conn.send("HTTP/1.1 200 OK\r\n"
                 "Content-Type: application/json; charset=utf-8\r\n"
                 "Content-Length: 26\r\n"

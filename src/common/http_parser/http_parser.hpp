@@ -62,7 +62,7 @@ private:
 
 typedef std::shared_ptr<HttpSession> HttpSessionPtr;
 
-class HttpServer : public Server::MessageHandler
+class HttpServer : public Connection::MessageHandler
 {
 public:
   HttpServer(std::shared_ptr<ServerFactory> server_factory,
@@ -75,6 +75,9 @@ public:
                CoroutineRef co,
                ConnectionPtr conn,
                std::string_view data) override;
+
+public:
+  Server* server() { return server_.get(); }
 
 protected:
   Session::MessageHandler* message_handler_;

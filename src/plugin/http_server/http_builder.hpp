@@ -14,6 +14,9 @@ public:
                SessionPtr session,
                MessagePtr message) override;
 
+public:
+  HttpServer* http_server() { return http_parser_.get(); }
+
 private:
   MessagePtr handle_error(std::string_view version);
 

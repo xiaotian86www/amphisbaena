@@ -13,8 +13,9 @@
 namespace amphisbaena {
 UdsConnection::UdsConnection(ScheduleRef sch,
                              CoroutineRef co,
+                             MessageHandler* message_handler,
                              stream_protocol::socket sock)
-  : Connection(sch, co)
+  : Connection(sch, co, message_handler)
   , sock_(std::move(sock))
 {
 }
@@ -48,14 +49,14 @@ UdsConnection::send(std::string_view data)
   }
 }
 
-std::size_t
-UdsConnection::recv(char* buffer, std::size_t buf_len)
+bool
+UdsConnection::recv()
 {
   boost::system::error_code ec;
   std::size_t size;
 
   sock_.async_read_some(
-    boost::asio::buffer(buffer, buf_len),
+    boost::asio::buffer(data_.data(), data_.size()),
     [&ec, &size, sch = sch_, co = co_](boost::system::error_code in_ec,
                                        std::size_t in_size) mutable {
       size = in_size;
@@ -67,11 +68,14 @@ UdsConnection::recv(char* buffer, std::size_t buf_len)
 
   if (ec) {
     close();
-    return -1;
+    return false;
   }
 
   LOG_DEBUG("Recv size: {}", size);
-  return size;
+  assert(message_handler_);
+  message_handler_->on_recv(
+    sch_, co_, shared_from_this(), { data_.data(), size });
+  return true;
 }
 
 void
@@ -84,7 +88,7 @@ UdsConnection::close()
 UdsServer::UdsServer(boost::asio::io_service& ios,
                      std::shared_ptr<Schedule> sch,
                      const std::filesystem::path& file,
-                     MessageHandler* message_handler)
+                     Connection::MessageHandler* message_handler)
   : Server(message_handler)
   , ios_(ios)
   , sch_(sch)
@@ -142,7 +146,6 @@ UdsServer::handle(ScheduleRef sch, CoroutineRef co)
 {
   // 接受连接
   auto sock = accept(sch, co);
-  std::array<char, 8192> data;
 
   // 开启新协程接受连接
   sch_->spawn(std::bind(
@@ -150,18 +153,8 @@ UdsServer::handle(ScheduleRef sch, CoroutineRef co)
 
   // 接受消息
   std::shared_ptr<UdsConnection> conn =
-    std::make_shared<UdsConnection>(sch, co, std::move(sock));
-  for (;;) {
-    std::size_t size = conn->recv(data.data(), data.size());
-
-    if (size == -1) {
-      break;
-    }
-
-    dispatch_message(sch,
-                     co,
-                     std::static_pointer_cast<Connection>(conn),
-                     { data.data(), size });
+    std::make_shared<UdsConnection>(sch, co, message_handler_, std::move(sock));
+  while (conn->recv()) {
   }
 }
 
@@ -175,7 +168,7 @@ UdsServerFactory::UdsServerFactory(boost::asio::io_service& ios,
 }
 
 std::unique_ptr<Server>
-UdsServerFactory::create(Server::MessageHandler* message_handler)
+UdsServerFactory::create(Connection::MessageHandler* message_handler)
 {
   return std::make_unique<UdsServer>(ios_, sch_, file_, message_handler);
 }

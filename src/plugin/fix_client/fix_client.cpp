@@ -5,6 +5,10 @@
 #include <mutex>
 #include <stdexcept>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include <quickfix/DataDictionary.h>
 #include <quickfix/FileLog.h>
 #include <quickfix/FileStore.h>
@@ -17,6 +21,7 @@
 #include <quickfix/SessionID.h>
 #include <quickfix/SessionSettings.h>
 #include <quickfix/SocketInitiator.h>
+#pragma GCC diagnostic pop
 
 #include "client.hpp"
 #include "fix_client.hpp"

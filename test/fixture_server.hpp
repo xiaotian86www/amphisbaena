@@ -13,7 +13,7 @@ class Server
       std::pair<std::function<std::unique_ptr<amphisbaena::Server>(
                   boost::asio::io_service&,
                   std::shared_ptr<amphisbaena::Schedule>,
-                  amphisbaena::Server::MessageHandler*)>,
+                  amphisbaena::Connection::MessageHandler*)>,
                 std::function<std::unique_ptr<HttpClient>()>>>>
 {
 public:
@@ -21,7 +21,7 @@ public:
     std::pair<std::function<std::unique_ptr<amphisbaena::Server>(
                 boost::asio::io_service&,
                 std::shared_ptr<amphisbaena::Schedule>,
-                amphisbaena::Server::MessageHandler*)>,
+                amphisbaena::Connection::MessageHandler*)>,
               std::function<std::unique_ptr<HttpClient>()>>>>
     Base;
 
@@ -37,7 +37,7 @@ public:
   void TearDown() override { Base::TearDown(); }
 
 protected:
-  MockServer::MockMessageHandler message_handler;
+  MockConnection::MockMessageHandler message_handler;
   std::unique_ptr<amphisbaena::Server> server;
   std::unique_ptr<HttpClient> client;
 };

@@ -6,6 +6,10 @@
 #include <memory>
 #include <string_view>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include <quickfix/Application.h>
 #include <quickfix/DataDictionary.h>
 #include <quickfix/Initiator.h>
@@ -14,6 +18,7 @@
 #include <quickfix/Session.h>
 #include <quickfix/SessionID.h>
 #include <quickfix/SessionSettings.h>
+#pragma GCC diagnostic pop
 
 #include "client.hpp"
 #include "fix_message.hpp"

@@ -34,7 +34,7 @@ TEST_F(Future, get)
 
 TEST_F(Future, get_for)
 {
-  auto foo = [this](amphisbaena::ScheduleRef sch,
+  auto foo = [this](amphisbaena::ScheduleRef /* sch */,
                     amphisbaena::CoroutineRef co) {
     co.yield_for(0);
     foo_mock2.Call(foo_mock1.Call());

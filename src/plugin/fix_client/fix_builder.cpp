@@ -1,8 +1,14 @@
 #include <boost/scope_exit.hpp>
 #include <memory>
 #include <mutex>
-#include <quickfix/FixValues.h>
 #include <stdexcept>
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#include <quickfix/FixValues.h>
+#pragma GCC diagnostic pop
 
 #include "builder.hpp"
 #include "environment.hpp"

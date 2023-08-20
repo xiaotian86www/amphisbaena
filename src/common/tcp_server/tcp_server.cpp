@@ -6,13 +6,17 @@
 #include <memory>
 #include <unistd.h>
 
+#include "future.hpp"
 #include "log.hpp"
 #include "schedule.hpp"
 #include "tcp_server.hpp"
 
 namespace amphisbaena {
-TcpConnection::TcpConnection(ScheduleRef sch, CoroutineRef co, tcp::socket sock)
-  : Connection(sch, co)
+TcpConnection::TcpConnection(ScheduleRef sch,
+                             CoroutineRef co,
+                             MessageHandler* message_handler,
+                             tcp::socket sock)
+  : Connection(sch, co, message_handler)
   , sock_(std::move(sock))
 {
 }
@@ -46,14 +50,14 @@ TcpConnection::send(std::string_view data)
   }
 }
 
-std::size_t
-TcpConnection::recv(char* buffer, std::size_t buf_len)
+bool
+TcpConnection::recv()
 {
   boost::system::error_code ec;
   std::size_t size;
 
   sock_.async_read_some(
-    boost::asio::buffer(buffer, buf_len),
+    boost::asio::buffer(data_, data_.size()),
     [&ec, &size, sch = sch_, co = co_](boost::system::error_code in_ec,
                                        std::size_t in_size) mutable {
       size = in_size;
@@ -65,11 +69,14 @@ TcpConnection::recv(char* buffer, std::size_t buf_len)
 
   if (ec) {
     close();
-    return -1;
+    return false;
   }
 
   LOG_DEBUG("Recv size: {}", size);
-  return size;
+  assert(message_handler_);
+  message_handler_->on_recv(
+    sch_, co_, shared_from_this(), { data_.data(), size });
+  return true;
 }
 
 void
@@ -82,7 +89,7 @@ TcpConnection::close()
 TcpServer::TcpServer(boost::asio::io_service& ios,
                      std::shared_ptr<Schedule> sch,
                      uint16_t port,
-                     MessageHandler* message_handler)
+                     Connection::MessageHandler* message_handler)
   : Server(message_handler)
   , ios_(ios)
   , sch_(sch)
@@ -138,7 +145,6 @@ TcpServer::handle(ScheduleRef sch, CoroutineRef co)
 {
   // 接受连接
   auto sock = accept(sch, co);
-  std::array<char, 8192> data;
 
   // 开启新协程接受连接
   sch_->spawn(std::bind(
@@ -146,18 +152,8 @@ TcpServer::handle(ScheduleRef sch, CoroutineRef co)
 
   // 接受消息
   std::shared_ptr<TcpConnection> conn =
-    std::make_shared<TcpConnection>(sch, co, std::move(sock));
-  for (;;) {
-    std::size_t size = conn->recv(data.data(), data.size());
-
-    if (size == -1) {
-      break;
-    }
-
-    dispatch_message(sch,
-                     co,
-                     std::static_pointer_cast<Connection>(conn),
-                     { data.data(), size });
+    std::make_shared<TcpConnection>(sch, co, message_handler_, std::move(sock));
+  while (conn->recv()) {
   }
 }
 
@@ -171,7 +167,7 @@ TcpServerFactory::TcpServerFactory(boost::asio::io_service& ios,
 }
 
 std::unique_ptr<Server>
-TcpServerFactory::create(Server::MessageHandler* message_handler)
+TcpServerFactory::create(Connection::MessageHandler* message_handler)
 {
   return std::make_unique<TcpServer>(ios_, sch_, port_, message_handler);
 }

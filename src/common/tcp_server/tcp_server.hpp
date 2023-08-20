@@ -15,21 +15,24 @@ using namespace boost::asio::ip;
 
 namespace amphisbaena {
 class TcpConnection
-  : public std::enable_shared_from_this<Connection>
-  , public Connection
+  : public Connection
 {
 public:
-  TcpConnection(ScheduleRef sch, CoroutineRef co, tcp::socket sock);
+  TcpConnection(ScheduleRef sch,
+                CoroutineRef co,
+                MessageHandler* message_handler,
+                tcp::socket sock);
 
 public:
   void send(std::string_view data) override;
 
-  std::size_t recv(char* buffer, std::size_t buf_len);
+  bool recv() override;
 
   void close() override;
 
 private:
   tcp::socket sock_;
+  std::array<char, 1024> data_;
 };
 
 class TcpServer
@@ -40,7 +43,7 @@ public:
   TcpServer(boost::asio::io_service& ios,
             std::shared_ptr<Schedule> sch,
             uint16_t port,
-            MessageHandler* message_handler);
+            Connection::MessageHandler* message_handler);
 
   virtual ~TcpServer();
 
@@ -65,7 +68,7 @@ public:
 
 public:
   std::unique_ptr<Server> create(
-    Server::MessageHandler* message_handler) override;
+    Connection::MessageHandler* message_handler) override;
 
 private:
   boost::asio::io_service& ios_;

@@ -4,11 +4,16 @@
 #include <gmock/gmock.h>
 #include <istream>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include <quickfix/Acceptor.h>
 #include <quickfix/Application.h>
 #include <quickfix/Log.h>
 #include <quickfix/SessionID.h>
 #include <quickfix/SessionSettings.h>
+#pragma GCC diagnostic pop
 
 class FixServer : public FIX::Application
 {

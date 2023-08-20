@@ -22,7 +22,7 @@ sigint_handler(int sig)
 }
 
 int
-main(int argc, char** argv)
+main(int /* argc */, char** /* argv */)
 {
   spdlog::set_level(spdlog::level::debug);
 

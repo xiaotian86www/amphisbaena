@@ -63,7 +63,8 @@ TEST_F(HttpBuilder, on_data)
 
   sch->spawn(
     [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
-      auto conn = std::make_shared<MockConnection>(sch, co);
+      auto conn =
+        std::make_shared<MockConnection>(sch, co, http_builder->http_server());
 
       EXPECT_CALL(*conn,
                   send("HTTP/1.1 200 OK\r\n"
@@ -74,24 +75,17 @@ TEST_F(HttpBuilder, on_data)
         .Times(2)
         .WillRepeatedly(testing::Return());
 
-      server_factory->server->dispatch_message(
-        sch,
-        co,
-        conn,
-        "GET / HTTP/1.1\r\n"
-        "Content-Type: application/json; charset=utf-8\r\n"
-        "Content-Length: 27\r\n"
-        "\r\n"
-        "{\"SenderCompID\": \"CLIENT1\"}");
-      server_factory->server->dispatch_message(
-        sch,
-        co,
-        conn,
-        "GET / HTTP/1.1\r\n"
-        "Content-Type: application/json; charset=utf-8\r\n"
-        "Content-Length: 27\r\n"
-        "\r\n"
-        "{\"SenderCompID\": \"CLIENT1\"}");
+      conn->recv("GET / HTTP/1.1\r\n"
+                 "Content-Type: application/json; charset=utf-8\r\n"
+                 "Content-Length: 27\r\n"
+                 "\r\n"
+                 "{\"SenderCompID\": \"CLIENT1\"}");
+
+      conn->recv("GET / HTTP/1.1\r\n"
+                 "Content-Type: application/json; charset=utf-8\r\n"
+                 "Content-Length: 27\r\n"
+                 "\r\n"
+                 "{\"SenderCompID\": \"CLIENT1\"}");
     });
 }
 
@@ -118,7 +112,8 @@ TEST_F(HttpBuilder, on_data_split)
 
   sch->spawn(
     [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
-      auto conn = std::make_shared<MockConnection>(sch, co);
+      auto conn =
+        std::make_shared<MockConnection>(sch, co, http_builder->http_server());
 
       EXPECT_CALL(*conn,
                   send("HTTP/1.1 200 OK\r\n"
@@ -129,25 +124,17 @@ TEST_F(HttpBuilder, on_data_split)
         .Times(2)
         .WillRepeatedly(testing::Return());
 
-      server_factory->server->dispatch_message(
-        sch,
-        co,
-        conn,
-        "GET / HTTP/1.1\r\n"
-        "Content-Type: application/json; charset=utf-8\r\n"
-        "Content-Length: 27\r\n"
-        "\r\n"
-        "{\"SenderCompID\": ");
-      server_factory->server->dispatch_message(sch, co, conn, "\"CLIENT1\"}");
-      server_factory->server->dispatch_message(
-        sch,
-        co,
-        conn,
-        "GET / HTTP/1.1\r\n"
-        "Content-Type: application/json; charset=utf-8\r\n"
-        "Content-Length: 27\r\n"
-        "\r\n"
-        "{\"SenderCompID\": \"CLIENT1\"}");
+      conn->recv("GET / HTTP/1.1\r\n"
+                 "Content-Type: application/json; charset=utf-8\r\n"
+                 "Content-Length: 27\r\n"
+                 "\r\n"
+                 "{\"SenderCompID\": ");
+      conn->recv("\"CLIENT1\"}");
+      conn->recv("GET / HTTP/1.1\r\n"
+                 "Content-Type: application/json; charset=utf-8\r\n"
+                 "Content-Length: 27\r\n"
+                 "\r\n"
+                 "{\"SenderCompID\": \"CLIENT1\"}");
     });
 }
 
@@ -155,7 +142,8 @@ TEST_F(HttpBuilder, on_data_not_found)
 {
   sch->spawn(
     [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
-      auto conn = std::make_shared<MockConnection>(sch, co);
+      auto conn =
+        std::make_shared<MockConnection>(sch, co, http_builder->http_server());
       EXPECT_CALL(*conn,
                   send("HTTP/1.1 404 NOT_FOUND\r\n"
                        "Content-Type: application/json; charset=utf-8\r\n"
@@ -165,10 +153,8 @@ TEST_F(HttpBuilder, on_data_not_found)
         .Times(2)
         .WillRepeatedly(testing::Return());
 
-      server_factory->server->dispatch_message(
-        sch, co, conn, "GET /root HTTP/1.1\r\n\r\n");
-      server_factory->server->dispatch_message(
-        sch, co, conn, "GET /root HTTP/1.1\r\n\r\n");
+      conn->recv("GET /root HTTP/1.1\r\n\r\n");
+      conn->recv("GET /root HTTP/1.1\r\n\r\n");
     });
 }
 
@@ -185,7 +171,8 @@ TEST_F(HttpBuilder, on_data_fail)
 
   sch->spawn(
     [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
-      auto conn = std::make_shared<MockConnection>(sch, co);
+      auto conn =
+        std::make_shared<MockConnection>(sch, co, http_builder->http_server());
       EXPECT_CALL(*conn,
                   send("HTTP/1.1 200 OK\r\n"
                        "Content-Type: application/json; charset=utf-8\r\n"
@@ -194,9 +181,7 @@ TEST_F(HttpBuilder, on_data_fail)
                        "{}"))
         .WillOnce(testing::Return());
 
-      server_factory->server->dispatch_message(
-        sch, co, conn, "GET HTTP/1.1\r\n\r\n");
-      server_factory->server->dispatch_message(
-        sch, co, conn, "GET / HTTP/1.1\r\n\r\n");
+      conn->recv("GET HTTP/1.1\r\n\r\n");
+      conn->recv("GET / HTTP/1.1\r\n\r\n");
     });
 }

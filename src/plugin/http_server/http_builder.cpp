@@ -5,7 +5,7 @@
 
 namespace amphisbaena {
 HttpBuilder::HttpBuilder(std::shared_ptr<ServerFactory> server_factory)
-  : http_parser_(new HttpServer(server_factory, this))
+  : http_parser_(std::make_unique<HttpServer>(server_factory, this))
 {
 }
 

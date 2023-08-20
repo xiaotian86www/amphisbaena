@@ -1,7 +1,11 @@
 #include <istream>
 #include <memory>
-#include <quickfix/FixFieldNumbers.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#include <quickfix/FixFieldNumbers.h>
 #include <quickfix/FileLog.h>
 #include <quickfix/FileStore.h>
 #include <quickfix/Log.h>
@@ -9,6 +13,7 @@
 #include <quickfix/Session.h>
 #include <quickfix/SessionSettings.h>
 #include <quickfix/SocketAcceptor.h>
+#pragma GCC diagnostic pop
 
 #include "fix_server.hpp"
 

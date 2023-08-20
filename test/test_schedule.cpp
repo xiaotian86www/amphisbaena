@@ -107,7 +107,7 @@ TEST_F(Coroutine, exception)
  */
 TEST_F(Coroutine, yield_for_timeout)
 {
-  auto foo = [this](amphisbaena::ScheduleRef sch,
+  auto foo = [this](amphisbaena::ScheduleRef /* sch */,
                     amphisbaena::CoroutineRef co) {
     EXPECT_SPEND_GT(co.yield_for(1), 1000000);
     foo_mock.Call(0);
@@ -142,14 +142,14 @@ TEST_F(Coroutine, resume_yield_for)
  */
 TEST_F(Coroutine, stop_yield_for)
 {
-  auto foo1 = [this](amphisbaena::ScheduleRef sch,
+  auto foo1 = [this](amphisbaena::ScheduleRef /* sch */,
                      amphisbaena::CoroutineRef co) {
     foo_mock.Call(0);
     co.yield_for(10);
     foo_mock.Call(2);
   };
 
-  auto foo2 = [this](amphisbaena::ScheduleRef sch,
+  auto foo2 = [this](amphisbaena::ScheduleRef /* sch */,
                      amphisbaena::CoroutineRef co) {
     foo_mock.Call(1);
     stop();

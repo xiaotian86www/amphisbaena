@@ -1,17 +1,35 @@
 #pragma once
 
+#include <memory>
 #include <string_view>
 
 #include "schedule.hpp"
 
 namespace amphisbaena {
 
-class Connection
+class Connection;
+typedef std::shared_ptr<Connection> ConnectionPtr;
+
+class Connection : public std::enable_shared_from_this<Connection>
 {
 public:
-  Connection(ScheduleRef sch, CoroutineRef co)
+  class MessageHandler
+  {
+  public:
+    virtual ~MessageHandler() = default;
+
+  public:
+    virtual void on_recv(ScheduleRef sch,
+                         CoroutineRef co,
+                         ConnectionPtr conn,
+                         std::string_view data) = 0;
+  };
+
+public:
+  Connection(ScheduleRef sch, CoroutineRef co, MessageHandler* message_handler)
     : sch_(sch)
     , co_(co)
+    , message_handler_(message_handler)
   {
   }
 
@@ -20,14 +38,15 @@ public:
 public:
   virtual void send(std::string_view data) = 0;
 
+  virtual bool recv() = 0;
+
   virtual void close() = 0;
 
 protected:
   ScheduleRef sch_;
   CoroutineRef co_;
+  MessageHandler* message_handler_;
 };
-
-typedef std::shared_ptr<Connection> ConnectionPtr;
 
 class ConnectionRef
 {
@@ -59,38 +78,15 @@ private:
 class Server
 {
 public:
-  class MessageHandler
-  {
-  public:
-    virtual ~MessageHandler() = default;
-
-  public:
-    virtual void on_recv(ScheduleRef sch,
-                         CoroutineRef co,
-                         ConnectionPtr conn,
-                         std::string_view data) = 0;
-  };
-
-public:
-  Server(MessageHandler* message_handler)
+  Server(Connection::MessageHandler* message_handler)
     : message_handler_(message_handler)
   {
   }
 
   virtual ~Server() = default;
 
-public:
-  void dispatch_message(ScheduleRef sch,
-                        CoroutineRef co,
-                        ConnectionPtr conn,
-                        std::string_view data)
-  {
-    assert(message_handler_);
-    message_handler_->on_recv(sch, co, conn, data);
-  }
-
-private:
-  MessageHandler* message_handler_;
+protected:
+  Connection::MessageHandler* message_handler_;
 };
 
 class ServerFactory
@@ -100,7 +96,7 @@ public:
 
 public:
   virtual std::unique_ptr<Server> create(
-    Server::MessageHandler* message_handler) = 0;
+    Connection::MessageHandler* message_handler) = 0;
 };
 
 }
