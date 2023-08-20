@@ -77,8 +77,8 @@ FixServer::toApp(FIX::Message&, const FIX::SessionID&) EXCEPT(FIX::DoNotSend)
 
 void
 FixServer::fromAdmin(
-  const FIX::Message& message,
-  const FIX::SessionID& session_id) EXCEPT(FIX::FieldNotFound,
+  const FIX::Message& /* message */,
+  const FIX::SessionID& /* session_id */) EXCEPT(FIX::FieldNotFound,
                                           FIX::IncorrectDataFormat,
                                           FIX::IncorrectTagValue,
                                           FIX::RejectLogon)

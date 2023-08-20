@@ -272,37 +272,37 @@ FixObject::end() const
 }
 
 ObjectPtr
-FixObject::get_object(std::string_view name)
+FixObject::get_object(std::string_view /* name */)
 {
   return {};
 }
 
 ConstObjectPtr
-FixObject::get_object(std::string_view name) const
+FixObject::get_object(std::string_view /* name */) const
 {
   return {};
 }
 
 ObjectPtr
-FixObject::get_or_set_object(std::string_view name)
+FixObject::get_or_set_object(std::string_view /* name */)
 {
   return {};
 }
 
 GroupPtr
-FixObject::get_group(std::string_view name)
+FixObject::get_group(std::string_view /* name */)
 {
   return {};
 }
 
 const GroupPtr
-FixObject::get_group(std::string_view name) const
+FixObject::get_group(std::string_view /* name */) const
 {
   return {};
 }
 
 void
-FixObject::from_string(std::string_view str)
+FixObject::from_string(std::string_view /* str */)
 {
 }
 

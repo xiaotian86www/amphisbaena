@@ -23,7 +23,7 @@ public:
 
 extern "C"
 {
-  void init(int argc, const char** argv)
+  void init(int /* argc */, const char** argv)
   {
     throw std::invalid_argument("Usage: " + std::string(argv[0]));
   }

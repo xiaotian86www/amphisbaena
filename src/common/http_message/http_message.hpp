@@ -44,7 +44,7 @@ public:
   };
 
 public:
-  JsonObject(RapidDocument::AllocatorType& allocator, RapidValue& value);
+  JsonObject(RapidValue& value);
 
 public:
   int32_t get_value(std::string_view name,

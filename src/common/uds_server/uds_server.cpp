@@ -130,7 +130,7 @@ UdsServer::accept(ScheduleRef sch, CoroutineRef co)
 
     if (!ec) {
       LOG_INFO("Accept: {}", sock.remote_endpoint().path());
-      return std::move(sock);
+      return sock;
     } else {
       LOG_INFO("Accept failed. what: {}", ec.what());
     }

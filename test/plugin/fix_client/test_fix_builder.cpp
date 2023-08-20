@@ -64,8 +64,8 @@ TEST_F(FixBuilder, call)
 
   EXPECT_CALL(*session, send(testing::_))
     .WillOnce(testing::Invoke([this, response](amphisbaena::MessagePtr) {
-      sch->spawn([this, response](amphisbaena::ScheduleRef sch,
-                                  amphisbaena::CoroutineRef co) {
+      sch->spawn([this, response](amphisbaena::ScheduleRef /* sch */,
+                                  amphisbaena::CoroutineRef /* co */) {
         EXPECT_NO_THROW(client_factory.client->send(amphisbaena::ScheduleRef(),
                                                     amphisbaena::CoroutineRef(),
                                                     session,

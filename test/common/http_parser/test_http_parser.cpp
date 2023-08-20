@@ -55,10 +55,10 @@ TEST_F(HttpParser, on_recv)
                                body->get_string("SenderCompID") == "CLIENT1";
                       })))
     .Times(2)
-    .WillRepeatedly(testing::Invoke([](amphisbaena::ScheduleRef sch,
-                                       amphisbaena::CoroutineRef co,
+    .WillRepeatedly(testing::Invoke([](amphisbaena::ScheduleRef /* sch */,
+                                       amphisbaena::CoroutineRef /* co */,
                                        amphisbaena::SessionPtr session,
-                                       amphisbaena::MessagePtr message) {
+                                       amphisbaena::MessagePtr /* message */) {
       auto response = std::make_shared<amphisbaena::HttpMessage>();
       auto response_head = response->get_head();
       auto response_body = response->get_body();

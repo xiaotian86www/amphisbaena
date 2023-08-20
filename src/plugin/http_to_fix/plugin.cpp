@@ -5,7 +5,7 @@ static std::shared_ptr<amphisbaena::MessageBuilder> builder;
 
 extern "C"
 {
-  void init(int argc, const char* const* argv)
+  void init(int /* argc */, const char* const* /* argv */)
   {
     builder = std::make_shared<amphisbaena::builder::HttpToFixBuilder>();
     amphisbaena::MessageBuilder::registe(builder);

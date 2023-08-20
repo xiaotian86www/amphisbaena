@@ -22,5 +22,5 @@ public:
 
 extern "C"
 {
-  void init2(int argc, const char** argv) {}
+  void init2(int /* argc */, const char** /* argv */) {}
 }

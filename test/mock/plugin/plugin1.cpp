@@ -24,7 +24,7 @@ static std::shared_ptr<amphisbaena::MessageBuilder> builder;
 
 extern "C"
 {
-  void init(int argc, const char** argv)
+  void init(int /* argc */, const char** /* argv */)
   {
     builder = std::make_shared<MessageBuilder1>();
     amphisbaena::MessageBuilder::registe(builder);

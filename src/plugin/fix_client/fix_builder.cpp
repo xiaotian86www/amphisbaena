@@ -14,7 +14,7 @@
 
 namespace amphisbaena {
 FixBuilder::FixBuilder(ClientFactory& client_factory, int timeout_milli)
-  : client_(std::move(client_factory.create(this)))
+  : client_(client_factory.create(this))
   , timeout_milli_(timeout_milli)
 {
   LOG_INFO("FixBuilder create");
@@ -76,8 +76,8 @@ FixBuilder::name() const
 }
 
 void
-FixBuilder::on_recv(ScheduleRef sch,
-                    CoroutineRef co,
+FixBuilder::on_recv(ScheduleRef /* sch */,
+                    CoroutineRef /* co */,
                     SessionPtr session,
                     MessagePtr response)
 {

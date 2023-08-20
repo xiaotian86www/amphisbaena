@@ -41,7 +41,7 @@ field_type_name(FieldType type)
 
 template<typename T>
 constexpr bool
-check_field_type(FieldType type)
+check_field_type(FieldType /* type */)
 {
   return false;
 }

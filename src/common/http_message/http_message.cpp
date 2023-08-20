@@ -31,7 +31,9 @@ get_value<std::string_view>(const RapidValue& value)
 
 template<typename Type_>
 inline void
-set_value(RapidDocument::AllocatorType& allocator, RapidValue& value, Type_ v)
+set_value(RapidDocument::AllocatorType& /* allocator */,
+          RapidValue& value,
+          Type_ v)
 {
   value.Set<Type_>(v);
 }
@@ -47,7 +49,7 @@ set_value<std::string_view>(RapidDocument::AllocatorType& allocator,
 
 template<typename Type_>
 inline RapidValue
-create_value(RapidDocument::AllocatorType& allocator, Type_ type)
+create_value(RapidDocument::AllocatorType& /* allocator */, Type_ type)
 {
   return RapidValue(type);
 }
@@ -131,8 +133,7 @@ JsonObject::ConstIterator::operator++()
   return *this;
 }
 
-JsonObject::JsonObject(RapidDocument::AllocatorType& allocator,
-                       RapidValue& value)
+JsonObject::JsonObject(RapidValue& value)
   : value_(value)
 {
 }
@@ -219,7 +220,7 @@ JsonObject::get_object(std::string_view name)
         value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
       iter != value_.MemberEnd()) {
     if (iter->value.IsObject())
-      return ObjectPtr(new JsonObject(g_allocator, iter->value));
+      return ObjectPtr(new JsonObject(iter->value));
     else
       throw TypeExecption(name, "Object");
   } else {
@@ -234,7 +235,7 @@ JsonObject::get_object(std::string_view name) const
         value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
       iter != value_.MemberEnd()) {
     if (iter->value.IsObject())
-      return ConstObjectPtr(new JsonObject(g_allocator, iter->value));
+      return ConstObjectPtr(new JsonObject(iter->value));
     else
       throw TypeExecption(name, "Object");
   } else {
@@ -251,7 +252,7 @@ JsonObject::get_or_set_object(std::string_view name)
     if (!iter->value.IsObject()) {
       iter->value = RapidValue(rapidjson::Type::kObjectType);
     }
-    return std::make_unique<JsonObject>(g_allocator, iter->value);
+    return std::make_unique<JsonObject>(iter->value);
   } else {
     value_.AddMember(rapidjson::StringRef(name.data(), name.size()),
                      RapidValue(rapidjson::Type::kObjectType),
@@ -259,18 +260,18 @@ JsonObject::get_or_set_object(std::string_view name)
 
     iter = value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
 
-    return std::make_unique<JsonObject>(g_allocator, iter->value);
+    return std::make_unique<JsonObject>(iter->value);
   }
 }
 
 GroupPtr
-JsonObject::get_group(std::string_view name)
+JsonObject::get_group(std::string_view /* name */)
 {
   return GroupPtr();
 }
 
 const GroupPtr
-JsonObject::get_group(std::string_view name) const
+JsonObject::get_group(std::string_view /* name */) const
 {
   return GroupPtr();
 }
@@ -371,8 +372,7 @@ HttpMessage::clone() const
 ObjectPtr
 HttpMessage::get_head()
 {
-  return std::make_unique<JsonObject>(g_allocator,
-                                      doc_.FindMember("head")->value);
+  return std::make_unique<JsonObject>(doc_.FindMember("head")->value);
 }
 
 ConstObjectPtr
@@ -384,8 +384,7 @@ HttpMessage::get_head() const
 ObjectPtr
 HttpMessage::get_body()
 {
-  return std::make_unique<JsonObject>(g_allocator,
-                                      doc_.FindMember("body")->value);
+  return std::make_unique<JsonObject>(doc_.FindMember("body")->value);
 }
 
 ConstObjectPtr
@@ -397,8 +396,7 @@ HttpMessage::get_body() const
 ObjectPtr
 HttpMessage::get_tail()
 {
-  return std::make_unique<JsonObject>(g_allocator,
-                                      doc_.FindMember("tail")->value);
+  return std::make_unique<JsonObject>(doc_.FindMember("tail")->value);
 }
 
 ConstObjectPtr
