@@ -7,7 +7,9 @@
 #include <string_view>
 
 #pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpragmas"
 #pragma GCC diagnostic ignored "-Wignored-qualifiers"
+#pragma GCC diagnostic ignored "-Wdeprecated-copy"
 #pragma GCC diagnostic ignored "-Wdeprecated-copy-with-user-provided-copy"
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #include <quickfix/Application.h>
