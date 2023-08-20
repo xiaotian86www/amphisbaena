@@ -126,31 +126,29 @@ private:
   std::thread th_;
 };
 
-llhttp_settings_t HttpClient::settings_ = {
-  .on_message_begin = handle_on_message_begin,
-  .on_url = nullptr,
-  .on_status = nullptr,
-  .on_method = nullptr,
-  .on_version = nullptr,
-  .on_header_field = nullptr,
-  .on_header_value = nullptr,
-  .on_chunk_extension_name = nullptr,
-  .on_chunk_extension_value = nullptr,
-  .on_headers_complete = nullptr,
-  .on_body = handle_on_body,
-  .on_message_complete = handle_on_message_complete,
-  .on_url_complete = nullptr,
-  .on_status_complete = nullptr,
-  .on_method_complete = nullptr,
-  .on_version_complete = nullptr,
-  .on_header_field_complete = nullptr,
-  .on_header_value_complete = nullptr,
-  .on_chunk_extension_name_complete = nullptr,
-  .on_chunk_extension_value_complete = nullptr,
-  .on_chunk_header = nullptr,
-  .on_chunk_complete = nullptr,
-  .on_reset = nullptr
-};
+llhttp_settings_t HttpClient::settings_ = { handle_on_message_begin,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            handle_on_body,
+                                            handle_on_message_complete,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr };
 
 HttpClient::HttpClient(const std::filesystem::path& path)
   : client_(new UdsClient(path, this))
