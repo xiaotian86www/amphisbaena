@@ -49,3 +49,5 @@ TEST_P(Server, on_recv)
   pms.get_future().wait_for(std::chrono::milliseconds(10));
   stop();
 }
+
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(Server);

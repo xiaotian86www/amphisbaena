@@ -125,3 +125,5 @@ TEST_P(Message, assignment)
   EXPECT_THAT(body2, field_int_eq("MsgSeqNum", 1));
   EXPECT_THAT(body2, field_double_eq("LeavesQty", 1.01));
 }
+
+GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(Message);
