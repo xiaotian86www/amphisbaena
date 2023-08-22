@@ -1,2 +1,9 @@
+# 编译目标文件夹
 build
+
+# 生成后的文档
+doc/html
+doc/latex
+
+# 索引文件
 .cache
