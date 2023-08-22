@@ -56,7 +56,7 @@ UdsConnection::recv()
   std::size_t size;
 
   sock_.async_read_some(
-    boost::asio::buffer(data_.data(), data_.size()),
+    boost::asio::buffer(data_),
     [&ec, &size, sch = sch_, co = co_](boost::system::error_code in_ec,
                                        std::size_t in_size) mutable {
       size = in_size;
