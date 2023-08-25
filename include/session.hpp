@@ -11,9 +11,10 @@
 
 #pragma once
 
+#include <memory>
+
 #include "message.hpp"
 #include "schedule.hpp"
-#include <memory>
 
 namespace amphisbaena {
 class Session;
