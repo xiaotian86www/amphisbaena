@@ -12,16 +12,18 @@
 #pragma once
 
 #include <boost/asio/io_service.hpp>
+#include <boost/asio/steady_timer.hpp>
+#include <boost/coroutine2/coroutine.hpp>
 #include <chrono>
 #include <functional>
 #include <memory>
 #include <unordered_set>
 
-void func();
-
 namespace amphisbaena {
 
+class Coroutine;
 class CoroutineRef;
+class Schedule;
 class ScheduleRef;
 
 typedef std::function<void(ScheduleRef, CoroutineRef)> task;
@@ -30,7 +32,44 @@ typedef std::function<void(ScheduleRef, CoroutineRef)> task;
  * @brief 协程
  * 
  */
-class Coroutine;
+class Coroutine : public std::enable_shared_from_this<Coroutine>
+{
+public:
+  Coroutine(boost::asio::io_service& ios, std::weak_ptr<Schedule> sch, task fn);
+
+  virtual ~Coroutine() = default;
+
+public:
+  /**
+   * @brief 让渡时间片，直到调用 Schedule::resume(CoroutineRef)
+   * 
+   */
+  void yield();
+
+  /**
+   * @brief 让渡时间片，直到 milli 毫秒后，或者调用 Schedule::resume(CoroutineRef)
+   * 
+   * @param milli 等待时长
+   */
+  void yield_for(int milli);
+
+  /**
+   * @brief 恢复
+   * 
+   * @return true 
+   * @return false 
+   */
+  bool resume();
+
+private:
+  void do_yield();
+
+private:
+  std::weak_ptr<Schedule> sch_;
+  boost::asio::steady_timer timer_;
+  boost::coroutines2::coroutine<void>::push_type ps_;
+  boost::coroutines2::coroutine<void>::pull_type* pl_ = nullptr;
+};
 
 /**
  * @brief 协程引用
@@ -54,17 +93,8 @@ public:
   }
 
 public:
-  /**
-   * @brief 让渡时间片，直到调用 Schedule::resume(CoroutineRef)
-   * 
-   */
   void yield();
 
-  /**
-   * @brief 让渡时间片，直到 milli 毫秒后，或者调用 Schedule::resume(CoroutineRef)
-   * 
-   * @param milli 等待时长
-   */
   void yield_for(int milli);
 
 private:
