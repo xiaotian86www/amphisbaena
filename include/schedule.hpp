@@ -89,7 +89,7 @@ public:
    * 
    * @param func 
    */
-  void spawn(task&& func);
+  void spawn(task func);
 
   /**
    * @brief 恢复协程
