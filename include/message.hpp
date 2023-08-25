@@ -1,3 +1,14 @@
+/**
+ * @file message.hpp
+ * @author duchang (xiaotian86www@163.com)
+ * @brief 消息类
+ * @version 0.1
+ * @date 2023-08-23
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #pragma once
 
 #include <cstddef>
@@ -13,13 +24,16 @@
 
 namespace amphisbaena {
 
-// TODO 调整FieldType组织方式，简化field_type_name、check_field_type调用
+/**
+ * @brief 字段类型
+ * 
+ */
 enum class FieldType
 {
-  kUnknown,
-  kInt,
-  kString,
-  kDouble
+  kUnknown, ///< 未知类型
+  kInt,     ///< 整数类型
+  kString,  ///< 字符串类型
+  kDouble   ///< 浮点数类型
 };
 
 constexpr std::string_view
@@ -77,30 +91,79 @@ typedef std::unique_ptr<Group> GroupPtr;
 class Message;
 typedef std::shared_ptr<Message> MessagePtr;
 
+/**
+ * @brief 单条记录接口
+ * 
+ */
 class Object
 {
 public:
+  /**
+   * @brief 常量字段迭代器接口
+   * 
+   */
   class ConstIterator
   {
   public:
     virtual ~ConstIterator() = default;
 
   public:
+    /**
+     * @brief 字段名
+     * 
+     * @return std::string_view 
+     */
     virtual std::string_view get_name() = 0;
 
+    /**
+     * @brief 字段类型
+     * 
+     * @return @link FieldType @endlink 
+     */
     virtual FieldType get_type() = 0;
 
+    /**
+     * @brief 整数类型值
+     * 
+     * @return int32_t 
+     */
     virtual int32_t get_int() = 0;
 
+    /**
+     * @brief 字符串类型值
+     * 
+     * @return std::string_view 
+     */
     virtual std::string_view get_string() = 0;
 
+    /**
+     * @brief 浮点类型值
+     * 
+     * @return double 
+     */
     virtual double get_double() = 0;
 
+    /**
+     * @brief 比较字段常量迭代器是否相等
+     * 
+     * @param right 
+     * @return true 
+     * @return false 
+     */
     virtual bool operator!=(const ConstIterator& right) = 0;
 
+    /**
+     * @brief 迭代器自增
+     * 
+     * @return ConstIterator& 
+     */
     virtual ConstIterator& operator++() = 0;
   };
 
+  /**
+   * @brief 常量迭代器包装类
+   * 
+   */
   class ConstIteratorWrap
   {
   public:
@@ -136,24 +199,83 @@ public:
   };
 
 public:
+  /**
+   * @brief 拷贝
+   * 
+   * @param right 
+   */
   virtual void copy_from(ObjectPtr right);
 
   virtual ~Object() = default;
 
 public:
+  /**
+   * @brief 获取整数值
+   *
+   * 字段名不存在或者字段类型不匹配时返回默认值
+   * 
+   * @param name 字段名
+   * @param default_value 默认值
+   * @return int32_t 
+   */
   virtual int32_t get_value(std::string_view name,
                             int32_t default_value) const = 0;
 
+  /**
+   * @brief 获取字符串值
+   *
+   * 字段名不存在或者字段类型不匹配时返回默认值
+   * 
+   * @param name 字段名
+   * @param default_value 默认值
+   * @return std::string_view 
+   */
   virtual std::string_view get_value(std::string_view name,
                                      std::string_view default_value) const = 0;
 
+  /**
+   * @brief 获取浮点数值
+   *
+   * 字段名不存在或者字段类型不匹配时返回默认值
+   * 
+   * @param name 字段名
+   * @param default_value 默认值
+   * @return double 
+   */
   virtual double get_value(std::string_view name,
                            double default_value) const = 0;
 
+  /**
+   * @brief 获取整数值
+   * 
+   * @param name 字段名
+   * @return int32_t 
+   *
+   * @exception NoKeyException 字段名不存在
+   * @exception TypeExecption 字段类型不匹配
+   */
   virtual int32_t get_int(std::string_view name) const = 0;
 
+  /**
+   * @brief 获取字符串值
+   * 
+   * @param name 字段名
+   * @return std::string_view 
+   *
+   * @exception NoKeyException 字段名不存在
+   * @exception TypeExecption 字段类型不匹配
+   */
   virtual std::string_view get_string(std::string_view name) const = 0;
 
+  /**
+   * @brief 获取浮点数值
+   * 
+   * @param name 字段名
+   * @return double 
+   *
+   * @exception NoKeyException 字段名不存在
+   * @exception TypeExecption 字段类型不匹配
+   */
   virtual double get_double(std::string_view name) const = 0;
 
   virtual void set_value(std::string_view name, int32_t value) = 0;
@@ -230,35 +352,32 @@ public:
 
   virtual ConstObjectPtr get_tail() const = 0;
 
-  // virtual std::string to_string() const = 0;
-
-  // virtual void from_string(std::string_view str) = 0;
-
-  // virtual std::string to_binary() const = 0;
-
-  // virtual void from_binary(std::string_view bin) = 0;
-
   virtual void clear() = 0;
 
-  // public:
-  //   std::string name;
 };
 
-enum class MessageType
-{
-  // kUnknown = 0,
-  kJson = 1,
-  kFix = 2
-};
-
+/**
+ * @brief 消息工厂
+ * 
+ */
 class MessageFactory
 {
 public:
   virtual ~MessageFactory() = default;
 
 public:
+  /**
+   * @brief 创建消息
+   * 
+   * @return MessagePtr 
+   */
   virtual MessagePtr create() = 0;
 
+  /**
+   * @brief 消息类型
+   * 
+   * @return std::string_view 
+   */
   virtual std::string_view name() = 0;
 
 public:
@@ -267,14 +386,14 @@ public:
    * 
    * @param factory 
    *
-   * 要求线程安全
+   * @note 要求线程安全
    */
   static void registe(std::shared_ptr<MessageFactory> factory);
 
   /**
    * @brief 取消全部注册
-   * 
-   * 要求线程安全
+   *
+   * @note 要求线程安全
    */
   static void unregiste();
 
@@ -283,10 +402,16 @@ public:
    * 
    * @param factory 
    *
-   * 要求线程安全
+   * @note 要求线程安全
    */
   static void unregiste(std::shared_ptr<MessageFactory> factory);
 
+  /**
+   * @brief 创建消息
+   * 
+   * @param type 消息类型
+   * @return MessagePtr 
+   */
   static MessagePtr create(std::string_view type);
 
 private:

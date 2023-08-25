@@ -1,3 +1,14 @@
+/**
+ * @file exception.hpp
+ * @author duchang (xiaotian86www@163.com)
+ * @brief 异常类
+ * @version 0.1
+ * @date 2023-08-23
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+ 
 #include <exception>
 #include <string>
 #include <string_view>

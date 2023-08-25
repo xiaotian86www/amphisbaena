@@ -1,3 +1,14 @@
+/**
+ * @file builder.hpp
+ * @author duchang (xiaotian86www@163.com)
+ * @brief 消息建造者类
+ * @version 0.1
+ * @date 2023-08-23
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #pragma once
 
 #include <filesystem>

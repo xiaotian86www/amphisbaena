@@ -21,11 +21,15 @@ namespace amphisbaena {
  *
  * 如何定义一个插件？
  * 
- * - 需要将插件打包成一个动态库
- * - 定义一个全局方法 @code {.c} void init(const char* const* args) @endcode，
- * 并实现初始化逻辑，会在插件加载后调用
- * - 定义一个全局方法（可选） @code {.c} void deinit() @endcode，
- * 并实现析构逻辑，会在插件卸载前调用
+ * @code {.cpp}
+ * // 1. 需要将插件编译成动态库
+ * extern "C" {
+ * // 2. 定义初始化方法
+ * void init(const char* const* args) {}
+ * // 3. 定义析构方法（可选）
+ * void deinit() {}
+ * }
+ * @endcode
  */
 class Plugin
 {
