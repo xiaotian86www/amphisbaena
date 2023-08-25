@@ -67,7 +67,7 @@ public:
    */
   void yield_for(int milli);
 
-public:
+private:
   std::weak_ptr<Coroutine> co_;
 };
 
