@@ -36,8 +36,7 @@ private:
 };
 
 class UdsServer
-  : public std::enable_shared_from_this<UdsServer>
-  , public Server
+  : public Server
 {
 public:
   UdsServer(boost::asio::io_service& ios,

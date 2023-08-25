@@ -36,8 +36,7 @@ private:
 };
 
 class TcpServer
-  : public std::enable_shared_from_this<TcpServer>
-  , public Server
+  : public Server
 {
 public:
   TcpServer(boost::asio::io_service& ios,

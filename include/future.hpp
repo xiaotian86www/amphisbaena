@@ -1,3 +1,13 @@
+/**
+ * @file future.hpp
+ * @author duchang (xiaotian86www@163.com)
+ * @brief 协程间通信库
+ * @version 0.1
+ * @date 2023-08-25
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
 #pragma once
 
 #include <iostream>

@@ -136,7 +136,7 @@ private:
  * @brief 服务端
  * 
  */
-class Server
+class Server : public std::enable_shared_from_this<Server>
 {
 public:
   /**

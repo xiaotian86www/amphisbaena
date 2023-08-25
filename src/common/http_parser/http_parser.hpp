@@ -14,8 +14,7 @@ namespace amphisbaena {
 class HttpServer;
 
 class HttpSession
-  : public std::enable_shared_from_this<HttpSession>
-  , public Session
+  : public Session
   , public llhttp_t
 {
 public:

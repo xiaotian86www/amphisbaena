@@ -13,12 +13,13 @@
 
 #include "message.hpp"
 #include "schedule.hpp"
+#include <memory>
 
 namespace amphisbaena {
 class Session;
 typedef std::shared_ptr<Session> SessionPtr;
 
-class Session
+class Session : public std::enable_shared_from_this<Session>
 {
 public:
   class MessageHandler

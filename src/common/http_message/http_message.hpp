@@ -1,3 +1,14 @@
+/**
+ * @file http_message.hpp
+ * @author duchang (xiaotian86www@163.com)
+ * @brief http消息类
+ * @version 0.1
+ * @date 2023-08-25
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
+
 #pragma once
 
 #include <memory>
@@ -14,6 +25,10 @@ typedef rapidjson::Document RapidDocument;
 typedef rapidjson::Value RapidValue;
 typedef rapidjson::MemoryPoolAllocator<> RapidAllocator;
 
+/**
+ * @brief 单条Json记录
+ * 
+ */
 class JsonObject : public Object
 {
 public:
@@ -102,6 +117,10 @@ private:
   RapidValue& value_;
 };
 
+/**
+ * @brief http消息
+ * 
+ */
 class HttpMessage : public Message
 {
 public:
