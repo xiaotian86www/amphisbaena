@@ -13,7 +13,7 @@ class Server
       std::pair<std::function<std::unique_ptr<amphisbaena::Server>(
                   boost::asio::io_service&,
                   std::shared_ptr<amphisbaena::Schedule>,
-                  amphisbaena::Connection::MessageHandler*)>,
+                  amphisbaena::Connection::MessageHandler&)>,
                 std::function<std::unique_ptr<HttpClient>()>>>>
 {
 public:
@@ -21,14 +21,14 @@ public:
     std::pair<std::function<std::unique_ptr<amphisbaena::Server>(
                 boost::asio::io_service&,
                 std::shared_ptr<amphisbaena::Schedule>,
-                amphisbaena::Connection::MessageHandler*)>,
+                amphisbaena::Connection::MessageHandler&)>,
               std::function<std::unique_ptr<HttpClient>()>>>>
     Base;
 
 public:
   void SetUp() override
   {
-    server = GetParam().first(ios, sch, &message_handler);
+    server = GetParam().first(ios, sch, message_handler);
     client = GetParam().second();
 
     Base::SetUp();

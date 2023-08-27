@@ -20,7 +20,7 @@ class TcpConnection
 public:
   TcpConnection(ScheduleRef sch,
                 CoroutineRef co,
-                MessageHandler* message_handler,
+                MessageHandler& message_handler,
                 tcp::socket sock);
 
 public:
@@ -42,7 +42,7 @@ public:
   TcpServer(boost::asio::io_service& ios,
             std::shared_ptr<Schedule> sch,
             uint16_t port,
-            Connection::MessageHandler* message_handler);
+            Connection::MessageHandler& message_handler);
 
   virtual ~TcpServer();
 
@@ -67,7 +67,7 @@ public:
 
 public:
   std::unique_ptr<Server> create(
-    Connection::MessageHandler* message_handler) override;
+    Connection::MessageHandler& message_handler) override;
 
 private:
   boost::asio::io_service& ios_;

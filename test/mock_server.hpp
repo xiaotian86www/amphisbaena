@@ -26,7 +26,7 @@ public:
   MOCK_METHOD(void, close, (), (override));
 
   void recv(std::string_view data) {
-    message_handler_->on_recv(sch_, co_, shared_from_this(), data);
+    message_handler_.on_recv(sch_, co_, shared_from_this(), data);
   }
 };
 
@@ -46,7 +46,7 @@ public:
 
 public:
   std::unique_ptr<amphisbaena::Server> create(
-    amphisbaena::Connection::MessageHandler* handler) override
+    amphisbaena::Connection::MessageHandler& handler) override
   {
     server = new MockServer(handler);
     return std::unique_ptr<amphisbaena::Server>(server);

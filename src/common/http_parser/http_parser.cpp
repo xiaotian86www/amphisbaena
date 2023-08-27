@@ -188,7 +188,7 @@ HttpSession::handle_error(std::string_view version)
 HttpServer::HttpServer(std::shared_ptr<ServerFactory> server_factory,
                        Session::MessageHandler* message_handler)
   : message_handler_(message_handler)
-  , server_(server_factory->create(this))
+  , server_(server_factory->create(*this))
 {
   LOG_INFO("HttpServer create");
 }

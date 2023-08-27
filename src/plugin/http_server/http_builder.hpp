@@ -15,7 +15,7 @@ public:
                MessagePtr message) override;
 
 public:
-  HttpServer* http_server() { return http_parser_.get(); }
+  HttpServer& http_server() { return *http_parser_; }
 
 private:
   MessagePtr handle_error(std::string_view version);

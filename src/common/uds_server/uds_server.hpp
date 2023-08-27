@@ -20,7 +20,7 @@ class UdsConnection
 public:
   UdsConnection(ScheduleRef sch,
                 CoroutineRef co,
-                MessageHandler* message_handler,
+                MessageHandler& message_handler,
                 stream_protocol::socket sock);
 
 public:
@@ -42,7 +42,7 @@ public:
   UdsServer(boost::asio::io_service& ios,
             std::shared_ptr<Schedule> sch,
             const std::filesystem::path& file,
-            Connection::MessageHandler* message_handler);
+            Connection::MessageHandler& message_handler);
 
   virtual ~UdsServer();
 
@@ -67,7 +67,7 @@ public:
 
 public:
   std::unique_ptr<Server> create(
-    Connection::MessageHandler* message_handler) override;
+    Connection::MessageHandler& message_handler) override;
 
 private:
   boost::asio::io_service& ios_;

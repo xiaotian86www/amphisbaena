@@ -13,7 +13,7 @@
 namespace amphisbaena {
 UdsConnection::UdsConnection(ScheduleRef sch,
                              CoroutineRef co,
-                             MessageHandler* message_handler,
+                             MessageHandler& message_handler,
                              stream_protocol::socket sock)
   : Connection(sch, co, message_handler)
   , sock_(std::move(sock))
@@ -72,8 +72,7 @@ UdsConnection::recv()
   }
 
   LOG_DEBUG("Recv size: {}", size);
-  assert(message_handler_);
-  message_handler_->on_recv(
+  message_handler_.on_recv(
     sch_, co_, shared_from_this(), { data_.data(), size });
   return true;
 }
@@ -88,7 +87,7 @@ UdsConnection::close()
 UdsServer::UdsServer(boost::asio::io_service& ios,
                      std::shared_ptr<Schedule> sch,
                      const std::filesystem::path& file,
-                     Connection::MessageHandler* message_handler)
+                     Connection::MessageHandler& message_handler)
   : Server(message_handler)
   , ios_(ios)
   , sch_(sch)
@@ -168,7 +167,7 @@ UdsServerFactory::UdsServerFactory(boost::asio::io_service& ios,
 }
 
 std::unique_ptr<Server>
-UdsServerFactory::create(Connection::MessageHandler* message_handler)
+UdsServerFactory::create(Connection::MessageHandler& message_handler)
 {
   return std::make_unique<UdsServer>(ios_, sch_, file_, message_handler);
 }

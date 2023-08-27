@@ -11,7 +11,7 @@ INSTANTIATE_TEST_SUITE_P(
   testing::Values(std::make_pair(
     [](boost::asio::io_service& ios,
        std::shared_ptr<amphisbaena::Schedule> sch,
-       amphisbaena::Connection::MessageHandler* message_handler) {
+       amphisbaena::Connection::MessageHandler& message_handler) {
       return std::make_unique<amphisbaena::UdsServer>(
         ios, sch, "server.sock", message_handler);
     },

@@ -73,7 +73,7 @@ TEST_F(HttpParser, on_recv)
   sch->spawn(
     [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
       auto conn =
-        std::make_shared<MockConnection>(sch, co, http_server.get());
+        std::make_shared<MockConnection>(sch, co, *http_server);
 
       EXPECT_CALL(*conn,
                   send("HTTP/1.1 200 OK\r\n"

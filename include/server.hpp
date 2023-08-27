@@ -59,7 +59,7 @@ public:
    * @param co 协程
    * @param message_handler 消息回调句柄
    */
-  Connection(ScheduleRef sch, CoroutineRef co, MessageHandler* message_handler)
+  Connection(ScheduleRef sch, CoroutineRef co, MessageHandler& message_handler)
     : sch_(sch)
     , co_(co)
     , message_handler_(message_handler)
@@ -93,7 +93,7 @@ public:
 protected:
   ScheduleRef sch_;
   CoroutineRef co_;
-  MessageHandler* message_handler_;
+  MessageHandler& message_handler_;
 };
 
 /**
@@ -144,7 +144,7 @@ public:
    * 
    * @param message_handler 消息回调句柄
    */
-  Server(Connection::MessageHandler* message_handler)
+  Server(Connection::MessageHandler& message_handler)
     : message_handler_(message_handler)
   {
   }
@@ -152,7 +152,7 @@ public:
   virtual ~Server() = default;
 
 protected:
-  Connection::MessageHandler* message_handler_;
+  Connection::MessageHandler& message_handler_;
 };
 
 /**
@@ -172,7 +172,7 @@ public:
    * @return std::unique_ptr< @link Server @endlink > 服务端
    */
   virtual std::unique_ptr<Server> create(
-    Connection::MessageHandler* message_handler) = 0;
+    Connection::MessageHandler& message_handler) = 0;
 };
 
 }

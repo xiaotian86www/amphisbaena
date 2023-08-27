@@ -14,7 +14,7 @@
 namespace amphisbaena {
 TcpConnection::TcpConnection(ScheduleRef sch,
                              CoroutineRef co,
-                             MessageHandler* message_handler,
+                             MessageHandler& message_handler,
                              tcp::socket sock)
   : Connection(sch, co, message_handler)
   , sock_(std::move(sock))
@@ -73,8 +73,7 @@ TcpConnection::recv()
   }
 
   LOG_DEBUG("Recv size: {}", size);
-  assert(message_handler_);
-  message_handler_->on_recv(
+  message_handler_.on_recv(
     sch_, co_, shared_from_this(), { data_.data(), size });
   return true;
 }
@@ -89,7 +88,7 @@ TcpConnection::close()
 TcpServer::TcpServer(boost::asio::io_service& ios,
                      std::shared_ptr<Schedule> sch,
                      uint16_t port,
-                     Connection::MessageHandler* message_handler)
+                     Connection::MessageHandler& message_handler)
   : Server(message_handler)
   , ios_(ios)
   , sch_(sch)
@@ -167,7 +166,7 @@ TcpServerFactory::TcpServerFactory(boost::asio::io_service& ios,
 }
 
 std::unique_ptr<Server>
-TcpServerFactory::create(Connection::MessageHandler* message_handler)
+TcpServerFactory::create(Connection::MessageHandler& message_handler)
 {
   return std::make_unique<TcpServer>(ios_, sch_, port_, message_handler);
 }
