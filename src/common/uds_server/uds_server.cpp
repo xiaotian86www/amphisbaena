@@ -72,8 +72,7 @@ UdsConnection::recv()
   }
 
   LOG_DEBUG("Recv size: {}", size);
-  message_handler_.on_recv(
-    sch_, co_, shared_from_this(), { data_.data(), size });
+  do_recv({ data_.data(), size });
   return true;
 }
 

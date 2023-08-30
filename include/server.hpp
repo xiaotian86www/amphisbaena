@@ -4,9 +4,9 @@
  * @brief 服务类
  * @version 0.1
  * @date 2023-08-23
- * 
+ *
  * @copyright Copyright (c) 2023
- * 
+ *
  */
 #pragma once
 
@@ -22,14 +22,14 @@ typedef std::shared_ptr<Connection> ConnectionPtr;
 
 /**
  * @brief 连接
- * 
+ *
  */
 class Connection : public std::enable_shared_from_this<Connection>
 {
 public:
   /**
    * @brief 消息回调句柄
-   * 
+   *
    */
   class MessageHandler
   {
@@ -39,7 +39,7 @@ public:
   public:
     /**
      * @brief 消息回调
-     * 
+     *
      * @param sch 协程调度器
      * @param co 协程
      * @param conn 连接
@@ -54,7 +54,7 @@ public:
 public:
   /**
    * @brief 构造函数
-   * 
+   *
    * @param sch 协程调度器
    * @param co 协程
    * @param message_handler 消息回调句柄
@@ -71,14 +71,14 @@ public:
 public:
   /**
    * @brief 发送数据
-   * 
-   * @param data 数据 
+   *
+   * @param data 数据
    */
   virtual void send(std::string_view data) = 0;
 
   /**
    * @brief 接受数据，并触发回调
-   * 
+   *
    * @return true 成功
    * @return false 失败，会触发连接关闭
    */
@@ -86,19 +86,31 @@ public:
 
   /**
    * @brief 关闭连接
-   * 
+   *
    */
   virtual void close() = 0;
+
+  /**
+   * @brief 触发回调
+   *
+   * @param data 数据
+   */
+  void do_recv(std::string_view data)
+  {
+    message_handler_.on_recv(sch_, co_, shared_from_this(), data);
+  }
 
 protected:
   ScheduleRef sch_;
   CoroutineRef co_;
+
+private:
   MessageHandler& message_handler_;
 };
 
 /**
  * @brief 连接引用
- * 
+ *
  */
 class ConnectionRef
 {
@@ -118,7 +130,7 @@ public:
 public:
   /**
    * @brief 发送数据
-   * 
+   *
    * @param data 数据
    */
   void send(std::string_view data)
@@ -134,14 +146,14 @@ private:
 
 /**
  * @brief 服务端
- * 
+ *
  */
 class Server : public std::enable_shared_from_this<Server>
 {
 public:
   /**
    * @brief 构造函数
-   * 
+   *
    * @param message_handler 消息回调句柄
    */
   Server(Connection::MessageHandler& message_handler)
@@ -157,7 +169,7 @@ protected:
 
 /**
  * @brief 服务端工厂
- * 
+ *
  */
 class ServerFactory
 {
@@ -167,7 +179,7 @@ public:
 public:
   /**
    * @brief 创建
-   * 
+   *
    * @param message_handler 消息回调句柄
    * @return std::unique_ptr< @link Server @endlink > 服务端
    */

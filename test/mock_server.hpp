@@ -24,10 +24,6 @@ public:
   MOCK_METHOD(void, send, (std::string_view), (override));
   MOCK_METHOD(bool, recv, (), (override));
   MOCK_METHOD(void, close, (), (override));
-
-  void recv(std::string_view data) {
-    message_handler_.on_recv(sch_, co_, shared_from_this(), data);
-  }
 };
 
 class MockServer : public amphisbaena::Server
