@@ -13,6 +13,7 @@
 #include "fixture_schedule.hpp"
 #include "message.hpp"
 #include "mock_builder.hpp"
+#include "mock_connection.hpp"
 #include "mock_server.hpp"
 #include "mock_session.hpp"
 #include "plugin/http_server/http_builder.hpp"
@@ -76,16 +77,16 @@ TEST_F(HttpBuilder, on_data)
         .WillRepeatedly(testing::Return());
 
       conn->do_recv("GET / HTTP/1.1\r\n"
-                 "Content-Type: application/json; charset=utf-8\r\n"
-                 "Content-Length: 27\r\n"
-                 "\r\n"
-                 "{\"SenderCompID\": \"CLIENT1\"}");
+                    "Content-Type: application/json; charset=utf-8\r\n"
+                    "Content-Length: 27\r\n"
+                    "\r\n"
+                    "{\"SenderCompID\": \"CLIENT1\"}");
 
       conn->do_recv("GET / HTTP/1.1\r\n"
-                 "Content-Type: application/json; charset=utf-8\r\n"
-                 "Content-Length: 27\r\n"
-                 "\r\n"
-                 "{\"SenderCompID\": \"CLIENT1\"}");
+                    "Content-Type: application/json; charset=utf-8\r\n"
+                    "Content-Length: 27\r\n"
+                    "\r\n"
+                    "{\"SenderCompID\": \"CLIENT1\"}");
     });
 }
 
@@ -125,16 +126,16 @@ TEST_F(HttpBuilder, on_data_split)
         .WillRepeatedly(testing::Return());
 
       conn->do_recv("GET / HTTP/1.1\r\n"
-                 "Content-Type: application/json; charset=utf-8\r\n"
-                 "Content-Length: 27\r\n"
-                 "\r\n"
-                 "{\"SenderCompID\": ");
+                    "Content-Type: application/json; charset=utf-8\r\n"
+                    "Content-Length: 27\r\n"
+                    "\r\n"
+                    "{\"SenderCompID\": ");
       conn->do_recv("\"CLIENT1\"}");
       conn->do_recv("GET / HTTP/1.1\r\n"
-                 "Content-Type: application/json; charset=utf-8\r\n"
-                 "Content-Length: 27\r\n"
-                 "\r\n"
-                 "{\"SenderCompID\": \"CLIENT1\"}");
+                    "Content-Type: application/json; charset=utf-8\r\n"
+                    "Content-Length: 27\r\n"
+                    "\r\n"
+                    "{\"SenderCompID\": \"CLIENT1\"}");
     });
 }
 

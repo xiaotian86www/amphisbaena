@@ -14,27 +14,6 @@
 using namespace boost::asio::ip;
 
 namespace amphisbaena {
-class TcpConnection
-  : public Connection
-{
-public:
-  TcpConnection(ScheduleRef sch,
-                CoroutineRef co,
-                MessageHandler& message_handler,
-                tcp::socket sock);
-
-public:
-  void send(std::string_view data) override;
-
-  bool recv() override;
-
-  void close() override;
-
-private:
-  tcp::socket sock_;
-  std::array<char, 1024> data_;
-};
-
 class TcpServer
   : public Server
 {

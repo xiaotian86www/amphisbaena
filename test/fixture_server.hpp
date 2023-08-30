@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "fixture_schedule.hpp"
+#include "mock_connection.hpp"
 #include "mock_server.hpp"
 #include "server.hpp"
 #include "tool/http_client.hpp"

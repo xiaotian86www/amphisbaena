@@ -13,6 +13,7 @@
 #include "fixture_schedule.hpp"
 #include "message.hpp"
 #include "mock_builder.hpp"
+#include "mock_connection.hpp"
 #include "mock_server.hpp"
 #include "mock_session.hpp"
 #include "schedule.hpp"
@@ -72,8 +73,7 @@ TEST_F(HttpParser, on_recv)
 
   sch->spawn(
     [this](amphisbaena::ScheduleRef sch, amphisbaena::CoroutineRef co) {
-      auto conn =
-        std::make_shared<MockConnection>(sch, co, *http_server);
+      auto conn = std::make_shared<MockConnection>(sch, co, *http_server);
 
       EXPECT_CALL(*conn,
                   send("HTTP/1.1 200 OK\r\n"
