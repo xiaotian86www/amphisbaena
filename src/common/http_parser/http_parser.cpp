@@ -36,13 +36,11 @@ llhttp_settings_t HttpSession::settings_ = { handle_on_message_begin,
                                              nullptr,
                                              nullptr };
 
-HttpSession::HttpSession(Session::MessageHandler* message_handle,
-                         ScheduleRef sch,
+HttpSession::HttpSession(ScheduleRef sch,
                          CoroutineRef co,
-                         ConnectionRef conn)
-  : message_handle_(message_handle)
-  , sch_(sch)
-  , co_(co)
+                         ConnectionRef conn,
+                         Session::MessageHandler& message_handle)
+  : Session(sch, co, message_handle)
   , conn_(conn)
 {
   llhttp_init(this, HTTP_REQUEST, &settings_);
@@ -148,9 +146,7 @@ HttpSession::handle_on_message_complete(llhttp_t* http)
 {
   auto parser = static_cast<HttpSession*>(http);
 
-  parser->message_handle_->on_recv(
-    parser->sch_, parser->co_, parser->shared_from_this(), parser->request_);
-
+  parser->do_recv(parser->request_);
   return HPE_OK;
 }
 
@@ -186,7 +182,7 @@ HttpSession::handle_error(std::string_view version)
 }
 
 HttpServer::HttpServer(std::shared_ptr<ServerFactory> server_factory,
-                       Session::MessageHandler* message_handler)
+                       Session::MessageHandler& message_handler)
   : message_handler_(message_handler)
   , server_(server_factory->create(*this))
 {
@@ -206,7 +202,7 @@ HttpServer::on_recv(ScheduleRef sch,
 {
   HttpSessionPtr session;
   if (auto iter = sessions_.find(conn); iter == sessions_.end()) {
-    session = std::make_shared<HttpSession>(message_handler_, sch, co, conn);
+    session = std::make_shared<HttpSession>(sch, co, conn, message_handler_);
     sessions_.insert_or_assign(conn, session);
   } else {
     session = iter->second;

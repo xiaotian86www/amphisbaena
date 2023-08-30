@@ -8,6 +8,7 @@
 
 #include "message.hpp"
 #include "mock_client.hpp"
+#include "mock_session.hpp"
 #include "plugin/fix_client/fix_client.hpp"
 #include "plugin/fix_client/fix_message.hpp"
 #include "tool/fix_server.hpp"
@@ -51,7 +52,7 @@ HeartBtInt=30
 
 protected:
   std::stringstream client_settings;
-  MockClient::MockMessageHandler message_handler;
+  MockSession::MockMessageHandler message_handler;
   FixServer server;
 };
 
@@ -81,7 +82,7 @@ TEST_F(FixClient, send)
   body->set_value("TransactTime", "20230718-04:57:20.922010000");
 
   amphisbaena::FixClient client(FIX::SessionSettings(client_settings),
-                                &message_handler);
+                                message_handler);
 
   auto session = client.create(request);
 
@@ -123,7 +124,7 @@ TEST_F(FixClient, recv)
   body.setField(FIX::FIELD::AvgPx, "10.01");
 
   amphisbaena::FixClient client(FIX::SessionSettings(client_settings),
-                                &message_handler);
+                                message_handler);
 
   server.send("FIX.4.2", "EXECUTOR", "CLIENT1", response.toString());
 

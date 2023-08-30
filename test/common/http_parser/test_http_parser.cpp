@@ -24,10 +24,10 @@ public:
   HttpParser()
     : http_message_factory(std::make_shared<amphisbaena::HttpMessageFactory>())
     , server_factory(std::make_shared<MockServerFactory>())
-    , message_handler(std::make_shared<MockSession::MessageHandler>())
+    , message_handler(std::make_shared<MockSession::MockMessageHandler>())
     , http_server(
         std::make_shared<amphisbaena::HttpServer>(server_factory,
-                                                  message_handler.get()))
+                                                  *message_handler))
   {
     amphisbaena::MessageFactory::registe(http_message_factory);
   }
@@ -37,7 +37,7 @@ public:
 protected:
   std::shared_ptr<amphisbaena::MessageFactory> http_message_factory;
   std::shared_ptr<amphisbaena::ServerFactory> server_factory;
-  std::shared_ptr<MockSession::MessageHandler> message_handler;
+  std::shared_ptr<MockSession::MockMessageHandler> message_handler;
   std::shared_ptr<amphisbaena::HttpServer> http_server;
 };
 

@@ -27,16 +27,18 @@ class FixBuilder : public FixtureSchedule<testing::Test>
 {
 public:
   FixBuilder()
-    : session(std::make_shared<MockSession>())
-    , builder(client_factory, 1)
+    : builder(client_factory, 1)
+    , session(std::make_shared<MockSession>(amphisbaena::ScheduleRef(),
+                                            amphisbaena::CoroutineRef(),
+                                            builder))
   {
     amphisbaena::FixMessage::init("../../thirdparty/quickfix/spec/FIX42.xml");
   }
 
 protected:
   MockClientFactory client_factory;
-  std::shared_ptr<MockSession> session;
   amphisbaena::FixBuilder builder;
+  std::shared_ptr<MockSession> session;
 };
 
 TEST_F(FixBuilder, call)
@@ -73,10 +75,7 @@ TEST_F(FixBuilder, call)
     .WillOnce(testing::Invoke([this, response](amphisbaena::MessagePtr) {
       sch->spawn([this, response](amphisbaena::ScheduleRef /* sch */,
                                   amphisbaena::CoroutineRef /* co */) {
-        EXPECT_NO_THROW(client_factory.client->send(amphisbaena::ScheduleRef(),
-                                                    amphisbaena::CoroutineRef(),
-                                                    session,
-                                                    response));
+        session->do_recv(response);
       });
     }));
 

@@ -22,7 +22,7 @@
 
 namespace amphisbaena {
 FixBuilder::FixBuilder(ClientFactory& client_factory, int timeout_milli)
-  : client_(client_factory.create(this))
+  : client_(client_factory.create(*this))
   , timeout_milli_(timeout_milli)
 {
   LOG_INFO("FixBuilder create");

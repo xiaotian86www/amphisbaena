@@ -10,7 +10,7 @@
 namespace amphisbaena {
 
 class FixBuilder
-  : public Client::MessageHandler
+  : public Session::MessageHandler
   , public MessageBuilder
 {
 public:

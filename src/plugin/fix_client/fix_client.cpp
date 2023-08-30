@@ -41,7 +41,7 @@ FixSession::send(MessagePtr data)
 }
 
 FixClient::FixClient(const FIX::SessionSettings& settings,
-                     MessageHandler* handler)
+                     Session::MessageHandler& handler)
   : Client(handler)
   , settings_(std::move(settings))
 {
@@ -141,11 +141,7 @@ FixClient::fromApp(
   SessionPtr session = iter->second;
 
   auto response = std::make_shared<FixMessage>(message);
-  if (message_handler_)
-    message_handler_->on_recv(amphisbaena::ScheduleRef(),
-                              amphisbaena::CoroutineRef(),
-                              session,
-                              response);
+  session->do_recv(response);
 }
 
 void
@@ -154,7 +150,7 @@ FixClient::init_sessions()
   auto session_ids = FIX::Session::getSessions();
   for (const auto& session_id : session_ids) {
     auto session = FIX::Session::lookupSession(session_id);
-    auto fix_session = std::make_shared<FixSession>(session);
+    auto fix_session = std::make_shared<FixSession>(session, message_handler_);
     sessions_.insert_or_assign(session_id, fix_session);
   }
 }
@@ -170,7 +166,7 @@ FixClientFactory::FixClientFactory(const std::filesystem::path& pt)
 }
 
 std::unique_ptr<Client>
-FixClientFactory::create(Client::MessageHandler* handler)
+FixClientFactory::create(Session::MessageHandler& handler)
 {
   return std::make_unique<FixClient>(settings_, handler);
 }

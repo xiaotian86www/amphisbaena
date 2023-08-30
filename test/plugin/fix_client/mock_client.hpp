@@ -8,19 +8,6 @@
 class MockClient : public amphisbaena::Client
 {
 public:
-  class MockMessageHandler : public MessageHandler
-  {
-  public:
-    MOCK_METHOD(void,
-                on_recv,
-                (amphisbaena::ScheduleRef sch,
-                 amphisbaena::CoroutineRef co,
-                 amphisbaena::SessionPtr session,
-                 amphisbaena::MessagePtr message),
-                (override));
-  };
-
-public:
   using amphisbaena::Client::Client;
 
 public:
@@ -29,20 +16,13 @@ public:
               (amphisbaena::MessagePtr message),
               (override));
 
-  void send(amphisbaena::ScheduleRef sch,
-            amphisbaena::CoroutineRef co,
-            amphisbaena::SessionPtr session,
-            amphisbaena::MessagePtr message)
-  {
-    message_handler_->on_recv(sch, co, session, message);
-  }
 };
 
 class MockClientFactory : public amphisbaena::ClientFactory
 {
 public:
   std::unique_ptr<amphisbaena::Client> create(
-    amphisbaena::Client::MessageHandler* handler) override
+    amphisbaena::Session::MessageHandler& handler) override
   {
     client = new MockClient(handler);
     return std::unique_ptr<MockClient>(client);

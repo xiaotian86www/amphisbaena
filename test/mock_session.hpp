@@ -8,10 +8,7 @@
 class MockSession : public amphisbaena::Session
 {
 public:
-  MOCK_METHOD(void, send, (amphisbaena::MessagePtr data), (override));
-
-public:
-  class MessageHandler : public amphisbaena::Session::MessageHandler
+  class MockMessageHandler : public MessageHandler
   {
   public:
     MOCK_METHOD(void,
@@ -22,4 +19,8 @@ public:
                  amphisbaena::MessagePtr message),
                 (override));
   };
+
+public:
+  using amphisbaena::Session::Session;
+  MOCK_METHOD(void, send, (amphisbaena::MessagePtr data), (override));
 };

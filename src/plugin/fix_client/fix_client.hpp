@@ -1,5 +1,6 @@
 #pragma once
 
+#include "schedule.hpp"
 #include <filesystem>
 #include <istream>
 #include <map>
@@ -31,8 +32,9 @@ namespace amphisbaena {
 class FixSession : public Session
 {
 public:
-  FixSession(FIX::Session* session)
-    : session_(session)
+  FixSession(FIX::Session* session, MessageHandler& message_handler)
+    : Session(ScheduleRef(), CoroutineRef(), message_handler)
+    , session_(session)
   {
   }
 
@@ -48,7 +50,7 @@ class FixClient
   , public FIX::Application
 {
 public:
-  FixClient(const FIX::SessionSettings& settings, MessageHandler* handler);
+  FixClient(const FIX::SessionSettings& settings, Session::MessageHandler& handler);
 
   ~FixClient() override;
 
@@ -99,7 +101,7 @@ public:
   FixClientFactory(const std::filesystem::path& pt);
 
 public:
-  std::unique_ptr<Client> create(Client::MessageHandler* handler) override;
+  std::unique_ptr<Client> create(Session::MessageHandler& handler) override;
 
 private:
   FIX::SessionSettings settings_;

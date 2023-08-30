@@ -1,7 +1,8 @@
+#pragma once
 
 #include <gmock/gmock.h>
-#include <memory>
 
+#include "message.hpp"
 #include "connection.hpp"
 
 class MockConnection : public amphisbaena::Connection
