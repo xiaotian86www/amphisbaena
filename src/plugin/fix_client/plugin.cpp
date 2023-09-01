@@ -11,12 +11,10 @@ extern "C"
 {
   void init(int argc, const char* const* argv)
   {
-    if (argc < 3)
+    if (argc < 2)
       throw std::invalid_argument("Usage: " + std::string(argv[0]));
-
-    amphisbaena::FixMessage::init(argv[1]);
     
-    amphisbaena::FixClientFactory client_factory(argv[2]);
+    amphisbaena::FixClientFactory client_factory(argv[1]);
     builder = std::make_shared<amphisbaena::FixBuilder>(client_factory);
     factory = std::make_shared<amphisbaena::FixMessageFactory>();
 

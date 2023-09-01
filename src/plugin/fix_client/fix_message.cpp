@@ -10,14 +10,10 @@
 #include <string_view>
 
 #include "fix_message.hpp"
+#include "fix_field.hpp"
 
 namespace amphisbaena {
 namespace detail {
-
-static std::map<std::string, std::tuple<int, FIX::TYPE::Type>, std::less<>>
-  g_fields_by_name;
-
-static std::map<int, std::tuple<std::string, FIX::TYPE::Type>> g_fields_by_tag;
 
 std::tuple<int, FIX::TYPE::Type>
 get_field_info(std::string_view name)
@@ -117,24 +113,6 @@ get_type(std::string_view type)
   if (type == "TIME")
     return FIX::TYPE::UtcTimeStamp;
   return FIX::TYPE::Unknown;
-}
-
-void
-init_tags(boost::property_tree::ptree& pt)
-{
-  auto fields = pt.get_child_optional("fix.fields");
-  if (fields) {
-    for (auto& child : *fields) {
-      auto attrs = child.second.get_child("<xmlattr>");
-      auto name = attrs.get_optional<std::string>("name");
-      auto tag = attrs.get_optional<int>("number");
-      auto type = attrs.get_optional<std::string>("type");
-      if (name && tag && type) {
-        g_fields_by_name[*name] = { *tag, get_type(*type) };
-        g_fields_by_tag[*tag] = { *name, get_type(*type) };
-      }
-    }
-  }
 }
 
 }
@@ -431,22 +409,6 @@ void
 FixMessage::clear()
 {
   fix_message.clear();
-}
-
-void
-FixMessage::init(std::string_view url)
-{
-  boost::property_tree::ptree pt;
-  boost::property_tree::xml_parser::read_xml(std::string(url), pt);
-  detail::init_tags(pt);
-}
-
-void
-FixMessage::init(std::istream& is)
-{
-  boost::property_tree::ptree pt;
-  boost::property_tree::xml_parser::read_xml(is, pt);
-  detail::init_tags(pt);
 }
 
 MessagePtr

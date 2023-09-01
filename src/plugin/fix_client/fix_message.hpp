@@ -147,11 +147,6 @@ public:
   void clear() override;
 
 public:
-  static void init(std::string_view url);
-
-  static void init(std::istream& is);
-
-public:
   FIX::Message fix_message;
 };
 

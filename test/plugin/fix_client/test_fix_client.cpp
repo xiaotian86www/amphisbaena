@@ -47,7 +47,6 @@ HeartBtInt=30
 )")
     , server("../../test/cfg/executor.cfg")
   {
-    amphisbaena::FixMessage::init("../../thirdparty/quickfix/spec/FIX42.xml");
   }
 
 protected:

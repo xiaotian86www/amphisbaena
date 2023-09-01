@@ -32,7 +32,6 @@ public:
                                             amphisbaena::CoroutineRef(),
                                             builder))
   {
-    amphisbaena::FixMessage::init("../../thirdparty/quickfix/spec/FIX42.xml");
   }
 
 protected:
