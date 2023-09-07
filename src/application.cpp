@@ -1,6 +1,7 @@
 #include <memory>
 
 #include "application.hpp"
+#include "exception.hpp"
 
 namespace amphisbaena {
 
@@ -24,9 +25,9 @@ Application::load(std::string_view name,
                   const std::filesystem::path& path,
                   const std::vector<std::string>& args)
 {
-  auto& plugin = get(name);
-  if (plugin) {
-    // TODO 抛出异常
+  auto iter = get(name);
+  if (iter != plugins_.end()) {
+    throw PluginExistedException(name);
   } else {
     plugins_.push_back(std::make_unique<Plugin>(name, path, args));
   }
@@ -37,26 +38,36 @@ Application::reload(std::string_view name,
                     const std::filesystem::path& path,
                     const std::vector<std::string>& args)
 {
-  auto& plugin = get(name);
-  if (!plugin) {
-    // TODO 抛出异常
+  auto iter = get(name);
+  if (iter == plugins_.end()) {
+    throw PluginNotFoundException(name);
   } else {
-    plugin = std::make_unique<Plugin>(name, path, args);
+    *iter = std::make_unique<Plugin>(name, path, args);
   }
 }
 
-std::unique_ptr<Plugin>&
+void
+Application::unload(std::string_view name)
+{
+  auto iter = get(name);
+  if (iter == plugins_.end()) {
+    throw PluginNotFoundException(name);
+  } else {
+    plugins_.erase(iter);
+  }
+}
+
+std::vector<std::unique_ptr<Plugin>>::iterator
 Application::get(std::string_view name)
 {
-  static std::unique_ptr<Plugin> empty;
-
-  for (auto& plugin : plugins_) {
-    if (plugin->name() == name) {
-      return plugin;
+  auto iter = plugins_.begin();
+  for (; iter != plugins_.end(); ++iter) {
+    if ((*iter)->name() == name) {
+      return iter;
     }
   }
 
-  return empty;
+  return iter;
 }
 
 }

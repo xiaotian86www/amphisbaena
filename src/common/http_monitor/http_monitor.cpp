@@ -5,7 +5,7 @@
 
 namespace amphisbaena {
 HttpMonitor::HttpMonitor(std::shared_ptr<ServerFactory> server_factory)
-  : http_parser_(new HttpServer(server_factory, this))
+  : http_parser_(new HttpServer(server_factory, *this))
 {
 }
 
@@ -31,6 +31,8 @@ HttpMonitor::on_recv(ScheduleRef sch,
     } else if (method == "PUT") {
       // TODO 更新插件
       Application::get_instance().reload("", "", {});
+    } else if (method == "DELETE") {
+      // TODO 卸载插件
     }
   }
 }

@@ -64,8 +64,16 @@ public:
               const std::filesystem::path& path,
               const std::vector<std::string>& args);
 
+
+  /**
+   * @brief 卸载插件
+   * 
+   * @param name 插件名，全局唯一
+   */
+  void unload(std::string_view name);
+
 private:
-  std::unique_ptr<Plugin>& get(std::string_view name);
+  std::vector<std::unique_ptr<Plugin>>::iterator get(std::string_view name);
 
 private:
   std::vector<std::unique_ptr<Plugin>> plugins_;
