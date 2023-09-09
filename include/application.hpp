@@ -4,9 +4,9 @@
  * @brief 应用类
  * @version 0.1
  * @date 2023-08-22
- * 
+ *
  * @copyright Copyright (c) 2023
- * 
+ *
  */
 
 #pragma once
@@ -40,37 +40,41 @@ public:
   /**
    * @brief 加载插件，先加载的插件在不主动卸载的情况下后释放，
    * 这样保证了插件之间正确的依赖关系
-   * 
+   *
    * @param[in] name 插件名，全局唯一
    * @param[in] path 插件库路径
    * @param[in] args 插件初始化参数
    *
-   * @exception PluginNameExitsException 插件名已存在
+   * @retval true 加载成功
+   * @retval false 加载失败
    */
-  void load(std::string_view name,
+  bool load(std::string_view name,
             const std::filesystem::path& path,
             const std::vector<std::string>& args);
 
   /**
    * @brief 重新加载插件，不会改变插件的加载顺序和释放顺序
-   * 
+   *
    * @param[in] name 插件名，全局唯一
    * @param[in] path 插件库路径
    * @param[in] args 插件初始化参数
    *
-   * @exception PluginNameNotExitsException 插件名不存在
+   * @retval true 加载成功
+   * @retval false 加载失败
    */
-  void reload(std::string_view name,
+  bool reload(std::string_view name,
               const std::filesystem::path& path,
               const std::vector<std::string>& args);
 
-
   /**
    * @brief 卸载插件
-   * 
+   *
    * @param name 插件名，全局唯一
+   *
+   * @retval true 卸载成功
+   * @retval false 卸载失败
    */
-  void unload(std::string_view name);
+  bool unload(std::string_view name);
 
 private:
   std::vector<std::unique_ptr<Plugin>>::iterator get(std::string_view name);

@@ -125,44 +125,4 @@ class TimeoutException : public Exception
 public:
   const char* what() const noexcept override { return "timeout"; }
 };
-
-class PluginNotFoundException : public Exception
-{
-public:
-  PluginNotFoundException(std::string_view name)
-    : name_(name)
-  {
-    what_ += name;
-    what_ += " plugin not found";
-  }
-
-public:
-  const char* what() const noexcept override { return what_.c_str(); }
-
-  std::string_view name() const noexcept { return name_; }
-
-private:
-  std::string name_;
-  std::string what_;
-};
-
-class PluginExistedException : public Exception
-{
-public:
-  PluginExistedException(std::string_view name)
-    : name_(name)
-  {
-    what_ += name;
-    what_ += " plugin has existed";
-  }
-
-public:
-  const char* what() const noexcept override { return what_.c_str(); }
-
-  std::string_view name() const noexcept { return name_; }
-
-private:
-  std::string name_;
-  std::string what_;
-};
 }

@@ -20,41 +20,41 @@ Application::get_instance()
   return instance;
 }
 
-void
+bool
 Application::load(std::string_view name,
                   const std::filesystem::path& path,
                   const std::vector<std::string>& args)
 {
   auto iter = get(name);
-  if (iter != plugins_.end()) {
-    throw PluginExistedException(name);
-  } else {
-    plugins_.push_back(std::make_unique<Plugin>(name, path, args));
-  }
+  if (iter != plugins_.end())
+    return false;
+
+  plugins_.push_back(std::make_unique<Plugin>(name, path, args));
+  return true;
 }
 
-void
+bool
 Application::reload(std::string_view name,
                     const std::filesystem::path& path,
                     const std::vector<std::string>& args)
 {
   auto iter = get(name);
-  if (iter == plugins_.end()) {
-    throw PluginNotFoundException(name);
-  } else {
-    *iter = std::make_unique<Plugin>(name, path, args);
-  }
+  if (iter == plugins_.end())
+    return false;
+
+  *iter = std::make_unique<Plugin>(name, path, args);
+  return true;
 }
 
-void
+bool
 Application::unload(std::string_view name)
 {
   auto iter = get(name);
-  if (iter == plugins_.end()) {
-    throw PluginNotFoundException(name);
-  } else {
-    plugins_.erase(iter);
-  }
+  if (iter == plugins_.end())
+    return false;
+
+  plugins_.erase(iter);
+  return true;
 }
 
 std::vector<std::unique_ptr<Plugin>>::iterator
