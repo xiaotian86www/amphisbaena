@@ -55,7 +55,7 @@ HttpBuilder::on_recv(ScheduleRef sch,
 MessagePtr
 HttpBuilder::handle_error(std::string_view version)
 {
-  auto response = amphisbaena::MessageFactory::create("Http");
+  auto response = amphisbaena::MessageFactory::create("http");
   auto response_head = response->get_head();
   auto response_body = response->get_body();
 

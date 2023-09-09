@@ -84,7 +84,7 @@ int
 HttpSession::handle_on_message_begin(llhttp_t* http)
 {
   auto parser = static_cast<HttpSession*>(http);
-  parser->request_ = amphisbaena::MessageFactory::create("Http");
+  parser->request_ = amphisbaena::MessageFactory::create("http");
   return HPE_OK;
 }
 
@@ -153,7 +153,7 @@ HttpSession::handle_on_message_complete(llhttp_t* http)
 MessagePtr
 HttpSession::handle_error(std::string_view version)
 {
-  auto response = amphisbaena::MessageFactory::create("Http");
+  auto response = amphisbaena::MessageFactory::create("http");
   auto response_head = response->get_head();
   auto response_body = response->get_body();
 

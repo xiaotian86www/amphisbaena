@@ -72,7 +72,7 @@ TEST_F(HttpToFixBuilder, call)
           return response;
         }));
 
-      auto request = amphisbaena::MessageFactory::create("Http");
+      auto request = amphisbaena::MessageFactory::create("http");
 
       auto request_body = request->get_body();
       auto request_body_head = request_body->get_or_set_object("head");

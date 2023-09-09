@@ -28,7 +28,7 @@ HttpToFixBuilder::create(Environment& env, MessagePtr request)
 
   auto fix_response = MessageBuilder::create(env, "fix", fix_request);
 
-  auto http_response = MessageFactory::create("Http");
+  auto http_response = MessageFactory::create("http");
   auto http_response_body = http_response->get_body();
   http_response_body->get_or_set_object("head")->copy_from(
     fix_response->get_head());
