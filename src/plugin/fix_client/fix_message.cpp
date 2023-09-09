@@ -9,8 +9,8 @@
 #include <string>
 #include <string_view>
 
-#include "fix_message.hpp"
 #include "fix_field.hpp"
+#include "fix_message.hpp"
 
 namespace amphisbaena {
 namespace detail {
@@ -211,22 +211,22 @@ FixObject::get_double(std::string_view name) const
   return get_value<FIX::DoubleField, double>(name);
 }
 
-void
+Object*
 FixObject::set_value(std::string_view name, int32_t value)
 {
-  set_value<FIX::IntField>(name, value);
+  return set_value<FIX::IntField>(name, value);
 }
 
-void
+Object*
 FixObject::set_value(std::string_view name, std::string_view value)
 {
-  set_value<FIX::StringField, const std::string&>(name, std::string(value));
+  return set_value<FIX::StringField, const std::string&>(name, std::string(value));
 }
 
-void
+Object*
 FixObject::set_value(std::string_view name, double value)
 {
-  set_value<FIX::DoubleField, double>(name, value);
+  return set_value<FIX::DoubleField, double>(name, value);
 }
 
 std::size_t
@@ -329,16 +329,16 @@ FixObject::get_value(std::string_view name) const
 }
 
 template<typename Field_, typename Value_>
-void
+Object*
 FixObject::set_value(std::string_view name, Value_ value)
 {
   auto name_ = std::string(name);
   auto [tag, type] = detail::get_field_info(name_);
-  if (!tag)
-    return;
+  if (tag) {
+    fields_.setField(Field_(tag, value));
+  }
 
-  Field_ field(tag, value);
-  return fields_.setField(field);
+  return this;
 }
 
 FixMessage::FixMessage() {}
@@ -396,14 +396,6 @@ FixMessage::get_tail() const
   return std::make_unique<FixObject>(
     const_cast<FIX::Trailer&>(fix_message.getTrailer()));
 }
-
-// std::string to_string() const { return {}; }
-
-// void from_string(std::string_view str) {}
-
-// std::string to_binary() const { return {}; }
-
-// void from_binary(std::string_view bin) {}
 
 void
 FixMessage::clear()

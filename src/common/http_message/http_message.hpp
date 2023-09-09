@@ -76,11 +76,11 @@ public:
 
   double get_double(std::string_view name) const override;
 
-  void set_value(std::string_view name, int32_t value) override;
+  Object* set_value(std::string_view name, int32_t value) override;
 
-  void set_value(std::string_view name, std::string_view value) override;
+  Object* set_value(std::string_view name, std::string_view value) override;
 
-  void set_value(std::string_view name, double value) override;
+  Object* set_value(std::string_view name, double value) override;
 
   std::size_t count() const override;
 
@@ -111,7 +111,7 @@ private:
   Type_ get_value(std::string_view name) const;
 
   template<typename Type_>
-  void set_value(std::string_view name, Type_ value);
+  Object* set_value(std::string_view name, Type_ value);
 
 private:
   RapidValue& value_;

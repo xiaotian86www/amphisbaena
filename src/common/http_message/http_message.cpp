@@ -175,22 +175,22 @@ JsonObject::get_double(std::string_view name) const
   return get_value<double>(name);
 }
 
-void
+Object*
 JsonObject::set_value(std::string_view name, int32_t value)
 {
-  set_value<>(name, value);
+  return set_value<>(name, value);
 }
 
-void
+Object*
 JsonObject::set_value(std::string_view name, std::string_view value)
 {
-  set_value<>(name, value);
+  return set_value<>(name, value);
 }
 
-void
+Object*
 JsonObject::set_value(std::string_view name, double value)
 {
-  set_value<>(name, value);
+  return set_value<>(name, value);
 }
 
 std::size_t
@@ -333,7 +333,7 @@ JsonObject::get_value(std::string_view name) const
 }
 
 template<typename Type_>
-void
+Object*
 JsonObject::set_value(std::string_view name, Type_ value)
 {
   if (auto iter =
@@ -345,6 +345,8 @@ JsonObject::set_value(std::string_view name, Type_ value)
                      detail::create_value(g_allocator, value),
                      g_allocator);
   }
+
+  return this;
 }
 
 HttpMessage::HttpMessage()
@@ -428,7 +430,7 @@ HttpMessageFactory::create()
 std::string_view
 HttpMessageFactory::name()
 {
-  return "Http";
+  return "http";
 }
 
 }
