@@ -211,19 +211,19 @@ FixObject::get_double(std::string_view name) const
   return get_value<FIX::DoubleField, double>(name);
 }
 
-Object*
+ObjectPtr
 FixObject::set_value(std::string_view name, int32_t value)
 {
   return set_value<FIX::IntField>(name, value);
 }
 
-Object*
+ObjectPtr
 FixObject::set_value(std::string_view name, std::string_view value)
 {
   return set_value<FIX::StringField, const std::string&>(name, std::string(value));
 }
 
-Object*
+ObjectPtr
 FixObject::set_value(std::string_view name, double value)
 {
   return set_value<FIX::DoubleField, double>(name, value);
@@ -239,14 +239,14 @@ Object::ConstIteratorWrap
 FixObject::begin() const
 {
   return Object::ConstIteratorWrap(
-    std::make_unique<ConstIterator>(fields_.begin()));
+    std::make_shared<ConstIterator>(fields_.begin()));
 }
 
 Object::ConstIteratorWrap
 FixObject::end() const
 {
   return Object::ConstIteratorWrap(
-    std::make_unique<ConstIterator>(fields_.end()));
+    std::make_shared<ConstIterator>(fields_.end()));
 }
 
 ObjectPtr
@@ -329,7 +329,7 @@ FixObject::get_value(std::string_view name) const
 }
 
 template<typename Field_, typename Value_>
-Object*
+ObjectPtr
 FixObject::set_value(std::string_view name, Value_ value)
 {
   auto name_ = std::string(name);
@@ -338,7 +338,7 @@ FixObject::set_value(std::string_view name, Value_ value)
     fields_.setField(Field_(tag, value));
   }
 
-  return this;
+  return shared_from_this();
 }
 
 FixMessage::FixMessage() {}
@@ -362,38 +362,38 @@ FixMessage::clone() const
 ObjectPtr
 FixMessage::get_head()
 {
-  return std::make_unique<FixObject>(fix_message.getHeader());
+  return std::make_shared<FixObject>(fix_message.getHeader());
 }
 
 ConstObjectPtr
 FixMessage::get_head() const
 {
-  return std::make_unique<FixObject>(
+  return std::make_shared<FixObject>(
     const_cast<FIX::Header&>(fix_message.getHeader()));
 }
 
 ObjectPtr
 FixMessage::get_body()
 {
-  return std::make_unique<FixObject>(fix_message);
+  return std::make_shared<FixObject>(fix_message);
 }
 
 ConstObjectPtr
 FixMessage::get_body() const
 {
-  return std::make_unique<FixObject>(const_cast<FIX::Message&>(fix_message));
+  return std::make_shared<FixObject>(const_cast<FIX::Message&>(fix_message));
 }
 
 ObjectPtr
 FixMessage::get_tail()
 {
-  return std::make_unique<FixObject>(fix_message.getTrailer());
+  return std::make_shared<FixObject>(fix_message.getTrailer());
 }
 
 ConstObjectPtr
 FixMessage::get_tail() const
 {
-  return std::make_unique<FixObject>(
+  return std::make_shared<FixObject>(
     const_cast<FIX::Trailer&>(fix_message.getTrailer()));
 }
 

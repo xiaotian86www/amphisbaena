@@ -82,11 +82,11 @@ check_field_type<std::string_view>(FieldType type)
 }
 
 class Object;
-typedef std::unique_ptr<Object> ObjectPtr;
-typedef std::unique_ptr<const Object> ConstObjectPtr;
+typedef std::shared_ptr<Object> ObjectPtr;
+typedef std::shared_ptr<const Object> ConstObjectPtr;
 
 class Group;
-typedef std::unique_ptr<Group> GroupPtr;
+typedef std::shared_ptr<Group> GroupPtr;
 
 class Message;
 typedef std::shared_ptr<Message> MessagePtr;
@@ -96,6 +96,7 @@ typedef std::shared_ptr<Message> MessagePtr;
  *
  */
 class Object
+  : public std::enable_shared_from_this<Object>
 {
 public:
   /**
@@ -167,7 +168,7 @@ public:
   class ConstIteratorWrap
   {
   public:
-    ConstIteratorWrap(std::unique_ptr<ConstIterator> it)
+    ConstIteratorWrap(std::shared_ptr<ConstIterator> it)
       : it_(std::move(it))
     {
     }
@@ -195,7 +196,7 @@ public:
     }
 
   private:
-    std::unique_ptr<ConstIterator> it_;
+    std::shared_ptr<ConstIterator> it_;
   };
 
 public:
@@ -278,12 +279,12 @@ public:
    */
   virtual double get_double(std::string_view name) const = 0;
 
-  virtual Object* set_value(std::string_view name, int32_t value) = 0;
+  virtual ObjectPtr set_value(std::string_view name, int32_t value) = 0;
 
-  virtual Object* set_value(std::string_view name,
+  virtual ObjectPtr set_value(std::string_view name,
                               std::string_view value) = 0;
 
-  virtual Object* set_value(std::string_view name, double value) = 0;
+  virtual ObjectPtr set_value(std::string_view name, double value) = 0;
 
   virtual std::size_t count() const = 0;
 

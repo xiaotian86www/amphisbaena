@@ -175,19 +175,19 @@ JsonObject::get_double(std::string_view name) const
   return get_value<double>(name);
 }
 
-Object*
+ObjectPtr
 JsonObject::set_value(std::string_view name, int32_t value)
 {
   return set_value<>(name, value);
 }
 
-Object*
+ObjectPtr
 JsonObject::set_value(std::string_view name, std::string_view value)
 {
   return set_value<>(name, value);
 }
 
-Object*
+ObjectPtr
 JsonObject::set_value(std::string_view name, double value)
 {
   return set_value<>(name, value);
@@ -203,14 +203,14 @@ Object::ConstIteratorWrap
 JsonObject::begin() const
 {
   return Object::ConstIteratorWrap(
-    std::make_unique<ConstIterator>(value_.MemberBegin()));
+    std::make_shared<ConstIterator>(value_.MemberBegin()));
 }
 
 Object::ConstIteratorWrap
 JsonObject::end() const
 {
   return Object::ConstIteratorWrap(
-    std::make_unique<ConstIterator>(value_.MemberEnd()));
+    std::make_shared<ConstIterator>(value_.MemberEnd()));
 }
 
 ObjectPtr
@@ -252,7 +252,7 @@ JsonObject::get_or_set_object(std::string_view name)
     if (!iter->value.IsObject()) {
       iter->value = RapidValue(rapidjson::Type::kObjectType);
     }
-    return std::make_unique<JsonObject>(iter->value);
+    return std::make_shared<JsonObject>(iter->value);
   } else {
     value_.AddMember(rapidjson::StringRef(name.data(), name.size()),
                      RapidValue(rapidjson::Type::kObjectType),
@@ -260,7 +260,7 @@ JsonObject::get_or_set_object(std::string_view name)
 
     iter = value_.FindMember(rapidjson::StringRef(name.data(), name.size()));
 
-    return std::make_unique<JsonObject>(iter->value);
+    return std::make_shared<JsonObject>(iter->value);
   }
 }
 
@@ -333,7 +333,7 @@ JsonObject::get_value(std::string_view name) const
 }
 
 template<typename Type_>
-Object*
+ObjectPtr
 JsonObject::set_value(std::string_view name, Type_ value)
 {
   if (auto iter =
@@ -346,7 +346,7 @@ JsonObject::set_value(std::string_view name, Type_ value)
                      g_allocator);
   }
 
-  return this;
+  return shared_from_this();
 }
 
 HttpMessage::HttpMessage()
@@ -374,7 +374,7 @@ HttpMessage::clone() const
 ObjectPtr
 HttpMessage::get_head()
 {
-  return std::make_unique<JsonObject>(doc_.FindMember("head")->value);
+  return std::make_shared<JsonObject>(doc_.FindMember("head")->value);
 }
 
 ConstObjectPtr
@@ -386,7 +386,7 @@ HttpMessage::get_head() const
 ObjectPtr
 HttpMessage::get_body()
 {
-  return std::make_unique<JsonObject>(doc_.FindMember("body")->value);
+  return std::make_shared<JsonObject>(doc_.FindMember("body")->value);
 }
 
 ConstObjectPtr
@@ -398,7 +398,7 @@ HttpMessage::get_body() const
 ObjectPtr
 HttpMessage::get_tail()
 {
-  return std::make_unique<JsonObject>(doc_.FindMember("tail")->value);
+  return std::make_shared<JsonObject>(doc_.FindMember("tail")->value);
 }
 
 ConstObjectPtr

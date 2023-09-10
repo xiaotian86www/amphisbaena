@@ -71,11 +71,11 @@ public:
 
   double get_double(std::string_view name) const override;
 
-  Object* set_value(std::string_view name, int32_t value) override;
+  ObjectPtr set_value(std::string_view name, int32_t value) override;
 
-  Object* set_value(std::string_view name, std::string_view value) override;
+  ObjectPtr set_value(std::string_view name, std::string_view value) override;
 
-  Object* set_value(std::string_view name, double value) override;
+  ObjectPtr set_value(std::string_view name, double value) override;
 
   std::size_t count() const override;
 
@@ -106,7 +106,7 @@ private:
   Value_ get_value(std::string_view name) const;
 
   template<typename Field_, typename Value_>
-  Object* set_value(std::string_view name, Value_ value);
+  ObjectPtr set_value(std::string_view name, Value_ value);
 
 private:
   FIX::FieldMap& fields_;
