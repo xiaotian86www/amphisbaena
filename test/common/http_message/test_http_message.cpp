@@ -1,9 +1,6 @@
 
 #include "common/http_message/http_message.hpp"
-#include "fixture_message.hpp"
+#include "test_message.ipp"
 #include "message.hpp"
 
-static std::shared_ptr<amphisbaena::MessageFactory> factory(
-  std::make_shared<amphisbaena::HttpMessageFactory>());
-
-INSTANTIATE_TEST_SUITE_P(Http, Message, testing::Values(factory));
+INSTANTIATE_TYPED_TEST_SUITE_P(Http, Message, amphisbaena::HttpMessageFactory);

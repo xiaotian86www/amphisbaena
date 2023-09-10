@@ -1,13 +1,21 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "fixture_message.hpp"
 #include "matcher_message.hpp"
 #include "message.hpp"
 
-TEST_P(Message, get_int)
+template<typename T>
+class Message : public testing::Test
 {
-  auto message = factory->create();
+protected:
+  T factory;
+};
+
+TYPED_TEST_SUITE_P(Message);
+
+TYPED_TEST_P(Message, get_int)
+{
+  auto message = this->factory.create();
   auto body = message->get_body();
   EXPECT_EQ(body->set_value("MsgSeqNum", 1), body.get());
   EXPECT_EQ(body->get_int("MsgSeqNum"), 1);
@@ -22,9 +30,9 @@ TEST_P(Message, get_int)
   EXPECT_EQ(body->get_value("SenderCompID", 10), 10);
 }
 
-TEST_P(Message, get_string)
+TYPED_TEST_P(Message, get_string)
 {
-  auto message = factory->create();
+  auto message = this->factory.create();
   auto body = message->get_body();
   EXPECT_EQ(body->set_value("SenderCompID", "value1"), body.get());
   EXPECT_EQ(body->get_string("SenderCompID"), "value1");
@@ -39,9 +47,9 @@ TEST_P(Message, get_string)
   EXPECT_EQ(body->get_value("MsgSeqNum", ""), "");
 }
 
-TEST_P(Message, get_string_char)
+TYPED_TEST_P(Message, get_string_char)
 {
-  auto message = factory->create();
+  auto message = this->factory.create();
   auto body = message->get_body();
   EXPECT_EQ(body->set_value("OrdType", "1"), body.get());
   EXPECT_EQ(body->get_string("OrdType"), "1");
@@ -56,11 +64,12 @@ TEST_P(Message, get_string_char)
   EXPECT_EQ(body->get_value("MsgSeqNum", ""), "");
 }
 
-TEST_P(Message, get_string_timestamp)
+TYPED_TEST_P(Message, get_string_timestamp)
 {
-  auto message = factory->create();
+  auto message = this->factory.create();
   auto body = message->get_body();
-  EXPECT_EQ(body->set_value("TransactTime", "20230718-04:57:20.922010000"), body.get());
+  EXPECT_EQ(body->set_value("TransactTime", "20230718-04:57:20.922010000"),
+            body.get());
   EXPECT_EQ(body->get_string("TransactTime"), "20230718-04:57:20.922010000");
   EXPECT_EQ(body->get_value("TransactTime", ""), "20230718-04:57:20.922010000");
 
@@ -73,9 +82,9 @@ TEST_P(Message, get_string_timestamp)
   EXPECT_EQ(body->get_value("MsgSeqNum", ""), "");
 }
 
-TEST_P(Message, get_double)
+TYPED_TEST_P(Message, get_double)
 {
-  auto message = factory->create();
+  auto message = this->factory.create();
   auto body = message->get_body();
   EXPECT_EQ(body->set_value("LeavesQty", 1.01), body.get());
 
@@ -91,9 +100,9 @@ TEST_P(Message, get_double)
   EXPECT_EQ(body->get_value("SenderCompID", 0.01), 0.01);
 }
 
-TEST_P(Message, iterator)
+TYPED_TEST_P(Message, iterator)
 {
-  auto message = factory->create();
+  auto message = this->factory.create();
   auto body = message->get_body();
   EXPECT_EQ(body->set_value("SenderCompID", "CLIENT1"), body.get());
   EXPECT_EQ(body->set_value("MsgSeqNum", 1), body.get());
@@ -109,10 +118,10 @@ TEST_P(Message, iterator)
   }
 }
 
-TEST_P(Message, assignment)
+TYPED_TEST_P(Message, assignment)
 {
-  auto message = factory->create();
-  auto message2 = factory->create();
+  auto message = this->factory.create();
+  auto message2 = this->factory.create();
   auto body = message->get_body();
   EXPECT_EQ(body->set_value("SenderCompID", "CLIENT1"), body.get());
   EXPECT_EQ(body->set_value("MsgSeqNum", 1), body.get());
@@ -125,4 +134,11 @@ TEST_P(Message, assignment)
   EXPECT_THAT(body2, field_double_eq("LeavesQty", 1.01));
 }
 
-GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST(Message);
+REGISTER_TYPED_TEST_SUITE_P(Message,
+                            get_int,
+                            get_string,
+                            get_string_char,
+                            get_string_timestamp,
+                            get_double,
+                            iterator,
+                            assignment);
