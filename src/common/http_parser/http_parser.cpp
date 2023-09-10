@@ -162,13 +162,7 @@ HttpSession::handle_error(std::string_view version)
   } catch (const NotFoundException& ec) {
     response_head->set_value("code", HTTP_STATUS_NOT_FOUND);
     response_body->set_value("description", ec.what());
-  } catch (const NoKeyException& ec) {
-    response_head->set_value("code", HTTP_STATUS_BAD_REQUEST);
-    response_body->set_value("description", ec.what());
-  } catch (const TypeExecption& ec) {
-    response_head->set_value("code", HTTP_STATUS_BAD_REQUEST);
-    response_body->set_value("description", ec.what());
-  } catch (const UnknownKeyException& ec) {
+  } catch (const MessageException& ec) {
     response_head->set_value("code", HTTP_STATUS_BAD_REQUEST);
     response_body->set_value("description", ec.what());
   } catch (const Exception& ec) {

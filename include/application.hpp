@@ -76,6 +76,12 @@ public:
    */
   bool unload(std::string_view name);
 
+  /**
+   * @brief 卸载所有插件
+   *
+   */
+  void unload();
+
 private:
   std::vector<std::unique_ptr<Plugin>>::iterator get(std::string_view name);
 

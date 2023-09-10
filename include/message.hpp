@@ -95,8 +95,7 @@ typedef std::shared_ptr<Message> MessagePtr;
  * @brief 单条记录接口
  *
  */
-class Object
-  : public std::enable_shared_from_this<Object>
+class Object : public std::enable_shared_from_this<Object>
 {
 public:
   /**
@@ -301,6 +300,21 @@ public:
   virtual GroupPtr get_group(std::string_view name) = 0;
 
   virtual const GroupPtr get_group(std::string_view name) const = 0;
+
+  Object& operator()(std::string_view name, int32_t value)
+  {
+    return *set_value(name, value);
+  }
+
+  Object& operator()(std::string_view name, std::string_view value)
+  {
+    return *set_value(name, value);
+  }
+
+  Object& operator()(std::string_view name, double value)
+  {
+    return *set_value(name, value);
+  }
 
 public:
   virtual void from_string(std::string_view str) = 0;

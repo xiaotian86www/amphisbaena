@@ -17,7 +17,10 @@ namespace amphisbaena {
 class Exception : public std::exception
 {};
 
-class NoKeyException : public Exception
+class MessageException : public Exception
+{};
+
+class NoKeyException : public MessageException
 {
 public:
   NoKeyException(std::string_view name)
@@ -37,7 +40,7 @@ private:
   std::string what_;
 };
 
-class TypeExecption : public Exception
+class TypeExecption : public MessageException
 {
 public:
   TypeExecption(std::string_view name, std::string_view type)
@@ -60,14 +63,14 @@ private:
   std::string what_;
 };
 
-class NotFoundException : public Exception
+class UnknownKeyException : public MessageException
 {
 public:
-  NotFoundException(std::string_view name)
+  UnknownKeyException(std::string_view name)
     : name_(name)
   {
+    what_ += "unknown field: ";
     what_ += name;
-    what_ += " not found";
   }
 
 public:
@@ -80,14 +83,14 @@ private:
   std::string what_;
 };
 
-class UnknownKeyException : public Exception
+class NotFoundException : public Exception
 {
 public:
-  UnknownKeyException(std::string_view name)
+  NotFoundException(std::string_view name)
     : name_(name)
   {
-    what_ += "unknown field: ";
     what_ += name;
+    what_ += " not found";
   }
 
 public:

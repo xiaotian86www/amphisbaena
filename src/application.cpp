@@ -42,6 +42,7 @@ Application::reload(std::string_view name,
   if (iter == plugins_.end())
     return false;
 
+  iter->reset();
   *iter = std::make_unique<Plugin>(name, path, args);
   return true;
 }
@@ -55,6 +56,12 @@ Application::unload(std::string_view name)
 
   plugins_.erase(iter);
   return true;
+}
+
+void
+Application::unload()
+{
+  plugins_.clear();
 }
 
 std::vector<std::unique_ptr<Plugin>>::iterator
