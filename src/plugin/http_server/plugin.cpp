@@ -8,41 +8,49 @@
 #include "common/http_parser/http_parser.hpp"
 #include "common/uds_server/uds_server.hpp"
 #include "http_builder.hpp"
+#include "loader.hpp"
 #include "message.hpp"
 #include "schedule.hpp"
 
-static boost::asio::io_service ios;
-static std::shared_ptr<amphisbaena::Schedule> schedule;
-static std::shared_ptr<amphisbaena::MessageFactory> factory;
-static std::shared_ptr<amphisbaena::HttpBuilder> builder;
-static std::thread ios_thread;
-
-extern "C"
+namespace amphisbaena {
+class HttpServerLoader : public amphisbaena::Loader
 {
-  void init(int argc, const char* const* argv)
+public:
+  void do_init(int argc, const char* const* argv) override
   {
     if (argc < 2)
       throw std::invalid_argument("Usage: " + std::string(argv[0]));
 
-    schedule = std::make_shared<amphisbaena::Schedule>(ios);
-    factory = std::make_shared<amphisbaena::HttpMessageFactory>();
-    amphisbaena::MessageFactory::registe(factory);
+    schedule_ = std::make_shared<amphisbaena::Schedule>(ios_);
+    factory_ = std::make_shared<amphisbaena::HttpMessageFactory>();
+    amphisbaena::MessageFactory::registe(factory_);
 
-    builder = std::make_shared<amphisbaena::HttpBuilder>(
-      std::make_shared<amphisbaena::UdsServerFactory>(ios, schedule, argv[1]));
+    builder_ = std::make_shared<amphisbaena::HttpBuilder>(
+      std::make_shared<amphisbaena::UdsServerFactory>(
+        ios_, schedule_, argv[1]));
 
-    ios_thread = std::thread([] { ios.run(); });
+    ios_thread_ = std::thread([this] { ios_.run(); });
   }
 
-  void deinit()
+  void do_deinit() override
   {
-    ios.stop();
-    ios_thread.join();
+    ios_.stop();
+    ios_thread_.join();
 
-    amphisbaena::MessageFactory::unregiste(factory);
+    amphisbaena::MessageFactory::unregiste(factory_);
 
-    builder.reset();
-    factory.reset();
-    schedule.reset();
+    builder_.reset();
+    factory_.reset();
+    schedule_.reset();
   }
+
+private:
+  boost::asio::io_service ios_;
+  std::shared_ptr<amphisbaena::Schedule> schedule_;
+  std::shared_ptr<amphisbaena::MessageFactory> factory_;
+  std::shared_ptr<amphisbaena::HttpBuilder> builder_;
+  std::thread ios_thread_;
+};
 }
+
+AMP_REGISTE_PLUGIN_LOADER(amphisbaena::HttpServerLoader)

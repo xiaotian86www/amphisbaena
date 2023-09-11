@@ -12,15 +12,3 @@ add_library(plugin11 SHARED plugin11.cpp)
 target_link_libraries(plugin11 PRIVATE
     http_message
     amphisbaena_core)
-    
-add_library(plugin12 SHARED plugin12.cpp)
-
-target_link_libraries(plugin12 PRIVATE
-    http_message
-    amphisbaena_core)
-    
-add_library(plugin13 SHARED plugin13.cpp)
-
-target_link_libraries(plugin13 PRIVATE
-    http_message
-    amphisbaena_core)

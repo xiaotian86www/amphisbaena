@@ -18,8 +18,8 @@ TEST_F(Application, load)
     "a", "mock/plugin/libplugin1.so", {}));
   EXPECT_TRUE(!amphisbaena::Application::get_instance().load(
     "a", "mock/plugin/libplugin1.so", {}));
-//   EXPECT_TRUE(amphisbaena::Application::get_instance().load(
-//     "b", "mock/plugin/libplugin1.so", {}));
+  EXPECT_TRUE(amphisbaena::Application::get_instance().load(
+    "b", "mock/plugin/libplugin1.so", {}));
 }
 
 TEST_F(Application, reload)

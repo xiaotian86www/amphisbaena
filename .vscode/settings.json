@@ -77,5 +77,6 @@
         "*.ipp": "cpp",
         "queue": "cpp",
         "unordered_set": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": true
 }
