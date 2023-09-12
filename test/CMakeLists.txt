@@ -25,6 +25,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     test_http_to_fix
     test_fix_client
     test_http_server
+    test_http_monitor
 )
 
 include(GoogleTest)
