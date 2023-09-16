@@ -17,6 +17,9 @@ public:
                SessionPtr session,
                MessagePtr message) override;
 
+public:
+  HttpServer& http_server() { return *http_parser_; }
+
 private:
   void on_load(SessionPtr session, std::string_view id, ObjectPtr request_body);
 
@@ -25,6 +28,8 @@ private:
   void on_unload_plugin(SessionPtr session, std::string_view id);
 
   void on_bad_request(SessionPtr session);
+
+  void on_internal_server_error(SessionPtr session);
 
   ObjectPtr init_response(MessagePtr message,
                      int32_t http_code,

@@ -5,6 +5,7 @@
 #include "log.hpp"
 #include "message.hpp"
 #include "util.hpp"
+#include <string_view>
 
 namespace amphisbaena {
 
@@ -25,7 +26,7 @@ HttpMonitor::on_recv(ScheduleRef /* sch */,
   std::string_view url = request_head->get_string("url");
   std::string_view method = request_head->get_string("method");
 
-  LOG_DEBUG(
+  LOG_INFO(
     "method: {}, url: {}, body: {}", method, url, request_body->to_string());
 
   auto url_elements = util::split(url, "/");
@@ -63,8 +64,10 @@ HttpMonitor::on_recv(ScheduleRef /* sch */,
     } catch (const MessageException& ec) {
       on_bad_request(session);
     } catch (...) {
-      
+      on_internal_server_error(session);
     }
+  } else {
+    on_bad_request(session);
   }
 }
 
@@ -75,17 +78,20 @@ HttpMonitor::on_load(SessionPtr session,
 {
   auto response = MessageFactory::create("http");
   auto path = request_body->get_string("path");
-  if (Application::get_instance().load(id, path, {})) {
-    auto response_data = init_response(response, HTTP_STATUS_OK, 0, "请求成功");
+  int status = HTTP_STATUS_OK;
+  std::string_view message = "请求成功";
 
-    response_data->set_value("id", id);
-  } else {
-    auto response_data =
-      init_response(response, HTTP_STATUS_NOT_FOUND, 0, "插件找不到");
-
-    response_data->set_value("id", id);
+  if (!Application::get_instance().load(id, path, {})) {
+    status = HTTP_STATUS_NOT_FOUND;
+    message = "插件找不到";
   }
 
+  auto response_data = init_response(response, status, 0, message);
+
+  response_data->set_value("id", id);
+
+  LOG_INFO(
+    "status: {}, message: {}, body: {}", status, message, response->get_body()->to_string());
   session->send(response);
 }
 
@@ -135,6 +141,18 @@ HttpMonitor::on_bad_request(SessionPtr session)
 
   init_response(response, HTTP_STATUS_BAD_REQUEST, 0, "参数错误");
 
+  LOG_INFO("status: {}, description: {}", (int)HTTP_STATUS_BAD_REQUEST, "参数错误");
+  session->send(response);
+}
+
+void
+HttpMonitor::on_internal_server_error(SessionPtr session)
+{
+  auto response = MessageFactory::create("http");
+
+  init_response(response, HTTP_STATUS_INTERNAL_SERVER_ERROR, 0, "内部错误");
+
+  LOG_INFO("status: {}, description: {}", (int)HTTP_STATUS_BAD_REQUEST, "内部错误");
   session->send(response);
 }
 

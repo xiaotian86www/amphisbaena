@@ -2,6 +2,7 @@
 
 #include "application.hpp"
 #include "exception.hpp"
+#include "log.hpp"
 
 namespace amphisbaena {
 
@@ -25,6 +26,7 @@ Application::load(std::string_view name,
                   const std::filesystem::path& path,
                   const std::vector<std::string>& args)
 {
+  LOG_INFO("load plugin, name: {}, path: {}", name, path.string());
   auto iter = get(name);
   if (iter != plugins_.end())
     return false;
